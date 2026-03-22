@@ -471,6 +471,7 @@
   "channels.dialogs.bulkOrdering.description": "Drag and drop to reorder channels. Higher weight channels will be preferred when selecting channels.",
   "channels.dialogs.bulkOrdering.dragHint": "Drag channels to reorder them",
   "channels.dialogs.bulkOrdering.channelCount": "{{count}} channel",
+  "channels.dialogs.bulkOrdering.autoSortButton": "Auto Sort",
   "channels.dialogs.bulkOrdering.saveButton": "Save Order",
   "channels.dialogs.bulkOrdering.orderingWeight": "Weight",
   "channels.dialogs.bulkOrdering.noChannels": "No channels available for ordering",

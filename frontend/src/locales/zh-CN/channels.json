@@ -468,6 +468,7 @@
   "channels.dialogs.bulkOrdering.description": "拖拽重新排列渠道。拥有更高权重的渠道在选择时将被优先考虑。",
   "channels.dialogs.bulkOrdering.dragHint": "拖拽渠道重新排序",
   "channels.dialogs.bulkOrdering.channelCount": "{{count}} 条渠道",
+  "channels.dialogs.bulkOrdering.autoSortButton": "自动排序",
   "channels.dialogs.bulkOrdering.saveButton": "保存排序",
   "channels.dialogs.bulkOrdering.orderingWeight": "权重",
   "channels.dialogs.bulkOrdering.noChannels": "没有可用于排序的渠道",

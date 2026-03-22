@@ -320,6 +320,35 @@ export function ChannelsBulkOrderingDialog({ open, onOpenChange }: ChannelsBulkO
     });
   }, []);
 
+  const handleAutoSort = useCallback(() => {
+    setOrderedChannels((items) => {
+      const enabledCount = items.filter((item) => item.channel.status === 'enabled').length;
+      let nextEnabledWeight = enabledCount;
+
+      const newItems = items.map((item) => {
+        if (item.channel.status !== 'enabled') {
+          return {
+            ...item,
+            orderingWeight: 0,
+          };
+        }
+
+        const currentWeight = nextEnabledWeight;
+        nextEnabledWeight -= 1;
+
+        return {
+          ...item,
+          orderingWeight: currentWeight,
+        };
+      });
+
+      newItems.sort((a, b) => b.orderingWeight - a.orderingWeight);
+      setHasChanges(true);
+
+      return newItems;
+    });
+  }, []);
+
   const handleSave = async () => {
     try {
       const updates = orderedChannels.map((item) => ({
@@ -436,6 +465,9 @@ export function ChannelsBulkOrderingDialog({ open, onOpenChange }: ChannelsBulkO
               )}
             </div>
             <div className='flex items-center gap-2'>
+              <Button variant='outline' onClick={handleAutoSort} disabled={bulkUpdateMutation.isPending || orderedChannels.length === 0}>
+                {t('channels.dialogs.bulkOrdering.autoSortButton')}
+              </Button>
               <Button variant='outline' onClick={handleCancel}>
                 {t('common.buttons.cancel')}
               </Button>
