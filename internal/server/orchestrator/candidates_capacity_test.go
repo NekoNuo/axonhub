@@ -63,6 +63,49 @@ func TestChannelCapacitySelector_RPMExceededSwitchesChannel(t *testing.T) {
 	require.Equal(t, ch2.ID, result[0].Channel.ID)
 }
 
+func TestChannelCapacitySelector_UnderLimitKeepsPrimaryChannel(t *testing.T) {
+	ctx, client := setupTest(t)
+
+	ch1, err := client.Channel.Create().
+		SetType(channel.TypeOpenai).
+		SetName("primary-limited").
+		SetBaseURL("https://api.openai.com/v1").
+		SetCredentials(objects.ChannelCredentials{APIKey: "k1"}).
+		SetSupportedModels([]string{"gpt-4"}).
+		SetDefaultTestModel("gpt-4").
+		SetStatus(channel.StatusEnabled).
+		SetSettings(&objects.ChannelSettings{RPM: 2}).
+		Save(ctx)
+	require.NoError(t, err)
+
+	ch2, err := client.Channel.Create().
+		SetType(channel.TypeOpenai).
+		SetName("backup").
+		SetBaseURL("https://api.openai.com/v1").
+		SetCredentials(objects.ChannelCredentials{APIKey: "k2"}).
+		SetSupportedModels([]string{"gpt-4"}).
+		SetDefaultTestModel("gpt-4").
+		SetStatus(channel.StatusEnabled).
+		Save(ctx)
+	require.NoError(t, err)
+
+	channelService := biz.NewChannelServiceForTest(client)
+	channelService.IncrementChannelSelection(ch1.ID)
+
+	base := &staticCandidatesSelector{
+		candidates: []*ChannelModelsCandidate{
+			{Channel: &biz.Channel{Channel: ch1}, Models: []biz.ChannelModelEntry{{RequestModel: "gpt-4", ActualModel: "gpt-4"}}},
+			{Channel: &biz.Channel{Channel: ch2}, Models: []biz.ChannelModelEntry{{RequestModel: "gpt-4", ActualModel: "gpt-4"}}},
+		},
+	}
+
+	selector := WithChannelCapacitySelector(base, channelService, NewDefaultConnectionTracker(10))
+	result, err := selector.Select(ctx, &llm.Request{Model: "gpt-4"})
+	require.NoError(t, err)
+	require.Len(t, result, 1)
+	require.Equal(t, ch1.ID, result[0].Channel.ID)
+}
+
 func TestChannelCapacitySelector_ConcurrencyExceededSwitchesChannel(t *testing.T) {
 	ctx, client := setupTest(t)
 

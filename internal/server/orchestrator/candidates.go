@@ -504,8 +504,12 @@ func matchChannelTagsFilter(allowedTags []string, matchMode objects.ChannelTagsM
 	}
 }
 
-// ChannelCapacitySelector filters out channels that exceed configured rpm/concurrency limits.
-// If all candidates exceed limits, it returns the original candidates as a fallback.
+// ChannelCapacitySelector applies per-channel rpm/concurrency guards and overflow routing.
+// Behavior:
+// 1. If the primary candidate (first in list) has capacity limits configured and is still under limit,
+// it keeps using the primary candidate.
+// 2. Once the primary candidate exceeds limits, requests overflow to other available candidates.
+// 3. If no candidate is available after capacity checks, fallback to original candidates.
 type ChannelCapacitySelector struct {
 	wrapped           CandidateSelector
 	channelService    *biz.ChannelService
@@ -536,28 +540,24 @@ func (s *ChannelCapacitySelector) Select(ctx context.Context, req *llm.Request) 
 	}
 
 	now := time.Now()
+	primary := candidates[0]
+	if s.hasCapacityLimits(primary) {
+		// Keep using the primary channel until it reaches configured limits.
+		if !s.exceedsCapacity(primary, now) {
+			return []*ChannelModelsCandidate{primary}, nil
+		}
+
+		// Primary exceeded limits, overflow to other available channels.
+		overflowCandidates := lo.Filter(candidates[1:], func(c *ChannelModelsCandidate, _ int) bool {
+			return !s.exceedsCapacity(c, now)
+		})
+		if len(overflowCandidates) > 0 {
+			return overflowCandidates, nil
+		}
+	}
+
 	filtered := lo.Filter(candidates, func(c *ChannelModelsCandidate, _ int) bool {
-		if c == nil || c.Channel == nil || c.Channel.Settings == nil {
-			return true
-		}
-
-		settings := c.Channel.Settings
-
-		if settings.RPM > 0 && s.channelService != nil {
-			count := s.channelService.GetChannelRecentRequestCount(c.Channel.ID, now.Add(-time.Minute))
-			if count >= int64(settings.RPM) {
-				return false
-			}
-		}
-
-		if settings.Concurrency > 0 && s.connectionTracker != nil {
-			active := s.connectionTracker.GetActiveConnections(c.Channel.ID)
-			if active >= settings.Concurrency {
-				return false
-			}
-		}
-
-		return true
+		return !s.exceedsCapacity(c, now)
 	})
 
 	if len(filtered) > 0 {
@@ -572,6 +572,40 @@ func (s *ChannelCapacitySelector) Select(ctx context.Context, req *llm.Request) 
 	}
 
 	return candidates, nil
+}
+
+func (s *ChannelCapacitySelector) hasCapacityLimits(c *ChannelModelsCandidate) bool {
+	if c == nil || c.Channel == nil || c.Channel.Settings == nil {
+		return false
+	}
+
+	settings := c.Channel.Settings
+
+	return settings.RPM > 0 || settings.Concurrency > 0
+}
+
+func (s *ChannelCapacitySelector) exceedsCapacity(c *ChannelModelsCandidate, now time.Time) bool {
+	if c == nil || c.Channel == nil || c.Channel.Settings == nil {
+		return false
+	}
+
+	settings := c.Channel.Settings
+
+	if settings.RPM > 0 && s.channelService != nil {
+		count := s.channelService.GetChannelRecentRequestCount(c.Channel.ID, now.Add(-time.Minute))
+		if count >= int64(settings.RPM) {
+			return true
+		}
+	}
+
+	if settings.Concurrency > 0 && s.connectionTracker != nil {
+		active := s.connectionTracker.GetActiveConnections(c.Channel.ID)
+		if active >= settings.Concurrency {
+			return true
+		}
+	}
+
+	return false
 }
 
 // SpecifiedChannelSelector allows selecting specific channels (including disabled ones) for testing.
