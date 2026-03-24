@@ -11,7 +11,7 @@ import { extractNumberID } from '@/lib/utils';
 import { formatDuration } from '@/utils/format-duration';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { InteractiveTooltip } from '@/components/ui/interactive-tooltip';
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
 import { useGeneralSettings } from '@/features/system/data/system';
 import { useRequestPermissions } from '../../../hooks/useRequestPermissions';
@@ -68,25 +68,26 @@ export function useRequestsColumns(options?: UseRequestsColumnsOptions): ColumnD
 
         if (executionModelIds.length > 0) {
           return (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type='button'
-                  className='flex w-fit cursor-help items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100 dark:border-amber-800/50 dark:bg-amber-900/30 dark:text-amber-300 dark:hover:bg-amber-900/50'
-                >
-                  <span>{originalModelId}</span>
-                  <IconRoute className='h-3.5 w-3.5 opacity-80' />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side='right' className='border-amber-200 bg-white dark:bg-zinc-900'>
+            <InteractiveTooltip
+              side='right'
+              className='border-amber-200 bg-white dark:bg-zinc-900'
+              content={
                 <div className='flex items-center gap-2 p-2'>
                   <span className='text-muted-foreground text-xs whitespace-nowrap'>{t('requests.columns.executedModelId')}:</span>
                   <span className='rounded bg-amber-100 px-2 py-0.5 text-xs font-medium whitespace-nowrap text-amber-800 dark:bg-amber-900/40 dark:text-amber-200'>
                     {executionModelIds[0]}
                   </span>
                 </div>
-              </TooltipContent>
-            </Tooltip>
+              }
+            >
+              <button
+                type='button'
+                className='flex w-fit cursor-help items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100 dark:border-amber-800/50 dark:bg-amber-900/30 dark:text-amber-300 dark:hover:bg-amber-900/50'
+              >
+                <span>{originalModelId}</span>
+                <IconRoute className='h-3.5 w-3.5 opacity-80' />
+              </button>
+            </InteractiveTooltip>
           );
         }
 
@@ -183,17 +184,10 @@ export function useRequestsColumns(options?: UseRequestsColumnsOptions): ColumnD
               });
 
               return (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      type='button'
-                      className='flex w-fit cursor-help items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-700 transition-colors hover:bg-rose-100 dark:border-rose-800/50 dark:bg-rose-900/30 dark:text-rose-300 dark:hover:bg-rose-900/50'
-                    >
-                      <span>{channel.name}</span>
-                      <IconArrowsJoin2 className='h-3.5 w-3.5 opacity-80' />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side='right' className='border-rose-200 bg-white p-0 dark:bg-zinc-900'>
+                <InteractiveTooltip
+                  side='right'
+                  className='border-rose-200 bg-white p-0 dark:bg-zinc-900'
+                  content={
                     <div className='flex min-w-[240px] flex-col'>
                       <div className='flex flex-col gap-1 border-b p-3 bg-rose-50/50 dark:bg-rose-900/10'>
                         <div className='text-rose-900 dark:text-rose-300 flex items-center gap-2 text-xs font-bold tracking-wider uppercase'>
@@ -226,8 +220,16 @@ export function useRequestsColumns(options?: UseRequestsColumnsOptions): ColumnD
                         ))}
                       </div>
                     </div>
-                  </TooltipContent>
-                </Tooltip>
+                  }
+                >
+                  <button
+                    type='button'
+                    className='flex w-fit cursor-help items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-700 transition-colors hover:bg-rose-100 dark:border-rose-800/50 dark:bg-rose-900/30 dark:text-rose-300 dark:hover:bg-rose-900/50'
+                  >
+                    <span>{channel.name}</span>
+                    <IconArrowsJoin2 className='h-3.5 w-3.5 opacity-80' />
+                  </button>
+                </InteractiveTooltip>
               );
             }
 
