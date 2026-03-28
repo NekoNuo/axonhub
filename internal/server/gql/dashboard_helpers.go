@@ -273,24 +273,3 @@ func (r *queryResolver) parseTimeWindow(ctx context.Context, timeWindow *string)
 
 	return since, applyFilter
 }
-
-func (r *queryResolver) parseTimeWindow(ctx context.Context, timeWindow *string) (since time.Time, applyFilter bool) {
-	loc := r.systemService.TimeLocation(ctx)
-	period := xtime.GetCalendarPeriods(loc)
-
-	if timeWindow != nil && *timeWindow != "" && *timeWindow != "allTime" {
-		applyFilter = true
-		switch *timeWindow {
-		case "day":
-			since = period.Today.Start
-		case "week":
-			since = period.ThisWeek.Start
-		case "month":
-			since = period.ThisMonth.Start
-		default:
-			applyFilter = false
-		}
-	}
-
-	return since, applyFilter
-}
