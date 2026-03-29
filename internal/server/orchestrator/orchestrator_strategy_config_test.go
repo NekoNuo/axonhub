@@ -28,6 +28,7 @@ func TestNewChatCompletionOrchestrator_StrategyConfigForHighAvailabilityAndLowLa
 	haProbe, ok := processor.highAvailabilityLoadBalancer.strategies[0].(*ProbeHealthStrategy)
 	require.True(t, ok)
 	assert.Equal(t, ProbeHealthModeAvailability, haProbe.mode)
+	assert.NotNil(t, haProbe.connectionTracker)
 	assert.IsType(t, &WeightStrategy{}, processor.highAvailabilityLoadBalancer.strategies[1])
 
 	require.NotNil(t, processor.lowLatencyLoadBalancer)
@@ -36,6 +37,6 @@ func TestNewChatCompletionOrchestrator_StrategyConfigForHighAvailabilityAndLowLa
 	llProbe, ok := processor.lowLatencyLoadBalancer.strategies[0].(*ProbeHealthStrategy)
 	require.True(t, ok)
 	assert.Equal(t, ProbeHealthModeLowLatency, llProbe.mode)
+	assert.NotNil(t, llProbe.connectionTracker)
 	assert.IsType(t, &WeightStrategy{}, processor.lowLatencyLoadBalancer.strategies[1])
 }
-

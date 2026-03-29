@@ -52,12 +52,12 @@ func NewChatCompletionOrchestrator(
 		NewWeightStrategy(), NewModelAwareCircuitBreakerStrategy(modelCircuitBreaker), rateLimitStrategy)
 
 	highAvailabilityLoadBalancer := NewLoadBalancer(systemService, channelService,
-		NewProbeHealthStrategy(channelService, ProbeHealthModeAvailability),
+		NewProbeHealthStrategy(channelService, connectionTracker, ProbeHealthModeAvailability),
 		NewWeightStrategy(),
 	)
 
 	lowLatencyLoadBalancer := NewLoadBalancer(systemService, channelService,
-		NewProbeHealthStrategy(channelService, ProbeHealthModeLowLatency),
+		NewProbeHealthStrategy(channelService, connectionTracker, ProbeHealthModeLowLatency),
 		NewWeightStrategy(),
 	)
 

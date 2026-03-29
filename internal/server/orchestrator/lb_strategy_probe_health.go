@@ -21,19 +21,21 @@ type ChannelProbeHealthProvider interface {
 // ProbeHealthStrategy scores channels by probe-based health and latency.
 // It strongly penalizes unhealthy channels and (mode-dependently) high-latency channels.
 type ProbeHealthStrategy struct {
-	provider ChannelProbeHealthProvider
-	mode     ProbeHealthMode
+	provider          ChannelProbeHealthProvider
+	connectionTracker ConnectionTracker
+	mode              ProbeHealthMode
 
 	softLatencyMs float64
 	hardLatencyMs float64
 }
 
-func NewProbeHealthStrategy(provider ChannelProbeHealthProvider, mode ProbeHealthMode) *ProbeHealthStrategy {
+func NewProbeHealthStrategy(provider ChannelProbeHealthProvider, connectionTracker ConnectionTracker, mode ProbeHealthMode) *ProbeHealthStrategy {
 	return &ProbeHealthStrategy{
-		provider:      provider,
-		mode:          mode,
-		softLatencyMs: 1200,
-		hardLatencyMs: 3000,
+		provider:          provider,
+		connectionTracker: connectionTracker,
+		mode:              mode,
+		softLatencyMs:     1200,
+		hardLatencyMs:     3000,
 	}
 }
 
@@ -44,7 +46,7 @@ func (s *ProbeHealthStrategy) Score(ctx context.Context, channel *biz.Channel) f
 
 	health, ok := s.provider.GetChannelProbeHealth(channel.ID)
 	if !ok || health == nil {
-		return 0
+		return s.scoreWithoutProbeHealth(channel)
 	}
 
 	return s.score(health)
@@ -64,12 +66,18 @@ func (s *ProbeHealthStrategy) ScoreWithDebug(ctx context.Context, channel *biz.C
 
 	health, ok := s.provider.GetChannelProbeHealth(channel.ID)
 	if !ok || health == nil {
+		score := s.scoreWithoutProbeHealth(channel)
+		hasActiveConnections := s.hasActiveConnections(channel)
+
 		return 0, StrategyScore{
 			StrategyName: s.Name(),
-			Score:        0,
+			Score:        score,
 			Details: map[string]any{
-				"mode":         string(s.mode),
-				"health_found": false,
+				"mode":                   string(s.mode),
+				"health_found":           false,
+				"active_connections":     s.activeConnections(channel),
+				"has_active_connections": hasActiveConnections,
+				"fallback_reason":        "missing_probe_health",
 			},
 		}
 	}
@@ -104,6 +112,19 @@ func (s *ProbeHealthStrategy) ScoreWithDebug(ctx context.Context, channel *biz.C
 
 func (s *ProbeHealthStrategy) Name() string {
 	return "ProbeHealth"
+}
+
+func (s *ProbeHealthStrategy) scoreWithoutProbeHealth(channel *biz.Channel) float64 {
+	if s.hasActiveConnections(channel) {
+		switch s.mode {
+		case ProbeHealthModeLowLatency:
+			return 180
+		default:
+			return 260
+		}
+	}
+
+	return 0
 }
 
 func (s *ProbeHealthStrategy) score(health *biz.ChannelProbeHealth) float64 {
@@ -177,4 +198,16 @@ func (s *ProbeHealthStrategy) preferredLatency(health *biz.ChannelProbeHealth) *
 	}
 
 	return health.ActiveProbeLatencyMs
+}
+
+func (s *ProbeHealthStrategy) hasActiveConnections(channel *biz.Channel) bool {
+	return s.activeConnections(channel) > 0
+}
+
+func (s *ProbeHealthStrategy) activeConnections(channel *biz.Channel) int {
+	if s.connectionTracker == nil || channel == nil {
+		return 0
+	}
+
+	return s.connectionTracker.GetActiveConnections(channel.ID)
 }
