@@ -1275,3 +1275,75 @@ func TestMatchAssociations_ChannelTagsRegex(t *testing.T) {
 		}
 	})
 }
+
+func TestMatchAssociations_ProviderAssociations(t *testing.T) {
+	channels := []*Channel{
+		{
+			Channel: &ent.Channel{
+				ID:              1,
+				Name:            "openai-chat",
+				Type:            channel.TypeOpenai,
+				SupportedModels: []string{"gpt-4", "gpt-4o"},
+			},
+		},
+		{
+			Channel: &ent.Channel{
+				ID:              2,
+				Name:            "openai-responses",
+				Type:            channel.TypeOpenaiResponses,
+				SupportedModels: []string{"gpt-4", "gpt-4.1"},
+			},
+		},
+		{
+			Channel: &ent.Channel{
+				ID:              3,
+				Name:            "anthropic-primary",
+				Type:            channel.TypeAnthropic,
+				SupportedModels: []string{"claude-3-7-sonnet"},
+			},
+		},
+		{
+			Channel: &ent.Channel{
+				ID:              4,
+				Name:            "gemini-openai",
+				Type:            channel.TypeGeminiOpenai,
+				SupportedModels: []string{"gemini-2.5-pro"},
+			},
+		},
+	}
+
+	t.Run("provider matches all channel types under one provider", func(t *testing.T) {
+		associations := []*objects.ModelAssociation{
+			{
+				Type:     "provider",
+				Priority: 1,
+				Provider: &objects.ProviderAssociation{
+					Provider: "openai",
+				},
+			},
+		}
+
+		result := MatchAssociations(associations, channels)
+
+		require.Len(t, result, 2)
+		channelIDs := []int{result[0].Channel.ID, result[1].Channel.ID}
+		require.ElementsMatch(t, []int{1, 2}, channelIDs)
+		require.ElementsMatch(t, []string{"gpt-4", "gpt-4o"}, []string{result[0].Models[0].RequestModel, result[0].Models[1].RequestModel})
+	})
+
+	t.Run("provider associations do not match other providers", func(t *testing.T) {
+		associations := []*objects.ModelAssociation{
+			{
+				Type:     "provider",
+				Priority: 1,
+				Provider: &objects.ProviderAssociation{
+					Provider: "anthropic",
+				},
+			},
+		}
+
+		result := MatchAssociations(associations, channels)
+		require.Len(t, result, 1)
+		require.Equal(t, 3, result[0].Channel.ID)
+	})
+}

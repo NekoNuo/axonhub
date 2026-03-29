@@ -49,6 +49,7 @@ type ModelAssociation {
   modelId: ModelIDAssociation
   channelTagsModel: ChannelTagsModelAssociation
   channelTagsRegex: ChannelTagsRegexAssociation
+  provider: ProviderAssociation
 }
 
 type ChannelModelAssociation {
@@ -85,6 +86,10 @@ type ChannelTagsModelAssociation {
 type ChannelTagsRegexAssociation {
   channelTags: [String!]!
   pattern: String!
+}
+
+type ProviderAssociation {
+  provider: String!
 }
 
 # Input types for mutations
@@ -137,6 +142,7 @@ input ModelAssociationInput {
   modelId: ModelIDAssociationInput
   channelTagsModel: ChannelTagsModelAssociationInput
   channelTagsRegex: ChannelTagsRegexAssociationInput
+  provider: ProviderAssociationInput
 }
 
 input ChannelModelAssociationInput {
@@ -173,6 +179,10 @@ input ChannelTagsModelAssociationInput {
 input ChannelTagsRegexAssociationInput {
   channelTags: [String!]!
   pattern: String!
+}
+
+input ProviderAssociationInput {
+  provider: String!
 }
 
 type ModelChannelConnection {

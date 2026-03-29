@@ -145,4 +145,32 @@ test.describe('Admin Models Management', () => {
 
     await expect(modelsTable.locator('tbody tr').filter({ hasText: updatedName })).toHaveCount(0)
   })
+
+  test('can edit association priority in dialog', async ({ page }) => {
+    const modelsTable = page.getByTestId('models-table')
+    const firstRow = modelsTable.locator('tbody tr').first()
+    await expect(firstRow).toBeVisible({ timeout: 20000 })
+
+    await firstRow.getByTestId('row-actions').click()
+    await page.getByRole('menuitem', { name: /Manage Association|关联规则/i }).click()
+
+    const associationDialog = page.getByRole('dialog').filter({ hasText: /Association|关联/i }).first()
+    await expect(associationDialog).toBeVisible({ timeout: 10000 })
+
+    const addRuleButton = associationDialog.getByRole('button', { name: /Add Rule|添加规则/i })
+    const priorityInputs = associationDialog.locator('input[type="number"]')
+
+    if ((await priorityInputs.count()) === 0) {
+      await addRuleButton.click()
+      await expect(priorityInputs.first()).toBeVisible()
+    }
+
+    const priorityInput = priorityInputs.first()
+    await priorityInput.click()
+    await priorityInput.fill('3')
+    await expect(priorityInput).toHaveValue('3')
+
+    await page.keyboard.press('Escape')
+    await expect(associationDialog).not.toBeVisible({ timeout: 5000 })
+  })
 })

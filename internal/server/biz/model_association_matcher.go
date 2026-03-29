@@ -2,6 +2,7 @@ package biz
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/samber/lo"
 
@@ -100,6 +101,71 @@ func matchSingleAssociation(
 		connections = matchChannelTagsModel(assoc, channels, tracker)
 	case "channel_tags_regex":
 		connections = matchChannelTagsRegex(assoc, channels, tracker)
+	case "provider":
+		connections = matchProvider(assoc, channels, tracker)
+	}
+
+	return connections
+}
+
+func getProviderFromChannelType(channelType string) string {
+	switch channelType {
+	case "openai", "openai_responses":
+		return "openai"
+	case "deepseek", "deepseek_anthropic":
+		return "deepseek"
+	case "gemini", "gemini_vertex", "gemini_openai":
+		return "gemini"
+	case "anthropic", "anthropic_aws", "anthropic_gcp":
+		return "anthropic"
+	case "moonshot", "moonshot_anthropic":
+		return "moonshot"
+	case "zhipu", "zhipu_anthropic":
+		return "zhipu"
+	case "zai", "zai_anthropic":
+		return "zai"
+	case "doubao", "doubao_anthropic":
+		return "doubao"
+	case "longcat", "longcat_anthropic":
+		return "longcat"
+	case "minimax", "minimax_anthropic":
+		return "minimax"
+	default:
+		return channelType
+	}
+}
+
+func matchProvider(assoc *objects.ModelAssociation, channels []*Channel, tracker *DuplicateKeyTracker) []*ModelChannelConnection {
+	if assoc.Provider == nil || assoc.Provider.Provider == "" {
+		return nil
+	}
+
+	provider := strings.ToLower(assoc.Provider.Provider)
+	connections := make([]*ModelChannelConnection, 0)
+
+	for _, ch := range channels {
+		if getProviderFromChannelType(ch.Type.String()) != provider {
+			continue
+		}
+
+		entries := ch.GetModelEntries()
+		var models []ChannelModelEntry
+
+		for modelID, entry := range entries {
+			if tracker.Add(ch.ID, modelID) {
+				models = append(models, entry)
+			}
+		}
+
+		if len(models) == 0 {
+			continue
+		}
+
+		connections = append(connections, &ModelChannelConnection{
+			Channel:  ch.Channel,
+			Models:   models,
+			Priority: assoc.Priority,
+		})
 	}
 
 	return connections

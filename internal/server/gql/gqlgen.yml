@@ -470,6 +470,12 @@ models:
   ChannelTagsRegexAssociationInput:
     model:
       - github.com/looplj/axonhub/internal/objects.ChannelTagsRegexAssociation
+  ProviderAssociation:
+    model:
+      - github.com/looplj/axonhub/internal/objects.ProviderAssociation
+  ProviderAssociationInput:
+    model:
+      - github.com/looplj/axonhub/internal/objects.ProviderAssociation
   ModelChannelConnection:
     model:
       - github.com/looplj/axonhub/internal/server/biz.ModelChannelConnection

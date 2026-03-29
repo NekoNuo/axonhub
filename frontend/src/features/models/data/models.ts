@@ -89,6 +89,9 @@ const MODELS_QUERY = `
                 channelTags
                 pattern
               }
+              provider {
+                provider
+              }
             }
           }
           status
@@ -175,6 +178,17 @@ const CREATE_MODEL_MUTATION = `
               channelTags
             }
           }
+          channelTagsModel {
+            channelTags
+            modelId
+          }
+          channelTagsRegex {
+            channelTags
+            pattern
+          }
+          provider {
+            provider
+          }
         }
       }
       status
@@ -251,6 +265,17 @@ const BULK_CREATE_MODELS_MUTATION = `
               channelTags
             }
           }
+          channelTagsModel {
+            channelTags
+            modelId
+          }
+          channelTagsRegex {
+            channelTags
+            pattern
+          }
+          provider {
+            provider
+          }
         }
       }
       status
@@ -326,6 +351,17 @@ const UPDATE_MODEL_MUTATION = `
               channelIds
               channelTags
             }
+          }
+          channelTagsModel {
+            channelTags
+            modelId
+          }
+          channelTagsRegex {
+            channelTags
+            pattern
+          }
+          provider {
+            provider
           }
         }
       }
@@ -541,7 +577,14 @@ export interface UnassociatedChannel {
 }
 
 export interface ModelAssociationInput {
-  type: 'channel_model' | 'channel_regex' | 'regex' | 'model' | 'channel_tags_model' | 'channel_tags_regex';
+  type:
+    | 'channel_model'
+    | 'channel_regex'
+    | 'regex'
+    | 'model'
+    | 'channel_tags_model'
+    | 'channel_tags_regex'
+    | 'provider';
   priority?: number;
   disabled?: boolean;
   channelModel?: {
@@ -567,6 +610,9 @@ export interface ModelAssociationInput {
   channelTagsRegex?: {
     channelTags: string[];
     pattern: string;
+  };
+  provider?: {
+    provider: string;
   };
 }
 

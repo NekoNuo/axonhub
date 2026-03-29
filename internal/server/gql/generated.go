@@ -666,6 +666,7 @@ type ComplexityRoot struct {
 		Disabled         func(childComplexity int) int
 		ModelID          func(childComplexity int) int
 		Priority         func(childComplexity int) int
+		Provider         func(childComplexity int) int
 		Regex            func(childComplexity int) int
 		Type             func(childComplexity int) int
 	}
@@ -1031,6 +1032,10 @@ type ComplexityRoot struct {
 	PromptWriteCacheVariant struct {
 		Pricing     func(childComplexity int) int
 		VariantCode func(childComplexity int) int
+	}
+
+	ProviderAssociation struct {
+		Provider func(childComplexity int) int
 	}
 
 	ProviderQuotaStatus struct {
@@ -4229,6 +4234,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.ModelAssociation.Priority(childComplexity), true
+	case "ModelAssociation.provider":
+		if e.complexity.ModelAssociation.Provider == nil {
+			break
+		}
+
+		return e.complexity.ModelAssociation.Provider(childComplexity), true
 	case "ModelAssociation.regex":
 		if e.complexity.ModelAssociation.Regex == nil {
 			break
@@ -6217,6 +6228,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.PromptWriteCacheVariant.VariantCode(childComplexity), true
+
+	case "ProviderAssociation.provider":
+		if e.complexity.ProviderAssociation.Provider == nil {
+			break
+		}
+
+		return e.complexity.ProviderAssociation.Provider(childComplexity), true
 
 	case "ProviderQuotaStatus.channel":
 		if e.complexity.ProviderQuotaStatus.Channel == nil {
@@ -9367,6 +9385,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputPromptSettingsInput,
 		ec.unmarshalInputPromptWhereInput,
 		ec.unmarshalInputPromptWriteCacheVariantInput,
+		ec.unmarshalInputProviderAssociationInput,
 		ec.unmarshalInputProviderQuotaStatusOrder,
 		ec.unmarshalInputProviderQuotaStatusWhereInput,
 		ec.unmarshalInputProxyConfigInput,
@@ -23738,6 +23757,39 @@ func (ec *executionContext) fieldContext_ModelAssociation_channelTagsRegex(_ con
 	return fc, nil
 }
 
+func (ec *executionContext) _ModelAssociation_provider(ctx context.Context, field graphql.CollectedField, obj *objects.ModelAssociation) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ModelAssociation_provider,
+		func(ctx context.Context) (any, error) {
+			return obj.Provider, nil
+		},
+		nil,
+		ec.marshalOProviderAssociation2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐProviderAssociation,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ModelAssociation_provider(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ModelAssociation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "provider":
+				return ec.fieldContext_ProviderAssociation_provider(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ProviderAssociation", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ModelCard_reasoning(ctx context.Context, field graphql.CollectedField, obj *objects.ModelCard) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -25226,6 +25278,8 @@ func (ec *executionContext) fieldContext_ModelSettings_associations(_ context.Co
 				return ec.fieldContext_ModelAssociation_channelTagsModel(ctx, field)
 			case "channelTagsRegex":
 				return ec.fieldContext_ModelAssociation_channelTagsRegex(ctx, field)
+			case "provider":
+				return ec.fieldContext_ModelAssociation_provider(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ModelAssociation", field.Name)
 		},
@@ -33435,6 +33489,35 @@ func (ec *executionContext) fieldContext_PromptWriteCacheVariant_pricing(_ conte
 				return ec.fieldContext_Pricing_usageTiered(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Pricing", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ProviderAssociation_provider(ctx context.Context, field graphql.CollectedField, obj *objects.ProviderAssociation) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ProviderAssociation_provider,
+		func(ctx context.Context) (any, error) {
+			return obj.Provider, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ProviderAssociation_provider(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProviderAssociation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -58817,7 +58900,7 @@ func (ec *executionContext) unmarshalInputModelAssociationInput(ctx context.Cont
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"type", "priority", "disabled", "channelModel", "channelRegex", "regex", "modelId", "channelTagsModel", "channelTagsRegex"}
+	fieldsInOrder := [...]string{"type", "priority", "disabled", "channelModel", "channelRegex", "regex", "modelId", "channelTagsModel", "channelTagsRegex", "provider"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -58887,6 +58970,13 @@ func (ec *executionContext) unmarshalInputModelAssociationInput(ctx context.Cont
 				return it, err
 			}
 			it.ChannelTagsRegex = data
+		case "provider":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("provider"))
+			data, err := ec.unmarshalOProviderAssociationInput2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐProviderAssociation(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Provider = data
 		}
 	}
 
@@ -62635,6 +62725,33 @@ func (ec *executionContext) unmarshalInputPromptWriteCacheVariantInput(ctx conte
 				return it, err
 			}
 			it.Pricing = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputProviderAssociationInput(ctx context.Context, obj any) (objects.ProviderAssociation, error) {
+	var it objects.ProviderAssociation
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"provider"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "provider":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("provider"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Provider = data
 		}
 	}
 
@@ -79164,6 +79281,8 @@ func (ec *executionContext) _ModelAssociation(ctx context.Context, sel ast.Selec
 			out.Values[i] = ec._ModelAssociation_channelTagsModel(ctx, field, obj)
 		case "channelTagsRegex":
 			out.Values[i] = ec._ModelAssociation_channelTagsRegex(ctx, field, obj)
+		case "provider":
+			out.Values[i] = ec._ModelAssociation_provider(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -82210,6 +82329,45 @@ func (ec *executionContext) _PromptWriteCacheVariant(ctx context.Context, sel as
 			}
 		case "pricing":
 			out.Values[i] = ec._PromptWriteCacheVariant_pricing(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var providerAssociationImplementors = []string{"ProviderAssociation"}
+
+func (ec *executionContext) _ProviderAssociation(ctx context.Context, sel ast.SelectionSet, obj *objects.ProviderAssociation) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, providerAssociationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ProviderAssociation")
+		case "provider":
+			out.Values[i] = ec._ProviderAssociation_provider(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -99556,6 +99714,21 @@ func (ec *executionContext) unmarshalOPromptWriteCacheVariantInput2ᚕgithubᚗc
 		}
 	}
 	return res, nil
+}
+
+func (ec *executionContext) marshalOProviderAssociation2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐProviderAssociation(ctx context.Context, sel ast.SelectionSet, v *objects.ProviderAssociation) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ProviderAssociation(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOProviderAssociationInput2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐProviderAssociation(ctx context.Context, v any) (*objects.ProviderAssociation, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputProviderAssociationInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOProviderQuotaStatus2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐProviderQuotaStatus(ctx context.Context, sel ast.SelectionSet, v *ent.ProviderQuotaStatus) graphql.Marshaler {

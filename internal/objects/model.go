@@ -47,6 +47,7 @@ type ModelAssociation struct {
 	// model: the specified model id
 	// channel_tags_model: the specified model id in channels with specified tags (OR logic)
 	// channel_tags_regex: the specified pattern in channels with specified tags (OR logic)
+	// provider: all models in channels belonging to the specified provider
 	Type             string                       `json:"type"`
 	Priority         int                          `json:"priority"` // Lower value = higher priority, default 0
 	Disabled         bool                         `json:"disabled"`
@@ -56,6 +57,7 @@ type ModelAssociation struct {
 	ModelID          *ModelIDAssociation          `json:"modelId"`
 	ChannelTagsModel *ChannelTagsModelAssociation `json:"channelTagsModel"`
 	ChannelTagsRegex *ChannelTagsRegexAssociation `json:"channelTagsRegex"`
+	Provider         *ProviderAssociation         `json:"provider"`
 }
 
 type ExcludeAssociation struct {
@@ -92,4 +94,8 @@ type ChannelTagsModelAssociation struct {
 type ChannelTagsRegexAssociation struct {
 	ChannelTags []string `json:"channelTags"`
 	Pattern     string   `json:"pattern"`
+}
+
+type ProviderAssociation struct {
+	Provider string `json:"provider"`
 }
