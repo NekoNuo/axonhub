@@ -150,7 +150,12 @@ func (r *mutationResolver) TriggerChannelProbe(ctx context.Context) (bool, error
 		return false, fmt.Errorf("channel probe service is not available")
 	}
 
-	r.channelProbeService.RunProbeNow(ctx)
+	if err := authz.RequireScope(ctx, scopes.ScopeWriteSettings); err != nil {
+		return false, fmt.Errorf("permission denied: requires write:settings scope")
+	}
+
+	runCtx := authz.WithSystemBypass(context.WithoutCancel(ctx), "manual-channel-probe")
+	r.channelProbeService.RunProbeNow(runCtx)
 
 	return true, nil
 }

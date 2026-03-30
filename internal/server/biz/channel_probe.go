@@ -441,6 +441,10 @@ func (svc *ChannelProbeService) fillIdleChannelProbeStatsWithSettings(
 
 // runProbe executes the probe task.
 func (svc *ChannelProbeService) runProbe(ctx context.Context) {
+	svc.runProbeWithMode(ctx, false)
+}
+
+func (svc *ChannelProbeService) runProbeWithMode(ctx context.Context, force bool) {
 	// Check if probe is enabled
 	setting := svc.SystemService.ChannelSettingOrDefault(ctx)
 	if !setting.Probe.Enabled {
@@ -458,7 +462,7 @@ func (svc *ChannelProbeService) runProbe(ctx context.Context) {
 	svc.mu.Lock()
 
 	lastExecution := svc.lastExecutionTime
-	if !lastExecution.IsZero() && !shouldRunProbe(setting.Probe.Frequency, now, lastExecution) {
+	if !force && !lastExecution.IsZero() && !shouldRunProbe(setting.Probe.Frequency, now, lastExecution) {
 		// Already executed for this interval
 		svc.mu.Unlock()
 		log.Debug(ctx, "Skipping probe, already executed for this interval",
@@ -554,6 +558,18 @@ func (svc *ChannelProbeService) runProbe(ctx context.Context) {
 	if len(probes) == 0 {
 		log.Debug(ctx, "No probe data to store (all channels have 0 requests)")
 		return
+	}
+
+	if force {
+		if _, err := svc.db.ChannelProbe.Delete().
+			Where(
+				channelprobe.ChannelIDIn(channelIDs...),
+				channelprobe.TimestampEQ(timestamp),
+			).
+			Exec(ctx); err != nil {
+			log.Error(ctx, "Failed to replace existing channel probes for manual run", log.Cause(err))
+			return
+		}
 	}
 
 	// Bulk create probes
@@ -663,7 +679,7 @@ func (svc *ChannelProbeService) QueryChannelProbes(ctx context.Context, channelI
 
 // RunProbeNow manually triggers the probe task.
 func (svc *ChannelProbeService) RunProbeNow(ctx context.Context) {
-	svc.runProbe(ctx)
+	svc.runProbeWithMode(ctx, true)
 }
 
 // GetProbesByChannelID returns probe data for a single channel.

@@ -12,6 +12,7 @@ import (
 	"github.com/looplj/axonhub/internal/authz"
 	"github.com/looplj/axonhub/internal/ent"
 	"github.com/looplj/axonhub/internal/ent/channel"
+	"github.com/looplj/axonhub/internal/ent/channelprobe"
 	"github.com/looplj/axonhub/internal/ent/enttest"
 	"github.com/looplj/axonhub/internal/ent/request"
 	"github.com/looplj/axonhub/internal/ent/requestexecution"
@@ -1170,4 +1171,64 @@ func TestRunProbe_ActiveProbeAlsoProbesActiveChannels(t *testing.T) {
 	assert.True(t, health.Alive)
 	require.NotNil(t, health.ActiveProbeLatencyMs)
 	assert.InDelta(t, 80.0, *health.ActiveProbeLatencyMs, 0.01)
+}
+
+func TestRunProbeNow_OverridesCurrentBucketAfterScheduledProbe(t *testing.T) {
+	client := enttest.NewEntClient(t, "sqlite3", "file:ent?mode=memory&_fk=0")
+	defer client.Close()
+
+	ctx := ent.NewContext(t.Context(), client)
+	ctx = authz.WithTestBypass(ctx)
+
+	systemService := NewSystemService(SystemServiceParams{Ent: client})
+	err := systemService.SetChannelSetting(ctx, SystemChannelSettings{
+		Probe: ChannelProbeSetting{
+			Enabled:                 true,
+			Frequency:               ProbeFrequency1Min,
+			ActiveProbeIdleChannels: true,
+		},
+	})
+	require.NoError(t, err)
+
+	ch, err := client.Channel.Create().
+		SetType(channel.TypeOpenaiFake).
+		SetName("manual-probe-channel").
+		SetStatus(channel.StatusEnabled).
+		SetBaseURL("https://provider.example").
+		SetSupportedModels([]string{"gpt-4o-mini"}).
+		SetDefaultTestModel("gpt-4o-mini").
+		SetCredentials(objects.ChannelCredentials{}).
+		Save(ctx)
+	require.NoError(t, err)
+
+	probeCalls := 0
+	svc := &ChannelProbeService{
+		AbstractService: &AbstractService{db: client},
+		SystemService:   systemService,
+	}
+	svc.idleChannelProber = func(_ context.Context, got *ent.Channel) (time.Duration, bool, error) {
+		probeCalls++
+		require.Equal(t, ch.ID, got.ID)
+		if probeCalls == 1 {
+			return 80 * time.Millisecond, true, nil
+		}
+
+		return 160 * time.Millisecond, false, nil
+	}
+
+	svc.runProbe(ctx)
+	svc.RunProbeNow(ctx)
+
+	assert.Equal(t, 2, probeCalls)
+
+	probes, err := client.ChannelProbe.Query().
+		Where(channelprobe.ChannelIDEQ(ch.ID)).
+		All(ctx)
+	require.NoError(t, err)
+	require.Len(t, probes, 1)
+
+	assert.Equal(t, 1, probes[0].TotalRequestCount)
+	assert.Equal(t, 0, probes[0].SuccessRequestCount)
+	require.NotNil(t, probes[0].ActiveProbeLatencyMs)
+	assert.InDelta(t, 160.0, *probes[0].ActiveProbeLatencyMs, 0.01)
 }
