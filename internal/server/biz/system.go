@@ -317,9 +317,9 @@ type ChannelProbeSetting struct {
 	Enabled bool `json:"enabled"`
 	// Frequency defines how often to probe channels
 	Frequency ProbeFrequency `json:"frequency"`
-	// ActiveProbeIdleChannels actively probes idle channels (channels without recent request data).
+	// ActiveProbeIdleChannels enables active probing for all channels.
 	ActiveProbeIdleChannels bool `json:"active_probe_idle_channels"`
-	// ProbeModelIdleChannels actively probes the default test model for idle channels.
+	// ProbeModelIdleChannels actively probes the default test model for channels during active probing.
 	ProbeModelIdleChannels bool `json:"probe_model_idle_channels"`
 }
 

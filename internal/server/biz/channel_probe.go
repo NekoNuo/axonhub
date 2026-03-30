@@ -360,11 +360,6 @@ func (svc *ChannelProbeService) fillIdleChannelProbeStatsWithSettings(
 	successCount := 0
 
 	for _, ch := range channels {
-		stats, ok := allStats[ch.ID]
-		if ok && stats.total > 0 {
-			continue
-		}
-
 		ch := ch
 		wg.Add(1)
 
@@ -378,7 +373,7 @@ func (svc *ChannelProbeService) fillIdleChannelProbeStatsWithSettings(
 
 			latency, success, err := svc.idleChannelProber(probeCtx, ch)
 			if err != nil {
-				log.Warn(ctx, "Active probe for idle channel failed",
+				log.Warn(ctx, "Active probe for channel failed",
 					log.Int("channel_id", ch.ID),
 					log.String("channel_type", ch.Type.String()),
 					log.Cause(err),
@@ -403,7 +398,7 @@ func (svc *ChannelProbeService) fillIdleChannelProbeStatsWithSettings(
 				if ch.DefaultTestModel != "" && svc.idleChannelModelProber != nil {
 					modelLatency, modelSuccess, modelErr := svc.idleChannelModelProber(probeCtx, ch, ch.DefaultTestModel)
 					if modelErr != nil {
-						log.Warn(ctx, "Active model probe for idle channel failed",
+						log.Warn(ctx, "Active model probe for channel failed",
 							log.Int("channel_id", ch.ID),
 							log.String("channel_type", ch.Type.String()),
 							log.String("model_id", ch.DefaultTestModel),
@@ -517,9 +512,9 @@ func (svc *ChannelProbeService) runProbe(ctx context.Context) {
 	if setting.Probe.ActiveProbeIdleChannels {
 		probedIdle, successIdle := svc.fillIdleChannelProbeStatsWithSettings(ctx, channels, allStats, setting.Probe)
 		if probedIdle > 0 {
-			log.Debug(ctx, "Completed active probe for idle channels",
-				log.Int("probed_idle_channels", probedIdle),
-				log.Int("successful_idle_probes", successIdle),
+			log.Debug(ctx, "Completed active probe for channels",
+				log.Int("probed_channels", probedIdle),
+				log.Int("successful_probes", successIdle),
 			)
 		}
 	}

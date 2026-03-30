@@ -17,6 +17,7 @@ import (
 	"github.com/looplj/axonhub/internal/ent/requestexecution"
 	"github.com/looplj/axonhub/internal/ent/usagelog"
 	"github.com/looplj/axonhub/internal/objects"
+	"github.com/looplj/axonhub/internal/pkg/xtime"
 )
 
 // TestTPSCalculation_RetryScenario tests that only successful executions are counted
@@ -938,10 +939,15 @@ func TestFillIdleChannelProbeStats(t *testing.T) {
 	}
 
 	probedCount, successCount := svc.fillIdleChannelProbeStats(context.Background(), channels, allStats)
-	assert.Equal(t, 2, probedCount)
+	assert.Equal(t, 3, probedCount)
 	assert.Equal(t, 1, successCount)
 
-	assert.Equal(t, 2, allStats[1].total, "existing stats should not be overwritten")
+	assert.Equal(t, 1, allStats[1].total)
+	assert.Equal(t, 0, allStats[1].success)
+	require.NotNil(t, allStats[1].activeProbeLatencyMs)
+	assert.InDelta(t, 50.0, *allStats[1].activeProbeLatencyMs, 0.01)
+	require.NotNil(t, allStats[1].latencyMs)
+	assert.InDelta(t, 50.0, *allStats[1].latencyMs, 0.01)
 	assert.Equal(t, 1, allStats[2].total)
 	assert.Equal(t, 0, allStats[2].success)
 	require.NotNil(t, allStats[2].activeProbeLatencyMs)
@@ -1070,4 +1076,98 @@ func TestRunProbe_ActiveModelProbeLoadsDefaultTestModel(t *testing.T) {
 	svc.runProbe(ctx)
 
 	assert.Equal(t, 1, modelProbeCalls)
+}
+
+func TestRunProbe_ActiveProbeAlsoProbesActiveChannels(t *testing.T) {
+	client := enttest.NewEntClient(t, "sqlite3", "file:ent?mode=memory&_fk=0")
+	defer client.Close()
+
+	ctx := ent.NewContext(t.Context(), client)
+	ctx = authz.WithTestBypass(ctx)
+
+	systemService := NewSystemService(SystemServiceParams{Ent: client})
+	err := systemService.SetChannelSetting(ctx, SystemChannelSettings{
+		Probe: ChannelProbeSetting{
+			Enabled:                 true,
+			Frequency:               ProbeFrequency1Min,
+			ActiveProbeIdleChannels: true,
+		},
+	})
+	require.NoError(t, err)
+
+	ch, err := client.Channel.Create().
+		SetType(channel.TypeOpenaiFake).
+		SetName("active-channel").
+		SetStatus(channel.StatusEnabled).
+		SetBaseURL("https://provider.example").
+		SetSupportedModels([]string{"gpt-4o-mini"}).
+		SetDefaultTestModel("gpt-4o-mini").
+		SetCredentials(objects.ChannelCredentials{}).
+		Save(ctx)
+	require.NoError(t, err)
+
+	now := xtime.UTCNow().Truncate(time.Minute)
+	req, err := client.Request.Create().
+		SetModelID("gpt-4o-mini").
+		SetRequestBody(objects.JSONRawMessage(`{}`)).
+		SetStatus(request.StatusCompleted).
+		SetChannelID(ch.ID).
+		SetStream(true).
+		SetMetricsLatencyMs(1200).
+		SetMetricsFirstTokenLatencyMs(300).
+		SetCreatedAt(now.Add(-30 * time.Second)).
+		SetUpdatedAt(now.Add(-30 * time.Second)).
+		Save(ctx)
+	require.NoError(t, err)
+
+	_, err = client.RequestExecution.Create().
+		SetRequestID(req.ID).
+		SetChannelID(ch.ID).
+		SetModelID("gpt-4o-mini").
+		SetRequestBody(objects.JSONRawMessage(`{}`)).
+		SetStatus(requestexecution.StatusCompleted).
+		SetStream(true).
+		SetMetricsLatencyMs(1200).
+		SetMetricsFirstTokenLatencyMs(300).
+		SetCreatedAt(now.Add(-30 * time.Second)).
+		SetUpdatedAt(now.Add(-30 * time.Second)).
+		Save(ctx)
+	require.NoError(t, err)
+
+	_, err = client.UsageLog.Create().
+		SetRequestID(req.ID).
+		SetChannelID(ch.ID).
+		SetModelID("gpt-4o-mini").
+		SetCompletionTokens(100).
+		SetTotalTokens(100).
+		SetCreatedAt(now.Add(-30 * time.Second)).
+		SetUpdatedAt(now.Add(-30 * time.Second)).
+		Save(ctx)
+	require.NoError(t, err)
+
+	channelService := &ChannelService{
+		channelProbeHealth: make(map[int]*ChannelProbeHealth),
+	}
+	probeCalls := 0
+	svc := &ChannelProbeService{
+		AbstractService: &AbstractService{db: client},
+		SystemService:   systemService,
+		ChannelService:  channelService,
+	}
+	svc.idleChannelProber = func(_ context.Context, got *ent.Channel) (time.Duration, bool, error) {
+		probeCalls++
+		require.Equal(t, ch.ID, got.ID)
+		return 80 * time.Millisecond, true, nil
+	}
+
+	svc.runProbe(ctx)
+
+	assert.Equal(t, 1, probeCalls)
+
+	health, ok := channelService.GetChannelProbeHealth(ch.ID)
+	require.True(t, ok)
+	require.NotNil(t, health)
+	assert.True(t, health.Alive)
+	require.NotNil(t, health.ActiveProbeLatencyMs)
+	assert.InDelta(t, 80.0, *health.ActiveProbeLatencyMs, 0.01)
 }
