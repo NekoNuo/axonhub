@@ -138,7 +138,10 @@ export function LoadBalancerPreview() {
                         </div>
                         <div className='mt-3 grid gap-2'>
                           <div className='grid gap-2 md:grid-cols-3'>
-                            <MetricPill label={t('dashboard.preview.healthStatus')} value={candidate.healthStatus} />
+                            <MetricPill
+                              label={t('dashboard.preview.healthStatus')}
+                              value={<StatusBadge status={candidate.healthStatus} />}
+                            />
                             <MetricPill
                               label={t('dashboard.preview.latency')}
                               value={candidate.latencyMs != null ? `${candidate.latencyMs.toFixed(0)}ms` : '-'}
@@ -180,11 +183,24 @@ function PreviewRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function MetricPill({ label, value }: { label: string; value: string }) {
+function MetricPill({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className='bg-muted/40 rounded-md px-3 py-2 text-sm'>
       <div className='text-muted-foreground text-xs'>{label}</div>
       <div className='font-medium'>{value}</div>
     </div>
   );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const colorClass =
+    status === 'healthy' || status === 'observed-healthy'
+      ? 'bg-emerald-500/12 text-emerald-700'
+      : status === 'degraded'
+        ? 'bg-amber-500/12 text-amber-700'
+        : status === 'unhealthy' || status === 'observed-unhealthy'
+          ? 'bg-rose-500/12 text-rose-700'
+          : 'bg-muted text-muted-foreground';
+
+  return <span className={`inline-flex rounded px-2 py-0.5 text-xs font-medium ${colorClass}`}>{status}</span>;
 }

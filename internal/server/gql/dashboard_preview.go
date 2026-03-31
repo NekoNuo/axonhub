@@ -295,8 +295,47 @@ func humanizeReason(reason string, detail orchestrator.StrategyScore) string {
 	case "no_trace_in_context":
 		return "No trace context is available, so trace affinity is skipped"
 	default:
+		if text := fallbackHumanizedReason(detail); text != "" {
+			return text
+		}
 		return reason
 	}
+}
+
+func fallbackHumanizedReason(detail orchestrator.StrategyScore) string {
+	switch detail.StrategyName {
+	case "Weight":
+		if weight, ok := detail.Details["ordering_weight"]; ok {
+			return fmt.Sprintf("Ordering weight %v contributes directly to ranking", weight)
+		}
+	case "ErrorAware":
+		consecutiveFailures, _ := detail.Details["consecutive_failures"].(int64)
+		if consecutiveFailures > 0 {
+			return fmt.Sprintf("Recent failures (%d) reduce this candidate's priority", consecutiveFailures)
+		}
+		return "No recent failures, so this candidate keeps a healthy error score"
+	case "ProbeHealth":
+		if latency, ok := detail.Details["latency_ms"].(float64); ok {
+			mode, _ := detail.Details["mode"].(string)
+			return fmt.Sprintf("%s mode sees current probe latency at %.0fms", mode, latency)
+		}
+		if fallback, ok := detail.Details["fallback_reason"].(string); ok && fallback != "" {
+			return humanizeReason(fallback, detail)
+		}
+	case "TraceAware":
+		return "Trace affinity is considered first when a trace context exists"
+	case "ConnectionAware":
+		return "Active connection pressure is used as a tie-breaker"
+	case "Random":
+		return "A tiny random offset breaks ties between otherwise equal candidates"
+	case "WeightRoundRobin":
+		if weight, ok := detail.Details["ordering_weight"]; ok {
+			return fmt.Sprintf("Weighted round robin balances traffic while respecting weight %v", weight)
+		}
+		return "Weighted round robin spreads traffic across available channels"
+	}
+
+	return ""
 }
 
 func candidateHealthStatus(channelService *biz.ChannelService, channelID int) string {
