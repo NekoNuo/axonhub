@@ -94,23 +94,41 @@ func (r *queryResolver) LoadBalancerPreview(ctx context.Context) (*LoadBalancerP
 	}
 
 	return &LoadBalancerPreview{
-		ModelID:  preview.ModelID,
-		Strategy: preview.Strategy,
-		Summary: &LoadBalancerPreviewSummary{
-			PrimaryChannelName:    lo.EmptyableToPtr(preview.Summary.PrimaryChannelName),
-			FirstRetryChannelName: lo.EmptyableToPtr(preview.Summary.FirstRetryChannelName),
-			FallbackChannelName:   lo.EmptyableToPtr(preview.Summary.FallbackChannelName),
-		},
-		Candidates: lo.Map(preview.Candidates, func(item *loadBalancerPreviewCandidate, _ int) *LoadBalancerPreviewCandidate {
-			return &LoadBalancerPreviewCandidate{
-				ChannelName: item.ChannelName,
-			}
-		}),
-		Steps: lo.Map(preview.Steps, func(item *loadBalancerPreviewStep, _ int) *LoadBalancerPreviewStep {
-			return &LoadBalancerPreviewStep{
-				Attempt:            item.Attempt,
-				ChannelName:        item.ChannelName,
-				WaitMsAfterFailure: item.WaitMSAfterFailure,
+		ModelID:        preview.ModelID,
+		ActiveStrategy: preview.ActiveStrategy,
+		Strategies: lo.Map(preview.Strategies, func(item *loadBalancerPreviewStrategy, _ int) *LoadBalancerPreviewStrategy {
+			return &LoadBalancerPreviewStrategy{
+				Strategy: item.Strategy,
+				Summary: &LoadBalancerPreviewSummary{
+					PrimaryChannelName:    lo.EmptyableToPtr(item.Summary.PrimaryChannelName),
+					FirstRetryChannelName: lo.EmptyableToPtr(item.Summary.FirstRetryChannelName),
+					FallbackChannelName:   lo.EmptyableToPtr(item.Summary.FallbackChannelName),
+				},
+				Candidates: lo.Map(item.Candidates, func(candidate *loadBalancerPreviewCandidate, _ int) *LoadBalancerPreviewCandidate {
+					return &LoadBalancerPreviewCandidate{
+						ChannelName:    candidate.ChannelName,
+						TotalScore:     candidate.TotalScore,
+						Reason:         candidate.Reason,
+						HealthStatus:   candidate.HealthStatus,
+						LatencyMs:      candidate.LatencyMS,
+						RecentFailures: int(candidate.RecentFailures),
+						ScoreBreakdown: lo.Map(candidate.ScoreBreakdown, func(score *loadBalancerPreviewScoreBreakdown, _ int) *LoadBalancerPreviewScoreBreakdown {
+							return &LoadBalancerPreviewScoreBreakdown{
+								StrategyName: score.StrategyName,
+								Score:        score.Score,
+								Reason:       score.Reason,
+							}
+						}),
+					}
+				}),
+				Steps: lo.Map(item.Steps, func(step *loadBalancerPreviewStep, _ int) *LoadBalancerPreviewStep {
+					return &LoadBalancerPreviewStep{
+						Attempt:            step.Attempt,
+						ChannelName:        step.ChannelName,
+						WaitMsAfterFailure: step.WaitMSAfterFailure,
+						Reason:             step.Reason,
+					}
+				}),
 			}
 		}),
 	}, nil

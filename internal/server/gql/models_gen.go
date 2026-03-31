@@ -237,21 +237,39 @@ type InitializeSystemPayload struct {
 }
 
 type LoadBalancerPreview struct {
-	ModelID    string                          `json:"modelId"`
-	Strategy   string                          `json:"strategy"`
-	Summary    *LoadBalancerPreviewSummary     `json:"summary"`
-	Candidates []*LoadBalancerPreviewCandidate `json:"candidates"`
-	Steps      []*LoadBalancerPreviewStep      `json:"steps"`
+	ModelID        string                         `json:"modelId"`
+	ActiveStrategy string                         `json:"activeStrategy"`
+	Strategies     []*LoadBalancerPreviewStrategy `json:"strategies"`
 }
 
 type LoadBalancerPreviewCandidate struct {
-	ChannelName string `json:"channelName"`
+	ChannelName    string                               `json:"channelName"`
+	TotalScore     float64                              `json:"totalScore"`
+	Reason         string                               `json:"reason"`
+	HealthStatus   string                               `json:"healthStatus"`
+	LatencyMs      *float64                             `json:"latencyMs,omitempty"`
+	RecentFailures int                                  `json:"recentFailures"`
+	ScoreBreakdown []*LoadBalancerPreviewScoreBreakdown `json:"scoreBreakdown"`
+}
+
+type LoadBalancerPreviewScoreBreakdown struct {
+	StrategyName string  `json:"strategyName"`
+	Score        float64 `json:"score"`
+	Reason       string  `json:"reason"`
 }
 
 type LoadBalancerPreviewStep struct {
 	Attempt            int    `json:"attempt"`
 	ChannelName        string `json:"channelName"`
 	WaitMsAfterFailure int    `json:"waitMsAfterFailure"`
+	Reason             string `json:"reason"`
+}
+
+type LoadBalancerPreviewStrategy struct {
+	Strategy   string                          `json:"strategy"`
+	Summary    *LoadBalancerPreviewSummary     `json:"summary"`
+	Candidates []*LoadBalancerPreviewCandidate `json:"candidates"`
+	Steps      []*LoadBalancerPreviewStep      `json:"steps"`
 }
 
 type LoadBalancerPreviewSummary struct {

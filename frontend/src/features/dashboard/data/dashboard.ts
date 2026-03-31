@@ -131,20 +131,38 @@ export const loadBalancerPreviewSummarySchema = z.object({
 
 export const loadBalancerPreviewCandidateSchema = z.object({
   channelName: z.string(),
+  totalScore: z.number(),
+  reason: z.string(),
+  healthStatus: z.string(),
+  latencyMs: z.number().nullable(),
+  recentFailures: z.number(),
+  scoreBreakdown: z.array(
+    z.object({
+      strategyName: z.string(),
+      score: z.number(),
+      reason: z.string(),
+    })
+  ),
 });
 
 export const loadBalancerPreviewStepSchema = z.object({
   attempt: z.number(),
   channelName: z.string(),
   waitMsAfterFailure: z.number(),
+  reason: z.string(),
 });
 
-export const loadBalancerPreviewSchema = z.object({
-  modelId: z.string(),
+export const loadBalancerPreviewStrategySchema = z.object({
   strategy: z.string(),
   summary: loadBalancerPreviewSummarySchema,
   candidates: z.array(loadBalancerPreviewCandidateSchema),
   steps: z.array(loadBalancerPreviewStepSchema),
+});
+
+export const loadBalancerPreviewSchema = z.object({
+  modelId: z.string(),
+  activeStrategy: z.string(),
+  strategies: z.array(loadBalancerPreviewStrategySchema),
 });
 
 export type RequestStats = z.infer<typeof requestStatsSchema>;
@@ -371,19 +389,33 @@ const LOAD_BALANCER_PREVIEW_QUERY = `
   query GetLoadBalancerPreview {
     loadBalancerPreview {
       modelId
-      strategy
-      summary {
-        primaryChannelName
-        firstRetryChannelName
-        fallbackChannelName
-      }
-      candidates {
-        channelName
-      }
-      steps {
-        attempt
-        channelName
-        waitMsAfterFailure
+      activeStrategy
+      strategies {
+        strategy
+        summary {
+          primaryChannelName
+          firstRetryChannelName
+          fallbackChannelName
+        }
+        candidates {
+          channelName
+          totalScore
+          reason
+          healthStatus
+          latencyMs
+          recentFailures
+          scoreBreakdown {
+            strategyName
+            score
+            reason
+          }
+        }
+        steps {
+          attempt
+          channelName
+          waitMsAfterFailure
+          reason
+        }
       }
     }
   }

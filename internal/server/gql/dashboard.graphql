@@ -13,22 +13,40 @@ type LoadBalancerPreviewSummary {
   fallbackChannelName: String
 }
 
+type LoadBalancerPreviewScoreBreakdown {
+  strategyName: String!
+  score: Float!
+  reason: String!
+}
+
 type LoadBalancerPreviewCandidate {
   channelName: String!
+  totalScore: Float!
+  reason: String!
+  healthStatus: String!
+  latencyMs: Float
+  recentFailures: Int!
+  scoreBreakdown: [LoadBalancerPreviewScoreBreakdown!]!
 }
 
 type LoadBalancerPreviewStep {
   attempt: Int!
   channelName: String!
   waitMsAfterFailure: Int!
+  reason: String!
 }
 
-type LoadBalancerPreview {
-  modelId: String!
+type LoadBalancerPreviewStrategy {
   strategy: String!
   summary: LoadBalancerPreviewSummary!
   candidates: [LoadBalancerPreviewCandidate!]!
   steps: [LoadBalancerPreviewStep!]!
+}
+
+type LoadBalancerPreview {
+  modelId: String!
+  activeStrategy: String!
+  strategies: [LoadBalancerPreviewStrategy!]!
 }
 
 type RequestStats {
