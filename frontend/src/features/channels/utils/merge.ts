@@ -1,53 +1,44 @@
 // Utility functions for merging channel override configurations
-// Mirrors backend merge logic in internal/server/biz/channel_merge.go
+// Mirrors backend merge logic in internal/server/biz/channel_override*.go
 import type { ChannelSettings, OverrideOperation } from '../data/schema';
 
 /**
- * Normalizes empty or whitespace-only parameter strings to "[]".
+ * Normalizes empty or whitespace-only parameter strings to "{}".
  * This ensures consistent representation across the system.
  */
 export function normalizeOverrideParameters(params: string): string {
   if (!params || params.trim() === '') {
-    return '[]';
+    return '{}';
   }
   return params;
 }
 
 /**
  * Merges override header operations with template header operations.
- * - For `set` ops: match by `path` (case-insensitive), template overrides existing
- * - Other ops (delete, rename, copy): always appended from template
+ * - For `set` and `delete` ops: match by `path` (case-insensitive), template overrides existing
+ * - For `rename` and `copy` ops: always appended from template
  * - Existing ops not matched by template are preserved
  */
 export function mergeOverrideHeaders(existing: OverrideOperation[], template: OverrideOperation[]): OverrideOperation[] {
-  const result: OverrideOperation[] = [];
-
-  const templateSetOpsByPath = new Map<string, number[]>();
-  template.forEach((op, index) => {
-    if (op.op === 'set' && op.path) {
-      const normalizedPath = op.path.toLowerCase();
-      const indices = templateSetOpsByPath.get(normalizedPath) || [];
-      indices.push(index);
-      templateSetOpsByPath.set(normalizedPath, indices);
-    }
-  });
-
-  for (const existingOp of existing) {
-    if (existingOp.op === 'set' && existingOp.path) {
-      const normalizedPath = existingOp.path.toLowerCase();
-      if (templateSetOpsByPath.has(normalizedPath)) {
-        continue;
-      }
-    }
-    result.push(existingOp);
-  }
+  const result = [...existing];
 
   for (const templateOp of template) {
-    if (templateOp.op === 'set' && templateOp.path) {
-      const index = result.findIndex((op) => op.op === 'set' && op.path?.toLowerCase() === templateOp.path?.toLowerCase());
-      if (index >= 0) {
-        result[index] = templateOp;
-      } else {
+    if (templateOp.op === 'rename' || templateOp.op === 'copy') {
+      result.push(templateOp);
+      continue;
+    }
+
+    const index = result.findIndex(
+      (op) =>
+        (op.op === 'set' || op.op === 'delete') &&
+        op.path?.toLowerCase() === templateOp.path?.toLowerCase()
+    );
+
+    if (index >= 0) {
+      result[index] = templateOp;
+      continue;
+    }
+
     result.push(templateOp);
   }
 
@@ -61,32 +52,23 @@ export function mergeOverrideHeaders(existing: OverrideOperation[], template: Ov
  * - Existing ops not matched by template are preserved
  */
 export function mergeOverrideOperations(existing: OverrideOperation[], template: OverrideOperation[]): OverrideOperation[] {
-  const result: OverrideOperation[] = [];
+  const result = [...existing];
 
-  const templateSetOpsByPath = new Map<string, number[]>();
-  template.forEach((op, index) => {
-    if ((op.op === 'set' || op.op === 'delete') && op.path) {
-      const indices = templateSetOpsByPath.get(op.path) || [];
-      indices.push(index);
-      templateSetOpsByPath.set(op.path, indices);
+  for (const templateOp of template) {
+    if (templateOp.op === 'rename' || templateOp.op === 'copy') {
+      result.push(templateOp);
+      continue;
     }
-  });
 
-  for (const existingOp of existing) {
-    if ((existingOp.op === 'set' || existingOp.op === 'delete') && existingOp.path) {
-      if (templateSetOpsByPath.has(existingOp.path)) {
-        continue;
-      }
+    const index = result.findIndex(
+      (op) => (op.op === 'set' || op.op === 'delete') && op.path === templateOp.path
+    );
+
+    if (index >= 0) {
+      result[index] = templateOp;
+      continue;
     }
-    result.push(existingOp);
-  }
 
-    // For set and delete ops, match by path
-    if ((templateOp.op === 'set' || templateOp.op === 'delete') && templateOp.path) {
-      const index = result.findIndex((op) => (op.op === 'set' || op.op === 'delete') && op.path === templateOp.path);
-      if (index >= 0) {
-        result[index] = templateOp;
-      } else {
     result.push(templateOp);
   }
 
