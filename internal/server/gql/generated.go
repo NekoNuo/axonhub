@@ -432,8 +432,9 @@ type ComplexityRoot struct {
 	}
 
 	ChannelProbeSetting struct {
-		Enabled   func(childComplexity int) int
-		Frequency func(childComplexity int) int
+		ActiveProbeIdleChannels func(childComplexity int) int
+		Enabled                 func(childComplexity int) int
+		Frequency               func(childComplexity int) int
 	}
 
 	ChannelRateLimit struct {
@@ -3332,6 +3333,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.ChannelProbePoint.TotalRequestCount(childComplexity), true
 
+	case "ChannelProbeSetting.activeProbeIdleChannels":
+		if e.complexity.ChannelProbeSetting.ActiveProbeIdleChannels == nil {
+			break
+		}
+
+		return e.complexity.ChannelProbeSetting.ActiveProbeIdleChannels(childComplexity), true
 	case "ChannelProbeSetting.enabled":
 		if e.complexity.ChannelProbeSetting.Enabled == nil {
 			break
@@ -19270,6 +19277,35 @@ func (ec *executionContext) fieldContext_ChannelProbeSetting_frequency(_ context
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type ProbeFrequency does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ChannelProbeSetting_activeProbeIdleChannels(ctx context.Context, field graphql.CollectedField, obj *biz.ChannelProbeSetting) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ChannelProbeSetting_activeProbeIdleChannels,
+		func(ctx context.Context) (any, error) {
+			return obj.ActiveProbeIdleChannels, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ChannelProbeSetting_activeProbeIdleChannels(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ChannelProbeSetting",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -42343,6 +42379,8 @@ func (ec *executionContext) fieldContext_SystemChannelSettings_probe(_ context.C
 				return ec.fieldContext_ChannelProbeSetting_enabled(ctx, field)
 			case "frequency":
 				return ec.fieldContext_ChannelProbeSetting_frequency(ctx, field)
+			case "activeProbeIdleChannels":
+				return ec.fieldContext_ChannelProbeSetting_activeProbeIdleChannels(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ChannelProbeSetting", field.Name)
 		},
@@ -68475,7 +68513,7 @@ func (ec *executionContext) unmarshalInputUpdateChannelProbeSettingInput(ctx con
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"enabled", "frequency"}
+	fieldsInOrder := [...]string{"enabled", "frequency", "activeProbeIdleChannels"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -68496,6 +68534,13 @@ func (ec *executionContext) unmarshalInputUpdateChannelProbeSettingInput(ctx con
 				return it, err
 			}
 			it.Frequency = data
+		case "activeProbeIdleChannels":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("activeProbeIdleChannels"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ActiveProbeIdleChannels = data
 		}
 	}
 
@@ -76836,6 +76881,11 @@ func (ec *executionContext) _ChannelProbeSetting(ctx context.Context, sel ast.Se
 			}
 		case "frequency":
 			out.Values[i] = ec._ChannelProbeSetting_frequency(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "activeProbeIdleChannels":
+			out.Values[i] = ec._ChannelProbeSetting_activeProbeIdleChannels(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

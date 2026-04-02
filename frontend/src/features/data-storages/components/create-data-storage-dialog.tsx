@@ -94,6 +94,7 @@ export function CreateDataStorageDialog() {
         directory: '',
         s3BucketName: '',
         s3Endpoint: '',
+        s3Region: '',
         s3AccessKey: '',
         s3SecretKey: '',
         s3PathStyle: false,

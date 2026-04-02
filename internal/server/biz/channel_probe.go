@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect"
+	"github.com/samber/lo"
 	"github.com/zhenzou/executors"
 	"go.uber.org/fx"
 
@@ -21,6 +22,12 @@ import (
 	"github.com/looplj/axonhub/internal/pkg/xtime"
 	"github.com/looplj/axonhub/internal/scopes"
 	"github.com/looplj/axonhub/internal/server/gql/qb"
+	"github.com/looplj/axonhub/llm/httpclient"
+)
+
+const (
+	activeProbeTimeout        = 8 * time.Second
+	activeProbeMaxConcurrency = 5
 )
 
 // ChannelProbePoint represents a single probe data point for a channel.
@@ -42,8 +49,10 @@ type ChannelProbeData struct {
 type ChannelProbeServiceParams struct {
 	fx.In
 
-	Ent           *ent.Client
-	SystemService *SystemService
+	Ent            *ent.Client
+	SystemService  *SystemService
+	ChannelService *ChannelService
+	HttpClient     *httpclient.HttpClient
 }
 
 // ChannelProbeService handles channel probe operations.
@@ -51,9 +60,12 @@ type ChannelProbeService struct {
 	*AbstractService
 
 	SystemService     *SystemService
+	ChannelService    *ChannelService
 	Executor          executors.ScheduledExecutor
 	mu                sync.Mutex
 	lastExecutionTime time.Time
+	modelFetcher      *ModelFetcher
+	idleChannelProber func(ctx context.Context, ch *ent.Channel) (bool, error)
 }
 
 // NewChannelProbeService creates a new ChannelProbeService.
@@ -63,9 +75,12 @@ func NewChannelProbeService(params ChannelProbeServiceParams) *ChannelProbeServi
 			db: params.Ent,
 		},
 		SystemService:     params.SystemService,
+		ChannelService:    params.ChannelService,
 		Executor:          executors.NewPoolScheduleExecutor(executors.WithMaxConcurrent(1)),
 		lastExecutionTime: time.Time{},
 	}
+	svc.modelFetcher = NewModelFetcher(params.HttpClient, params.ChannelService)
+	svc.idleChannelProber = svc.probeIdleChannelByFetchModels
 
 	return svc
 }
@@ -235,6 +250,100 @@ func (svc *ChannelProbeService) computeAllChannelProbeStats(
 	return result, nil
 }
 
+func (svc *ChannelProbeService) probeIdleChannelByFetchModels(ctx context.Context, ch *ent.Channel) (bool, error) {
+	if svc.modelFetcher == nil {
+		return false, fmt.Errorf("model fetcher is not initialized")
+	}
+
+	result, err := svc.modelFetcher.FetchModels(ctx, FetchModelsInput{
+		ChannelType: ch.Type.String(),
+		BaseURL:     ch.BaseURL,
+		ChannelID:   lo.ToPtr(ch.ID),
+	})
+	if err != nil {
+		return false, err
+	}
+
+	if result == nil {
+		return false, fmt.Errorf("empty fetch models result")
+	}
+
+	if result.Error != nil {
+		return false, fmt.Errorf("fetch models returned error: %s", *result.Error)
+	}
+
+	return true, nil
+}
+
+func (svc *ChannelProbeService) fillIdleChannelProbeStats(
+	ctx context.Context,
+	channels []*ent.Channel,
+	allStats map[int]*channelProbeStats,
+) (int, int) {
+	if svc.idleChannelProber == nil || len(channels) == 0 {
+		return 0, 0
+	}
+
+	if allStats == nil {
+		allStats = make(map[int]*channelProbeStats)
+	}
+
+	sem := make(chan struct{}, activeProbeMaxConcurrency)
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+
+	probedCount := 0
+	successCount := 0
+
+	for _, ch := range channels {
+		stats, ok := allStats[ch.ID]
+		if ok && stats.total > 0 {
+			continue
+		}
+
+		ch := ch
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
+			probeCtx, cancel := context.WithTimeout(ctx, activeProbeTimeout)
+			defer cancel()
+
+			success, err := svc.idleChannelProber(probeCtx, ch)
+			if err != nil {
+				log.Warn(ctx, "Active probe for idle channel failed",
+					log.Int("channel_id", ch.ID),
+					log.String("channel_type", ch.Type.String()),
+					log.Cause(err),
+				)
+			}
+
+			stats := &channelProbeStats{
+				total:   1,
+				success: 0,
+			}
+			if success {
+				stats.success = 1
+			}
+
+			mu.Lock()
+			allStats[ch.ID] = stats
+			probedCount++
+			if success {
+				successCount++
+			}
+			mu.Unlock()
+		}()
+	}
+
+	wg.Wait()
+
+	return probedCount, successCount
+}
+
 // runProbe executes the probe task.
 func (svc *ChannelProbeService) runProbe(ctx context.Context) {
 	// Check if probe is enabled
@@ -277,7 +386,7 @@ func (svc *ChannelProbeService) runProbe(ctx context.Context) {
 	// Get all enabled channels
 	channels, err := svc.db.Channel.Query().
 		Where(channel.StatusEQ(channel.StatusEnabled)).
-		Select(channel.FieldID).
+		Select(channel.FieldID, channel.FieldType, channel.FieldBaseURL).
 		All(ctx)
 	if err != nil {
 		log.Error(ctx, "Failed to query enabled channels", log.Cause(err))
@@ -303,6 +412,16 @@ func (svc *ChannelProbeService) runProbe(ctx context.Context) {
 	if err != nil {
 		log.Error(ctx, "Failed to compute channel probe stats", log.Cause(err))
 		return
+	}
+
+	if setting.Probe.ActiveProbeIdleChannels {
+		probedIdle, successIdle := svc.fillIdleChannelProbeStats(ctx, channels, allStats)
+		if probedIdle > 0 {
+			log.Debug(ctx, "Completed active probe for idle channels",
+				log.Int("probed_idle_channels", probedIdle),
+				log.Int("successful_idle_probes", successIdle),
+			)
+		}
 	}
 
 	// Collect probe data for each channel

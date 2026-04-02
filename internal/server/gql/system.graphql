@@ -161,6 +161,7 @@ enum AutoSyncFrequency {
 type ChannelProbeSetting {
   enabled: Boolean!
   frequency: ProbeFrequency!
+  activeProbeIdleChannels: Boolean!
 }
 
 type ChannelModelAutoSyncSetting {
@@ -175,6 +176,7 @@ type SystemChannelSettings {
 input UpdateChannelProbeSettingInput {
   enabled: Boolean!
   frequency: ProbeFrequency!
+  activeProbeIdleChannels: Boolean!
 }
 
 input UpdateChannelModelAutoSyncSettingInput {

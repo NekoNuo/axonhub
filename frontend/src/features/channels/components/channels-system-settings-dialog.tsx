@@ -34,12 +34,13 @@ export function ChannelsSystemSettingsDialog() {
 
   const [probeEnabled, setProbeEnabled] = React.useState(false);
   const [probeFrequency, setProbeFrequency] = React.useState<ProbeFrequency>('ONE_MINUTE');
-  const [autoSyncFrequency, setAutoSyncFrequency] = React.useState<AutoSyncFrequency>('ONE_HOUR');
+  const [activeProbeIdleChannels, setActiveProbeIdleChannels] = React.useState(false);
 
   React.useEffect(() => {
     if (settings?.probe) {
       setProbeEnabled(settings.probe.enabled);
       setProbeFrequency(settings.probe.frequency);
+      setActiveProbeIdleChannels(settings.probe.activeProbeIdleChannels);
     }
     if (settings?.autoSync?.frequency) {
       setAutoSyncFrequency(settings.autoSync.frequency);
@@ -51,13 +52,14 @@ export function ChannelsSystemSettingsDialog() {
       probe: {
         enabled: probeEnabled,
         frequency: probeFrequency,
+        activeProbeIdleChannels,
       },
       autoSync: {
         frequency: autoSyncFrequency,
       },
     });
     setOpen(null);
-  }, [updateSettings, probeEnabled, probeFrequency, autoSyncFrequency, setOpen]);
+  }, [updateSettings, probeEnabled, probeFrequency, activeProbeIdleChannels, setOpen]);
 
   const handleClose = useCallback(() => {
     setOpen(null);
@@ -103,24 +105,39 @@ export function ChannelsSystemSettingsDialog() {
                 </div>
 
                 {probeEnabled && (
-                  <div className='space-y-2'>
-                    <label htmlFor='probe-frequency' className='text-sm font-medium'>
-                      {t('channels.dialogs.systemSettings.channelProbe.frequencyLabel')}
-                    </label>
-                    <Select value={probeFrequency} onValueChange={(value) => setProbeFrequency(value as ProbeFrequency)}>
-                      <SelectTrigger id='probe-frequency' disabled={updateSettings.isPending}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PROBE_FREQUENCY_OPTIONS.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <p className='text-muted-foreground text-xs'>{t('channels.dialogs.systemSettings.channelProbe.frequencyDescription')}</p>
-                    <p className='text-muted-foreground text-xs mt-1'>{t('channels.dialogs.systemSettings.channelProbe.frequencyWarning')}</p>
+                  <div className='space-y-4'>
+                    <div className='space-y-2'>
+                      <label htmlFor='probe-frequency' className='text-sm font-medium'>
+                        {t('channels.dialogs.systemSettings.channelProbe.frequencyLabel')}
+                      </label>
+                      <Select value={probeFrequency} onValueChange={(value) => setProbeFrequency(value as ProbeFrequency)}>
+                        <SelectTrigger id='probe-frequency' disabled={updateSettings.isPending}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {PROBE_FREQUENCY_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className='text-muted-foreground text-xs'>{t('channels.dialogs.systemSettings.channelProbe.frequencyDescription')}</p>
+                      <p className='text-muted-foreground text-xs mt-1'>{t('channels.dialogs.systemSettings.channelProbe.frequencyWarning')}</p>
+                    </div>
+
+                    <div className='flex items-center justify-between'>
+                      <div className='flex-1 pr-4'>
+                        <p className='text-sm font-medium'>{t('channels.dialogs.systemSettings.channelProbe.activeProbeIdleChannelsLabel')}</p>
+                        <p className='text-muted-foreground text-sm'>{t('channels.dialogs.systemSettings.channelProbe.activeProbeIdleChannelsDescription')}</p>
+                      </div>
+                      <Switch
+                        id='active-probe-idle-channels'
+                        checked={activeProbeIdleChannels}
+                        onCheckedChange={setActiveProbeIdleChannels}
+                        disabled={updateSettings.isPending}
+                      />
+                    </div>
                   </div>
                 )}
               </CardContent>

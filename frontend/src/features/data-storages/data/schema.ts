@@ -5,7 +5,7 @@ import { pageInfoSchema } from '@/gql/pagination';
 export const s3SettingsSchema = z.object({
   bucketName: z.string(),
   endpoint: z.string().optional(),
-  region: z.string(),
+  region: z.string().optional(),
   accessKey: z.string().optional(),
   secretKey: z.string().optional(),
   pathStyle: z.boolean().optional(),
@@ -22,10 +22,10 @@ export type GCSSettings = z.infer<typeof gcsSettingsSchema>;
 // WebDAV Settings schema
 export const webdavSettingsSchema = z.object({
   url: z.string(),
-  username: z.string().optional(),
-  password: z.string().optional(),
-  insecure_skip_tls: z.boolean().optional(),
-  path: z.string().optional(),
+  username: z.string().optional().nullable(),
+  password: z.string().optional().nullable(),
+  insecure_skip_tls: z.boolean().optional().nullable(),
+  path: z.string().optional().nullable(),
 });
 export type WebDAVSettings = z.infer<typeof webdavSettingsSchema>;
 

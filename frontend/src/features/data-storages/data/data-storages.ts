@@ -50,6 +50,12 @@ const DATA_STORAGES_QUERY = `
             gcs {
               bucketName
             }
+            webdav {
+              url
+              username
+              insecure_skip_tls
+              path
+            }
           }
           createdAt
           updatedAt
@@ -85,6 +91,12 @@ const CREATE_DATA_STORAGE_MUTATION = `
         gcs {
           bucketName
         }
+        webdav {
+          url
+          username
+          insecure_skip_tls
+          path
+        }
       }
       createdAt
       updatedAt
@@ -110,6 +122,12 @@ const UPDATE_DATA_STORAGE_MUTATION = `
         }
         gcs {
           bucketName
+        }
+        webdav {
+          url
+          username
+          insecure_skip_tls
+          path
         }
       }
       createdAt

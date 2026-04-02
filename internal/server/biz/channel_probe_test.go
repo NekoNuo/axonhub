@@ -1,6 +1,8 @@
 package biz
 
 import (
+	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -907,4 +909,41 @@ func TestComputeAllChannelProbeStats_FailedExecutions(t *testing.T) {
 	// TPS: 100 tokens / ((3000-500)/1000) = 100 / 2.5 = 40 tokens/s
 	require.NotNil(t, channelStats.avgTokensPerSecond)
 	assert.InDelta(t, 40.0, *channelStats.avgTokensPerSecond, 0.01)
+}
+
+func TestFillIdleChannelProbeStats(t *testing.T) {
+	svc := &ChannelProbeService{}
+	svc.idleChannelProber = func(_ context.Context, ch *ent.Channel) (bool, error) {
+		switch ch.ID {
+		case 2:
+			return false, fmt.Errorf("probe failed")
+		case 3:
+			return true, nil
+		default:
+			return false, nil
+		}
+	}
+
+	channels := []*ent.Channel{
+		{ID: 1, Type: channel.TypeOpenaiFake, BaseURL: "https://provider-1.example"},
+		{ID: 2, Type: channel.TypeOpenaiFake, BaseURL: "https://provider-2.example"},
+		{ID: 3, Type: channel.TypeOpenaiFake, BaseURL: "https://provider-3.example"},
+	}
+
+	allStats := map[int]*channelProbeStats{
+		1: {
+			total:   2,
+			success: 2,
+		},
+	}
+
+	probedCount, successCount := svc.fillIdleChannelProbeStats(context.Background(), channels, allStats)
+	assert.Equal(t, 2, probedCount)
+	assert.Equal(t, 1, successCount)
+
+	assert.Equal(t, 2, allStats[1].total, "existing stats should not be overwritten")
+	assert.Equal(t, 1, allStats[2].total)
+	assert.Equal(t, 0, allStats[2].success)
+	assert.Equal(t, 1, allStats[3].total)
+	assert.Equal(t, 1, allStats[3].success)
 }

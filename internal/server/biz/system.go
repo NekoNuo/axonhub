@@ -311,6 +311,8 @@ type ChannelProbeSetting struct {
 	Enabled bool `json:"enabled"`
 	// Frequency defines how often to probe channels
 	Frequency ProbeFrequency `json:"frequency"`
+	// ActiveProbeIdleChannels actively probes idle channels (channels without recent request data).
+	ActiveProbeIdleChannels bool `json:"active_probe_idle_channels"`
 }
 
 // GetQueryRangeMinutes returns the query range in minutes based on the probe frequency.

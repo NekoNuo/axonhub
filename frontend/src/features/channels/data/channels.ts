@@ -1343,6 +1343,7 @@ export function useChannelProbeData(channelIDs: string[], options?: { enabled?: 
     },
     enabled: channelIDs.length > 0 && options?.enabled !== false,
     staleTime: 1 * 60 * 1000, // 1 minute
+    refetchInterval: 1 * 60 * 1000, // Keep visible channel health data refreshed
   });
 }
 

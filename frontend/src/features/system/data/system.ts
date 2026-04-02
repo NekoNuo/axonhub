@@ -566,6 +566,7 @@ const CHANNEL_SETTINGS_QUERY = `
       probe {
         enabled
         frequency
+        activeProbeIdleChannels
       }
       autoSync {
         frequency
@@ -664,6 +665,7 @@ export type AutoSyncFrequency = 'ONE_HOUR' | 'SIX_HOURS' | 'ONE_DAY';
 export interface ChannelProbeSetting {
   enabled: boolean;
   frequency: ProbeFrequency;
+  activeProbeIdleChannels: boolean;
 }
 
 export interface ChannelModelAutoSyncSetting {
@@ -678,6 +680,7 @@ export interface ChannelSetting {
 export interface UpdateChannelProbeSettingInput {
   enabled?: boolean;
   frequency?: ProbeFrequency;
+  activeProbeIdleChannels?: boolean;
 }
 
 export interface UpdateChannelModelAutoSyncSettingInput {

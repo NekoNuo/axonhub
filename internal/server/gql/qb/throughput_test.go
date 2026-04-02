@@ -552,6 +552,26 @@ func TestBuildProbeStatsQuery_PlaceholderCount(t *testing.T) {
 	}
 }
 
+// TestBuildProbeStatsQuery_IncludeFailedExecutions ensures probe stats include failed requests
+// instead of filtering them out via successful-only joins/conditions.
+func TestBuildProbeStatsQuery_IncludeFailedExecutions(t *testing.T) {
+	t.Run("ROW_NUMBER mode uses LEFT JOIN for usage logs", func(t *testing.T) {
+		got := BuildProbeStatsQuery(true, "AND se.channel_id IN ($3, $4)", ThroughputModeRowNumber)
+
+		assert.Contains(t, got, "LEFT JOIN usage_logs ul ON se.request_id = ul.request_id")
+		assert.Contains(t, got, "SUM(CASE WHEN se.status = 'completed' THEN 1 ELSE 0 END) as success_count")
+		assert.NotContains(t, got, "FROM latest_execs se\nJOIN usage_logs ul ON se.request_id = ul.request_id")
+	})
+
+	t.Run("MAX_ID mode does not force completed latest execution", func(t *testing.T) {
+		got := BuildProbeStatsQuery(true, "AND se.channel_id IN ($3, $4)", ThroughputModeMaxID)
+
+		assert.Contains(t, got, "LEFT JOIN usage_logs ul ON se.request_id = ul.request_id")
+		assert.Contains(t, got, "SELECT MAX(re2.id)")
+		assert.NotContains(t, got, "AND re2.status = 'completed'")
+	})
+}
+
 // TestThroughputQueryTypeEnum tests that the enum values are correct.
 func TestThroughputQueryTypeEnum(t *testing.T) {
 	assert.Equal(t, ThroughputQueryType(0), ThroughputQueryByChannel, "ThroughputQueryByChannel should be 0")
