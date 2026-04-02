@@ -567,6 +567,7 @@ const CHANNEL_SETTINGS_QUERY = `
         enabled
         frequency
         activeProbeIdleChannels
+        probeModelIdleChannels
       }
       autoSync {
         frequency
@@ -578,6 +579,12 @@ const CHANNEL_SETTINGS_QUERY = `
 const UPDATE_CHANNEL_SETTINGS_MUTATION = `
   mutation UpdateChannelSettings($input: UpdateSystemChannelSettingsInput!) {
     updateSystemChannelSettings(input: $input)
+  }
+`;
+
+const TRIGGER_CHANNEL_PROBE_MUTATION = `
+  mutation TriggerChannelProbe {
+    triggerChannelProbe
   }
 `;
 
@@ -666,6 +673,7 @@ export interface ChannelProbeSetting {
   enabled: boolean;
   frequency: ProbeFrequency;
   activeProbeIdleChannels: boolean;
+  probeModelIdleChannels: boolean;
 }
 
 export interface ChannelModelAutoSyncSetting {
@@ -681,6 +689,7 @@ export interface UpdateChannelProbeSettingInput {
   enabled?: boolean;
   frequency?: ProbeFrequency;
   activeProbeIdleChannels?: boolean;
+  probeModelIdleChannels?: boolean;
 }
 
 export interface UpdateChannelModelAutoSyncSettingInput {
@@ -724,6 +733,25 @@ export function useUpdateChannelSetting() {
     },
     onError: () => {
       toast.error(i18n.t('common.errors.systemUpdateFailed'));
+    },
+  });
+}
+
+export function useTriggerChannelProbe() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const data = await graphqlRequest<{ triggerChannelProbe: boolean }>(TRIGGER_CHANNEL_PROBE_MUTATION);
+      return data.triggerChannelProbe;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['channelProbeData'] });
+      queryClient.invalidateQueries({ queryKey: ['channelSetting'] });
+      toast.success(i18n.t('channels.dialogs.systemSettings.channelProbe.triggerSuccess'));
+    },
+    onError: () => {
+      toast.error(i18n.t('channels.dialogs.systemSettings.channelProbe.triggerError'));
     },
   });
 }

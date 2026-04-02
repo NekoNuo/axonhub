@@ -944,14 +944,130 @@ func TestFillIdleChannelProbeStats(t *testing.T) {
 	assert.Equal(t, 2, allStats[1].total, "existing stats should not be overwritten")
 	assert.Equal(t, 1, allStats[2].total)
 	assert.Equal(t, 0, allStats[2].success)
-	require.NotNil(t, allStats[2].avgTimeToFirstTokenMs)
-	assert.InDelta(t, 120.0, *allStats[2].avgTimeToFirstTokenMs, 0.01)
+	require.NotNil(t, allStats[2].activeProbeLatencyMs)
+	assert.InDelta(t, 120.0, *allStats[2].activeProbeLatencyMs, 0.01)
 	require.NotNil(t, allStats[2].latencyMs)
 	assert.InDelta(t, 120.0, *allStats[2].latencyMs, 0.01)
 	assert.Equal(t, 1, allStats[3].total)
 	assert.Equal(t, 1, allStats[3].success)
-	require.NotNil(t, allStats[3].avgTimeToFirstTokenMs)
-	assert.InDelta(t, 80.0, *allStats[3].avgTimeToFirstTokenMs, 0.01)
+	require.NotNil(t, allStats[3].activeProbeLatencyMs)
+	assert.InDelta(t, 80.0, *allStats[3].activeProbeLatencyMs, 0.01)
 	require.NotNil(t, allStats[3].latencyMs)
 	assert.InDelta(t, 80.0, *allStats[3].latencyMs, 0.01)
+}
+
+func TestFillIdleChannelProbeStats_ProbeModelEnabledUsesBothChecks(t *testing.T) {
+	svc := &ChannelProbeService{}
+	svc.idleChannelProber = func(_ context.Context, ch *ent.Channel) (time.Duration, bool, error) {
+		return 90 * time.Millisecond, true, nil
+	}
+	svc.idleChannelModelProber = func(_ context.Context, ch *ent.Channel, modelID string) (time.Duration, bool, error) {
+		require.Equal(t, 1, ch.ID)
+		require.Equal(t, "gpt-4o-mini", modelID)
+		return 140 * time.Millisecond, true, nil
+	}
+
+	channels := []*ent.Channel{
+		{ID: 1, Type: channel.TypeOpenaiFake, BaseURL: "https://provider-1.example", DefaultTestModel: "gpt-4o-mini"},
+	}
+	allStats := map[int]*channelProbeStats{}
+
+	probedCount, successCount := svc.fillIdleChannelProbeStatsWithSettings(
+		context.Background(),
+		channels,
+		allStats,
+		ChannelProbeSetting{ActiveProbeIdleChannels: true, ProbeModelIdleChannels: true},
+	)
+
+	assert.Equal(t, 1, probedCount)
+	assert.Equal(t, 1, successCount)
+	require.Contains(t, allStats, 1)
+	assert.True(t, allStats[1].alive)
+	require.NotNil(t, allStats[1].activeProbeLatencyMs)
+	assert.InDelta(t, 90.0, *allStats[1].activeProbeLatencyMs, 0.01)
+	require.NotNil(t, allStats[1].activeProbeModelLatencyMs)
+	assert.InDelta(t, 140.0, *allStats[1].activeProbeModelLatencyMs, 0.01)
+}
+
+func TestFillIdleChannelProbeStats_ProbeModelFallsBackToModelsWhenDefaultModelMissing(t *testing.T) {
+	svc := &ChannelProbeService{}
+	svc.idleChannelProber = func(_ context.Context, ch *ent.Channel) (time.Duration, bool, error) {
+		return 75 * time.Millisecond, true, nil
+	}
+
+	modelProbeCalls := 0
+	svc.idleChannelModelProber = func(_ context.Context, ch *ent.Channel, modelID string) (time.Duration, bool, error) {
+		modelProbeCalls++
+		return 0, false, fmt.Errorf("unexpected model probe call for channel %d model %q", ch.ID, modelID)
+	}
+
+	channels := []*ent.Channel{
+		{ID: 1, Type: channel.TypeOpenaiFake, BaseURL: "https://provider-1.example"},
+	}
+	allStats := map[int]*channelProbeStats{}
+
+	probedCount, successCount := svc.fillIdleChannelProbeStatsWithSettings(
+		context.Background(),
+		channels,
+		allStats,
+		ChannelProbeSetting{ActiveProbeIdleChannels: true, ProbeModelIdleChannels: true},
+	)
+
+	assert.Equal(t, 1, probedCount)
+	assert.Equal(t, 1, successCount)
+	assert.Equal(t, 0, modelProbeCalls)
+	require.Contains(t, allStats, 1)
+	assert.True(t, allStats[1].alive)
+	require.NotNil(t, allStats[1].activeProbeLatencyMs)
+	assert.InDelta(t, 75.0, *allStats[1].activeProbeLatencyMs, 0.01)
+	require.NotNil(t, allStats[1].activeProbeModelLatencyMs)
+	assert.InDelta(t, 75.0, *allStats[1].activeProbeModelLatencyMs, 0.01)
+}
+
+func TestRunProbe_ActiveModelProbeLoadsDefaultTestModel(t *testing.T) {
+	client := enttest.NewEntClient(t, "sqlite3", "file:ent?mode=memory&_fk=0")
+	defer client.Close()
+
+	ctx := ent.NewContext(t.Context(), client)
+	ctx = authz.WithTestBypass(ctx)
+
+	systemService := NewSystemService(SystemServiceParams{Ent: client})
+	err := systemService.SetChannelSetting(ctx, SystemChannelSettings{
+		Probe: ChannelProbeSetting{
+			Enabled:                 true,
+			Frequency:               ProbeFrequency1Min,
+			ActiveProbeIdleChannels: true,
+			ProbeModelIdleChannels:  true,
+		},
+	})
+	require.NoError(t, err)
+
+	_, err = client.Channel.Create().
+		SetType(channel.TypeOpenaiFake).
+		SetName("probe-channel").
+		SetStatus(channel.StatusEnabled).
+		SetBaseURL("https://provider.example").
+		SetSupportedModels([]string{"gpt-4o-mini"}).
+		SetDefaultTestModel("gpt-4o-mini").
+		SetCredentials(objects.ChannelCredentials{}).
+		Save(ctx)
+	require.NoError(t, err)
+
+	modelProbeCalls := 0
+	svc := &ChannelProbeService{
+		AbstractService: &AbstractService{db: client},
+		SystemService:   systemService,
+	}
+	svc.idleChannelProber = func(_ context.Context, ch *ent.Channel) (time.Duration, bool, error) {
+		return 50 * time.Millisecond, true, nil
+	}
+	svc.idleChannelModelProber = func(_ context.Context, ch *ent.Channel, modelID string) (time.Duration, bool, error) {
+		modelProbeCalls++
+		assert.Equal(t, "gpt-4o-mini", modelID)
+		return 80 * time.Millisecond, true, nil
+	}
+
+	svc.runProbe(ctx)
+
+	assert.Equal(t, 1, modelProbeCalls)
 }

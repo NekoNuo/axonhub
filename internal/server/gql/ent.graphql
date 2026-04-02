@@ -988,6 +988,8 @@ type ChannelProbe implements Node {
   successRequestCount: Int!
   avgTokensPerSecond: Float
   avgTimeToFirstTokenMs: Float
+  activeProbeLatencyMs: Float
+  probeModelLatencyMs: Float
   timestamp: Int!
   channel: Channel!
 }
@@ -1065,6 +1067,32 @@ input ChannelProbeWhereInput {
   avgTimeToFirstTokenMsLTE: Float
   avgTimeToFirstTokenMsIsNil: Boolean
   avgTimeToFirstTokenMsNotNil: Boolean
+  """
+  active_probe_latency_ms field predicates
+  """
+  activeProbeLatencyMs: Float
+  activeProbeLatencyMsNEQ: Float
+  activeProbeLatencyMsIn: [Float!]
+  activeProbeLatencyMsNotIn: [Float!]
+  activeProbeLatencyMsGT: Float
+  activeProbeLatencyMsGTE: Float
+  activeProbeLatencyMsLT: Float
+  activeProbeLatencyMsLTE: Float
+  activeProbeLatencyMsIsNil: Boolean
+  activeProbeLatencyMsNotNil: Boolean
+  """
+  probe_model_latency_ms field predicates
+  """
+  probeModelLatencyMs: Float
+  probeModelLatencyMsNEQ: Float
+  probeModelLatencyMsIn: [Float!]
+  probeModelLatencyMsNotIn: [Float!]
+  probeModelLatencyMsGT: Float
+  probeModelLatencyMsGTE: Float
+  probeModelLatencyMsLT: Float
+  probeModelLatencyMsLTE: Float
+  probeModelLatencyMsIsNil: Boolean
+  probeModelLatencyMsNotNil: Boolean
   """
   timestamp field predicates
   """

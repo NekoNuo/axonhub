@@ -76,15 +76,23 @@ func (s *ProbeHealthStrategy) ScoreWithDebug(ctx context.Context, channel *biz.C
 
 	score := s.score(health)
 	details := map[string]any{
-		"mode":            string(s.mode),
-		"health_found":    true,
-		"alive":           health.Alive,
-		"soft_latency_ms": s.softLatencyMs,
-		"hard_latency_ms": s.hardLatencyMs,
-		"timestamp":       health.Timestamp,
+		"mode":              string(s.mode),
+		"health_found":      true,
+		"alive":             health.Alive,
+		"models_alive":      health.ModelsAlive,
+		"probe_model_alive": health.ProbeModelAlive,
+		"soft_latency_ms":   s.softLatencyMs,
+		"hard_latency_ms":   s.hardLatencyMs,
+		"timestamp":         health.Timestamp,
 	}
-	if health.LatencyMs != nil {
-		details["latency_ms"] = *health.LatencyMs
+	if latency := s.preferredLatency(health); latency != nil {
+		details["latency_ms"] = *latency
+	}
+	if health.ActiveProbeLatencyMs != nil {
+		details["active_probe_latency_ms"] = *health.ActiveProbeLatencyMs
+	}
+	if health.ProbeModelLatencyMs != nil {
+		details["probe_model_latency_ms"] = *health.ProbeModelLatencyMs
 	}
 
 	return score, StrategyScore{
@@ -118,41 +126,55 @@ func (s *ProbeHealthStrategy) score(health *biz.ChannelProbeHealth) float64 {
 func (s *ProbeHealthStrategy) scoreAvailability(health *biz.ChannelProbeHealth) float64 {
 	// Healthy channels get a stable positive baseline.
 	base := 450.0
-	if health.LatencyMs == nil {
+	latency := s.preferredLatency(health)
+	if latency == nil {
 		return base
 	}
 
-	latency := *health.LatencyMs
-	if latency > s.hardLatencyMs {
+	value := *latency
+	if value > s.hardLatencyMs {
 		return -1000
 	}
 
-	if latency <= s.softLatencyMs {
+	if value <= s.softLatencyMs {
 		return base + 100
 	}
 
 	// Linear penalty between soft/hard thresholds.
-	ratio := (latency - s.softLatencyMs) / (s.hardLatencyMs - s.softLatencyMs)
+	ratio := (value - s.softLatencyMs) / (s.hardLatencyMs - s.softLatencyMs)
 	return (base + 100) - (ratio * 320)
 }
 
 func (s *ProbeHealthStrategy) scoreLowLatency(health *biz.ChannelProbeHealth) float64 {
 	// Low-latency mode aggressively prefers fast channels.
 	base := 600.0
-	if health.LatencyMs == nil {
+	latency := s.preferredLatency(health)
+	if latency == nil {
 		return -300
 	}
 
-	latency := *health.LatencyMs
-	if latency > s.hardLatencyMs {
+	value := *latency
+	if value > s.hardLatencyMs {
 		return -2500
 	}
 
-	if latency <= s.softLatencyMs {
+	if value <= s.softLatencyMs {
 		return base + 400
 	}
 
 	// Linear drop from fast to degraded in the threshold band.
-	ratio := (latency - s.softLatencyMs) / (s.hardLatencyMs - s.softLatencyMs)
+	ratio := (value - s.softLatencyMs) / (s.hardLatencyMs - s.softLatencyMs)
 	return (base + 400) - (ratio * 900)
+}
+
+func (s *ProbeHealthStrategy) preferredLatency(health *biz.ChannelProbeHealth) *float64 {
+	if health == nil {
+		return nil
+	}
+
+	if health.ProbeModelLatencyMs != nil {
+		return health.ProbeModelLatencyMs
+	}
+
+	return health.ActiveProbeLatencyMs
 }

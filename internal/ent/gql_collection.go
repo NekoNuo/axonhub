@@ -1256,6 +1256,16 @@ func (_q *ChannelProbeQuery) collectField(ctx context.Context, oneNode bool, opC
 				selectedFields = append(selectedFields, channelprobe.FieldAvgTimeToFirstTokenMs)
 				fieldSeen[channelprobe.FieldAvgTimeToFirstTokenMs] = struct{}{}
 			}
+		case "activeProbeLatencyMs":
+			if _, ok := fieldSeen[channelprobe.FieldActiveProbeLatencyMs]; !ok {
+				selectedFields = append(selectedFields, channelprobe.FieldActiveProbeLatencyMs)
+				fieldSeen[channelprobe.FieldActiveProbeLatencyMs] = struct{}{}
+			}
+		case "probeModelLatencyMs":
+			if _, ok := fieldSeen[channelprobe.FieldProbeModelLatencyMs]; !ok {
+				selectedFields = append(selectedFields, channelprobe.FieldProbeModelLatencyMs)
+				fieldSeen[channelprobe.FieldProbeModelLatencyMs] = struct{}{}
+			}
 		case "timestamp":
 			if _, ok := fieldSeen[channelprobe.FieldTimestamp]; !ok {
 				selectedFields = append(selectedFields, channelprobe.FieldTimestamp)

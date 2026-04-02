@@ -1,11 +1,15 @@
 package gql
 
 import (
+	"context"
 	"errors"
+	"time"
 
 	"github.com/99designs/gqlgen/graphql"
+	"github.com/samber/lo"
 
 	"github.com/looplj/axonhub/internal/ent"
+	"github.com/looplj/axonhub/internal/objects"
 	"github.com/looplj/axonhub/internal/server/backup"
 	"github.com/looplj/axonhub/internal/server/biz"
 	"github.com/looplj/axonhub/internal/server/gc"
@@ -72,6 +76,38 @@ func NewSchema(
 	gcWorker *gc.Worker,
 ) graphql.ExecutableSchema {
 	modelFetcher := biz.NewModelFetcher(httpClient, channelService)
+	testChannelOrchestrator := orchestrator.NewTestChannelOrchestrator(
+		channelService,
+		requestService,
+		systemService,
+		usageLogService,
+		promptProtectionRuleService,
+		httpClient,
+	)
+	channelProbeService.SetIdleChannelModelProber(func(
+		ctx context.Context,
+		ch *ent.Channel,
+		modelID string,
+	) (time.Duration, bool, error) {
+		start := time.Now()
+		result, err := testChannelOrchestrator.TestChannel(
+			ctx,
+			objects.GUID{Type: "Channel", ID: ch.ID},
+			lo.ToPtr(modelID),
+			nil,
+		)
+		if err != nil {
+			return time.Since(start), false, err
+		}
+		if result == nil || !result.Success {
+			if result != nil && result.Error != nil {
+				return time.Since(start), false, errors.New(*result.Error)
+			}
+			return time.Since(start), false, errors.New("model probe failed")
+		}
+
+		return time.Since(start), true, nil
+	})
 
 	return NewExecutableSchema(Config{
 		Resolvers: &Resolver{
@@ -95,7 +131,7 @@ func NewSchema(
 			promptProtectionRuleService:    promptProtectionRuleService,
 			providerQuotaService:           providerQuotaService,
 			modelFetcher:                   modelFetcher,
-			TestChannelOrchestrator:        orchestrator.NewTestChannelOrchestrator(channelService, requestService, systemService, usageLogService, promptProtectionRuleService, httpClient),
+			TestChannelOrchestrator:        testChannelOrchestrator,
 			gcWorker:                       gcWorker,
 		},
 	})

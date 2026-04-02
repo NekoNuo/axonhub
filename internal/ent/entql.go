@@ -175,6 +175,8 @@ var schemaGraph = func() *sqlgraph.Schema {
 			channelprobe.FieldSuccessRequestCount:   {Type: field.TypeInt, Column: channelprobe.FieldSuccessRequestCount},
 			channelprobe.FieldAvgTokensPerSecond:    {Type: field.TypeFloat64, Column: channelprobe.FieldAvgTokensPerSecond},
 			channelprobe.FieldAvgTimeToFirstTokenMs: {Type: field.TypeFloat64, Column: channelprobe.FieldAvgTimeToFirstTokenMs},
+			channelprobe.FieldActiveProbeLatencyMs:  {Type: field.TypeFloat64, Column: channelprobe.FieldActiveProbeLatencyMs},
+			channelprobe.FieldProbeModelLatencyMs:   {Type: field.TypeFloat64, Column: channelprobe.FieldProbeModelLatencyMs},
 			channelprobe.FieldTimestamp:             {Type: field.TypeInt64, Column: channelprobe.FieldTimestamp},
 		},
 	}
@@ -1994,6 +1996,16 @@ func (f *ChannelProbeFilter) WhereAvgTokensPerSecond(p entql.Float64P) {
 // WhereAvgTimeToFirstTokenMs applies the entql float64 predicate on the avg_time_to_first_token_ms field.
 func (f *ChannelProbeFilter) WhereAvgTimeToFirstTokenMs(p entql.Float64P) {
 	f.Where(p.Field(channelprobe.FieldAvgTimeToFirstTokenMs))
+}
+
+// WhereActiveProbeLatencyMs applies the entql float64 predicate on the active_probe_latency_ms field.
+func (f *ChannelProbeFilter) WhereActiveProbeLatencyMs(p entql.Float64P) {
+	f.Where(p.Field(channelprobe.FieldActiveProbeLatencyMs))
+}
+
+// WhereProbeModelLatencyMs applies the entql float64 predicate on the probe_model_latency_ms field.
+func (f *ChannelProbeFilter) WhereProbeModelLatencyMs(p entql.Float64P) {
+	f.Where(p.Field(channelprobe.FieldProbeModelLatencyMs))
 }
 
 // WhereTimestamp applies the entql int64 predicate on the timestamp field.

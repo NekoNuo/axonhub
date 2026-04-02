@@ -144,6 +144,17 @@ func (r *mutationResolver) UpdateVideoStorageSettings(ctx context.Context, input
 	return true, nil
 }
 
+// TriggerChannelProbe is the resolver for the triggerChannelProbe field.
+func (r *mutationResolver) TriggerChannelProbe(ctx context.Context) (bool, error) {
+	if r.channelProbeService == nil {
+		return false, fmt.Errorf("channel probe service is not available")
+	}
+
+	r.channelProbeService.RunProbeNow(ctx)
+
+	return true, nil
+}
+
 // CheckProviderQuotas is the resolver for the checkProviderQuotas field.
 func (r *mutationResolver) CheckProviderQuotas(ctx context.Context) (bool, error) {
 	if r.providerQuotaService == nil {

@@ -133,6 +133,8 @@ export const channelProbePointSchema = z.object({
   successRequestCount: z.number(),
   avgTokensPerSecond: z.number().optional().nullable(),
   avgTimeToFirstTokenMs: z.number().optional().nullable(),
+  activeProbeLatencyMs: z.number().optional().nullable(),
+  probeModelLatencyMs: z.number().optional().nullable(),
 });
 export type ChannelProbePoint = z.infer<typeof channelProbePointSchema>;
 

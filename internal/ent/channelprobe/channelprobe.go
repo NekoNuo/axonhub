@@ -22,6 +22,10 @@ const (
 	FieldAvgTokensPerSecond = "avg_tokens_per_second"
 	// FieldAvgTimeToFirstTokenMs holds the string denoting the avg_time_to_first_token_ms field in the database.
 	FieldAvgTimeToFirstTokenMs = "avg_time_to_first_token_ms"
+	// FieldActiveProbeLatencyMs holds the string denoting the active_probe_latency_ms field in the database.
+	FieldActiveProbeLatencyMs = "active_probe_latency_ms"
+	// FieldProbeModelLatencyMs holds the string denoting the probe_model_latency_ms field in the database.
+	FieldProbeModelLatencyMs = "probe_model_latency_ms"
 	// FieldTimestamp holds the string denoting the timestamp field in the database.
 	FieldTimestamp = "timestamp"
 	// EdgeChannel holds the string denoting the channel edge name in mutations.
@@ -45,6 +49,8 @@ var Columns = []string{
 	FieldSuccessRequestCount,
 	FieldAvgTokensPerSecond,
 	FieldAvgTimeToFirstTokenMs,
+	FieldActiveProbeLatencyMs,
+	FieldProbeModelLatencyMs,
 	FieldTimestamp,
 }
 
@@ -89,6 +95,16 @@ func ByAvgTokensPerSecond(opts ...sql.OrderTermOption) OrderOption {
 // ByAvgTimeToFirstTokenMs orders the results by the avg_time_to_first_token_ms field.
 func ByAvgTimeToFirstTokenMs(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAvgTimeToFirstTokenMs, opts...).ToFunc()
+}
+
+// ByActiveProbeLatencyMs orders the results by the active_probe_latency_ms field.
+func ByActiveProbeLatencyMs(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldActiveProbeLatencyMs, opts...).ToFunc()
+}
+
+// ByProbeModelLatencyMs orders the results by the probe_model_latency_ms field.
+func ByProbeModelLatencyMs(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProbeModelLatencyMs, opts...).ToFunc()
 }
 
 // ByTimestamp orders the results by the timestamp field.

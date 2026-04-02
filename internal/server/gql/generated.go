@@ -408,11 +408,13 @@ type ComplexityRoot struct {
 	}
 
 	ChannelProbe struct {
+		ActiveProbeLatencyMs  func(childComplexity int) int
 		AvgTimeToFirstTokenMs func(childComplexity int) int
 		AvgTokensPerSecond    func(childComplexity int) int
 		Channel               func(childComplexity int) int
 		ChannelID             func(childComplexity int) int
 		ID                    func(childComplexity int) int
+		ProbeModelLatencyMs   func(childComplexity int) int
 		SuccessRequestCount   func(childComplexity int) int
 		Timestamp             func(childComplexity int) int
 		TotalRequestCount     func(childComplexity int) int
@@ -424,8 +426,10 @@ type ComplexityRoot struct {
 	}
 
 	ChannelProbePoint struct {
+		ActiveProbeLatencyMs  func(childComplexity int) int
 		AvgTimeToFirstTokenMs func(childComplexity int) int
 		AvgTokensPerSecond    func(childComplexity int) int
+		ProbeModelLatencyMs   func(childComplexity int) int
 		SuccessRequestCount   func(childComplexity int) int
 		Timestamp             func(childComplexity int) int
 		TotalRequestCount     func(childComplexity int) int
@@ -435,6 +439,7 @@ type ComplexityRoot struct {
 		ActiveProbeIdleChannels func(childComplexity int) int
 		Enabled                 func(childComplexity int) int
 		Frequency               func(childComplexity int) int
+		ProbeModelIdleChannels  func(childComplexity int) int
 	}
 
 	ChannelRateLimit struct {
@@ -828,6 +833,7 @@ type ComplexityRoot struct {
 		SyncChannelModels                    func(childComplexity int, channelID objects.GUID, pattern *string) int
 		TestChannel                          func(childComplexity int, input TestChannelInput) int
 		TriggerAutoBackup                    func(childComplexity int) int
+		TriggerChannelProbe                  func(childComplexity int) int
 		TriggerGcCleanup                     func(childComplexity int) int
 		UpdateAPIKey                         func(childComplexity int, id objects.GUID, input ent.UpdateAPIKeyInput) int
 		UpdateAPIKeyProfiles                 func(childComplexity int, id objects.GUID, input objects.APIKeyProfiles) int
@@ -1837,6 +1843,7 @@ type MutationResolver interface {
 	UpdateSystemChannelSettings(ctx context.Context, input biz.SystemChannelSettings) (bool, error)
 	UpdateSystemGeneralSettings(ctx context.Context, input biz.SystemGeneralSettings) (bool, error)
 	UpdateVideoStorageSettings(ctx context.Context, input biz.VideoStorageSettings) (bool, error)
+	TriggerChannelProbe(ctx context.Context) (bool, error)
 	CheckProviderQuotas(ctx context.Context) (bool, error)
 	TriggerGcCleanup(ctx context.Context) (bool, error)
 	SaveProxyPreset(ctx context.Context, input biz.ProxyPreset) (bool, error)
@@ -3242,6 +3249,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.ChannelPolicies.Stream(childComplexity), true
 
+	case "ChannelProbe.activeProbeLatencyMs":
+		if e.complexity.ChannelProbe.ActiveProbeLatencyMs == nil {
+			break
+		}
+
+		return e.complexity.ChannelProbe.ActiveProbeLatencyMs(childComplexity), true
 	case "ChannelProbe.avgTimeToFirstTokenMs":
 		if e.complexity.ChannelProbe.AvgTimeToFirstTokenMs == nil {
 			break
@@ -3272,6 +3285,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.ChannelProbe.ID(childComplexity), true
+	case "ChannelProbe.probeModelLatencyMs":
+		if e.complexity.ChannelProbe.ProbeModelLatencyMs == nil {
+			break
+		}
+
+		return e.complexity.ChannelProbe.ProbeModelLatencyMs(childComplexity), true
 	case "ChannelProbe.successRequestCount":
 		if e.complexity.ChannelProbe.SuccessRequestCount == nil {
 			break
@@ -3304,6 +3323,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.ChannelProbeData.Points(childComplexity), true
 
+	case "ChannelProbePoint.activeProbeLatencyMs":
+		if e.complexity.ChannelProbePoint.ActiveProbeLatencyMs == nil {
+			break
+		}
+
+		return e.complexity.ChannelProbePoint.ActiveProbeLatencyMs(childComplexity), true
 	case "ChannelProbePoint.avgTimeToFirstTokenMs":
 		if e.complexity.ChannelProbePoint.AvgTimeToFirstTokenMs == nil {
 			break
@@ -3316,6 +3341,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.ChannelProbePoint.AvgTokensPerSecond(childComplexity), true
+	case "ChannelProbePoint.probeModelLatencyMs":
+		if e.complexity.ChannelProbePoint.ProbeModelLatencyMs == nil {
+			break
+		}
+
+		return e.complexity.ChannelProbePoint.ProbeModelLatencyMs(childComplexity), true
 	case "ChannelProbePoint.successRequestCount":
 		if e.complexity.ChannelProbePoint.SuccessRequestCount == nil {
 			break
@@ -3353,6 +3384,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.ChannelProbeSetting.Frequency(childComplexity), true
+	case "ChannelProbeSetting.probeModelIdleChannels":
+		if e.complexity.ChannelProbeSetting.ProbeModelIdleChannels == nil {
+			break
+		}
+
+		return e.complexity.ChannelProbeSetting.ProbeModelIdleChannels(childComplexity), true
 
 	case "ChannelRateLimit.maxConcurrent":
 		if e.complexity.ChannelRateLimit.MaxConcurrent == nil {
@@ -5183,6 +5220,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.TriggerAutoBackup(childComplexity), true
+	case "Mutation.triggerChannelProbe":
+		if e.complexity.Mutation.TriggerChannelProbe == nil {
+			break
+		}
+
+		return e.complexity.Mutation.TriggerChannelProbe(childComplexity), true
 	case "Mutation.triggerGcCleanup":
 		if e.complexity.Mutation.TriggerGcCleanup == nil {
 			break
@@ -16118,6 +16161,10 @@ func (ec *executionContext) fieldContext_Channel_channelProbes(_ context.Context
 				return ec.fieldContext_ChannelProbe_avgTokensPerSecond(ctx, field)
 			case "avgTimeToFirstTokenMs":
 				return ec.fieldContext_ChannelProbe_avgTimeToFirstTokenMs(ctx, field)
+			case "activeProbeLatencyMs":
+				return ec.fieldContext_ChannelProbe_activeProbeLatencyMs(ctx, field)
+			case "probeModelLatencyMs":
+				return ec.fieldContext_ChannelProbe_probeModelLatencyMs(ctx, field)
 			case "timestamp":
 				return ec.fieldContext_ChannelProbe_timestamp(ctx, field)
 			case "channel":
@@ -18913,6 +18960,64 @@ func (ec *executionContext) fieldContext_ChannelProbe_avgTimeToFirstTokenMs(_ co
 	return fc, nil
 }
 
+func (ec *executionContext) _ChannelProbe_activeProbeLatencyMs(ctx context.Context, field graphql.CollectedField, obj *ent.ChannelProbe) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ChannelProbe_activeProbeLatencyMs,
+		func(ctx context.Context) (any, error) {
+			return obj.ActiveProbeLatencyMs, nil
+		},
+		nil,
+		ec.marshalOFloat2ᚖfloat64,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ChannelProbe_activeProbeLatencyMs(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ChannelProbe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ChannelProbe_probeModelLatencyMs(ctx context.Context, field graphql.CollectedField, obj *ent.ChannelProbe) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ChannelProbe_probeModelLatencyMs,
+		func(ctx context.Context) (any, error) {
+			return obj.ProbeModelLatencyMs, nil
+		},
+		nil,
+		ec.marshalOFloat2ᚖfloat64,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ChannelProbe_probeModelLatencyMs(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ChannelProbe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ChannelProbe_timestamp(ctx context.Context, field graphql.CollectedField, obj *ent.ChannelProbe) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -19090,6 +19195,10 @@ func (ec *executionContext) fieldContext_ChannelProbeData_points(_ context.Conte
 				return ec.fieldContext_ChannelProbePoint_avgTokensPerSecond(ctx, field)
 			case "avgTimeToFirstTokenMs":
 				return ec.fieldContext_ChannelProbePoint_avgTimeToFirstTokenMs(ctx, field)
+			case "activeProbeLatencyMs":
+				return ec.fieldContext_ChannelProbePoint_activeProbeLatencyMs(ctx, field)
+			case "probeModelLatencyMs":
+				return ec.fieldContext_ChannelProbePoint_probeModelLatencyMs(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ChannelProbePoint", field.Name)
 		},
@@ -19242,6 +19351,64 @@ func (ec *executionContext) fieldContext_ChannelProbePoint_avgTimeToFirstTokenMs
 	return fc, nil
 }
 
+func (ec *executionContext) _ChannelProbePoint_activeProbeLatencyMs(ctx context.Context, field graphql.CollectedField, obj *biz.ChannelProbePoint) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ChannelProbePoint_activeProbeLatencyMs,
+		func(ctx context.Context) (any, error) {
+			return obj.ActiveProbeLatencyMs, nil
+		},
+		nil,
+		ec.marshalOFloat2ᚖfloat64,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ChannelProbePoint_activeProbeLatencyMs(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ChannelProbePoint",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ChannelProbePoint_probeModelLatencyMs(ctx context.Context, field graphql.CollectedField, obj *biz.ChannelProbePoint) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ChannelProbePoint_probeModelLatencyMs,
+		func(ctx context.Context) (any, error) {
+			return obj.ProbeModelLatencyMs, nil
+		},
+		nil,
+		ec.marshalOFloat2ᚖfloat64,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ChannelProbePoint_probeModelLatencyMs(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ChannelProbePoint",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ChannelProbeSetting_enabled(ctx context.Context, field graphql.CollectedField, obj *biz.ChannelProbeSetting) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -19317,6 +19484,35 @@ func (ec *executionContext) _ChannelProbeSetting_activeProbeIdleChannels(ctx con
 }
 
 func (ec *executionContext) fieldContext_ChannelProbeSetting_activeProbeIdleChannels(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ChannelProbeSetting",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ChannelProbeSetting_probeModelIdleChannels(ctx context.Context, field graphql.CollectedField, obj *biz.ChannelProbeSetting) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ChannelProbeSetting_probeModelIdleChannels,
+		func(ctx context.Context) (any, error) {
+			return obj.ProbeModelIdleChannels, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ChannelProbeSetting_probeModelIdleChannels(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ChannelProbeSetting",
 		Field:      field,
@@ -28492,6 +28688,35 @@ func (ec *executionContext) fieldContext_Mutation_updateVideoStorageSettings(ctx
 	if fc.Args, err = ec.field_Mutation_updateVideoStorageSettings_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_triggerChannelProbe(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_triggerChannelProbe,
+		func(ctx context.Context) (any, error) {
+			return ec.resolvers.Mutation().TriggerChannelProbe(ctx)
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_triggerChannelProbe(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
 	}
 	return fc, nil
 }
@@ -42457,6 +42682,8 @@ func (ec *executionContext) fieldContext_SystemChannelSettings_probe(_ context.C
 				return ec.fieldContext_ChannelProbeSetting_frequency(ctx, field)
 			case "activeProbeIdleChannels":
 				return ec.fieldContext_ChannelProbeSetting_activeProbeIdleChannels(ctx, field)
+			case "probeModelIdleChannels":
+				return ec.fieldContext_ChannelProbeSetting_probeModelIdleChannels(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ChannelProbeSetting", field.Name)
 		},
@@ -54306,7 +54533,7 @@ func (ec *executionContext) unmarshalInputChannelProbeWhereInput(ctx context.Con
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "channelID", "channelIDNEQ", "channelIDIn", "channelIDNotIn", "totalRequestCount", "totalRequestCountNEQ", "totalRequestCountIn", "totalRequestCountNotIn", "totalRequestCountGT", "totalRequestCountGTE", "totalRequestCountLT", "totalRequestCountLTE", "successRequestCount", "successRequestCountNEQ", "successRequestCountIn", "successRequestCountNotIn", "successRequestCountGT", "successRequestCountGTE", "successRequestCountLT", "successRequestCountLTE", "avgTokensPerSecond", "avgTokensPerSecondNEQ", "avgTokensPerSecondIn", "avgTokensPerSecondNotIn", "avgTokensPerSecondGT", "avgTokensPerSecondGTE", "avgTokensPerSecondLT", "avgTokensPerSecondLTE", "avgTokensPerSecondIsNil", "avgTokensPerSecondNotNil", "avgTimeToFirstTokenMs", "avgTimeToFirstTokenMsNEQ", "avgTimeToFirstTokenMsIn", "avgTimeToFirstTokenMsNotIn", "avgTimeToFirstTokenMsGT", "avgTimeToFirstTokenMsGTE", "avgTimeToFirstTokenMsLT", "avgTimeToFirstTokenMsLTE", "avgTimeToFirstTokenMsIsNil", "avgTimeToFirstTokenMsNotNil", "timestamp", "timestampNEQ", "timestampIn", "timestampNotIn", "timestampGT", "timestampGTE", "timestampLT", "timestampLTE", "hasChannel", "hasChannelWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "channelID", "channelIDNEQ", "channelIDIn", "channelIDNotIn", "totalRequestCount", "totalRequestCountNEQ", "totalRequestCountIn", "totalRequestCountNotIn", "totalRequestCountGT", "totalRequestCountGTE", "totalRequestCountLT", "totalRequestCountLTE", "successRequestCount", "successRequestCountNEQ", "successRequestCountIn", "successRequestCountNotIn", "successRequestCountGT", "successRequestCountGTE", "successRequestCountLT", "successRequestCountLTE", "avgTokensPerSecond", "avgTokensPerSecondNEQ", "avgTokensPerSecondIn", "avgTokensPerSecondNotIn", "avgTokensPerSecondGT", "avgTokensPerSecondGTE", "avgTokensPerSecondLT", "avgTokensPerSecondLTE", "avgTokensPerSecondIsNil", "avgTokensPerSecondNotNil", "avgTimeToFirstTokenMs", "avgTimeToFirstTokenMsNEQ", "avgTimeToFirstTokenMsIn", "avgTimeToFirstTokenMsNotIn", "avgTimeToFirstTokenMsGT", "avgTimeToFirstTokenMsGTE", "avgTimeToFirstTokenMsLT", "avgTimeToFirstTokenMsLTE", "avgTimeToFirstTokenMsIsNil", "avgTimeToFirstTokenMsNotNil", "activeProbeLatencyMs", "activeProbeLatencyMsNEQ", "activeProbeLatencyMsIn", "activeProbeLatencyMsNotIn", "activeProbeLatencyMsGT", "activeProbeLatencyMsGTE", "activeProbeLatencyMsLT", "activeProbeLatencyMsLTE", "activeProbeLatencyMsIsNil", "activeProbeLatencyMsNotNil", "probeModelLatencyMs", "probeModelLatencyMsNEQ", "probeModelLatencyMsIn", "probeModelLatencyMsNotIn", "probeModelLatencyMsGT", "probeModelLatencyMsGTE", "probeModelLatencyMsLT", "probeModelLatencyMsLTE", "probeModelLatencyMsIsNil", "probeModelLatencyMsNotNil", "timestamp", "timestampNEQ", "timestampIn", "timestampNotIn", "timestampGT", "timestampGTE", "timestampLT", "timestampLTE", "hasChannel", "hasChannelWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -54718,6 +54945,146 @@ func (ec *executionContext) unmarshalInputChannelProbeWhereInput(ctx context.Con
 				return it, err
 			}
 			it.AvgTimeToFirstTokenMsNotNil = data
+		case "activeProbeLatencyMs":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("activeProbeLatencyMs"))
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ActiveProbeLatencyMs = data
+		case "activeProbeLatencyMsNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("activeProbeLatencyMsNEQ"))
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ActiveProbeLatencyMsNEQ = data
+		case "activeProbeLatencyMsIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("activeProbeLatencyMsIn"))
+			data, err := ec.unmarshalOFloat2ᚕfloat64ᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ActiveProbeLatencyMsIn = data
+		case "activeProbeLatencyMsNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("activeProbeLatencyMsNotIn"))
+			data, err := ec.unmarshalOFloat2ᚕfloat64ᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ActiveProbeLatencyMsNotIn = data
+		case "activeProbeLatencyMsGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("activeProbeLatencyMsGT"))
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ActiveProbeLatencyMsGT = data
+		case "activeProbeLatencyMsGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("activeProbeLatencyMsGTE"))
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ActiveProbeLatencyMsGTE = data
+		case "activeProbeLatencyMsLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("activeProbeLatencyMsLT"))
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ActiveProbeLatencyMsLT = data
+		case "activeProbeLatencyMsLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("activeProbeLatencyMsLTE"))
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ActiveProbeLatencyMsLTE = data
+		case "activeProbeLatencyMsIsNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("activeProbeLatencyMsIsNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ActiveProbeLatencyMsIsNil = data
+		case "activeProbeLatencyMsNotNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("activeProbeLatencyMsNotNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ActiveProbeLatencyMsNotNil = data
+		case "probeModelLatencyMs":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("probeModelLatencyMs"))
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ProbeModelLatencyMs = data
+		case "probeModelLatencyMsNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("probeModelLatencyMsNEQ"))
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ProbeModelLatencyMsNEQ = data
+		case "probeModelLatencyMsIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("probeModelLatencyMsIn"))
+			data, err := ec.unmarshalOFloat2ᚕfloat64ᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ProbeModelLatencyMsIn = data
+		case "probeModelLatencyMsNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("probeModelLatencyMsNotIn"))
+			data, err := ec.unmarshalOFloat2ᚕfloat64ᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ProbeModelLatencyMsNotIn = data
+		case "probeModelLatencyMsGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("probeModelLatencyMsGT"))
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ProbeModelLatencyMsGT = data
+		case "probeModelLatencyMsGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("probeModelLatencyMsGTE"))
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ProbeModelLatencyMsGTE = data
+		case "probeModelLatencyMsLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("probeModelLatencyMsLT"))
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ProbeModelLatencyMsLT = data
+		case "probeModelLatencyMsLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("probeModelLatencyMsLTE"))
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ProbeModelLatencyMsLTE = data
+		case "probeModelLatencyMsIsNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("probeModelLatencyMsIsNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ProbeModelLatencyMsIsNil = data
+		case "probeModelLatencyMsNotNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("probeModelLatencyMsNotNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ProbeModelLatencyMsNotNil = data
 		case "timestamp":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("timestamp"))
 			data, err := ec.unmarshalOInt2ᚖint64(ctx, v)
@@ -68569,7 +68936,7 @@ func (ec *executionContext) unmarshalInputUpdateChannelProbeSettingInput(ctx con
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"enabled", "frequency", "activeProbeIdleChannels"}
+	fieldsInOrder := [...]string{"enabled", "frequency", "activeProbeIdleChannels", "probeModelIdleChannels"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -68597,6 +68964,13 @@ func (ec *executionContext) unmarshalInputUpdateChannelProbeSettingInput(ctx con
 				return it, err
 			}
 			it.ActiveProbeIdleChannels = data
+		case "probeModelIdleChannels":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("probeModelIdleChannels"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ProbeModelIdleChannels = data
 		}
 	}
 
@@ -76727,6 +77101,10 @@ func (ec *executionContext) _ChannelProbe(ctx context.Context, sel ast.Selection
 			out.Values[i] = ec._ChannelProbe_avgTokensPerSecond(ctx, field, obj)
 		case "avgTimeToFirstTokenMs":
 			out.Values[i] = ec._ChannelProbe_avgTimeToFirstTokenMs(ctx, field, obj)
+		case "activeProbeLatencyMs":
+			out.Values[i] = ec._ChannelProbe_activeProbeLatencyMs(ctx, field, obj)
+		case "probeModelLatencyMs":
+			out.Values[i] = ec._ChannelProbe_probeModelLatencyMs(ctx, field, obj)
 		case "timestamp":
 			out.Values[i] = ec._ChannelProbe_timestamp(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -76896,6 +77274,10 @@ func (ec *executionContext) _ChannelProbePoint(ctx context.Context, sel ast.Sele
 			out.Values[i] = ec._ChannelProbePoint_avgTokensPerSecond(ctx, field, obj)
 		case "avgTimeToFirstTokenMs":
 			out.Values[i] = ec._ChannelProbePoint_avgTimeToFirstTokenMs(ctx, field, obj)
+		case "activeProbeLatencyMs":
+			out.Values[i] = ec._ChannelProbePoint_activeProbeLatencyMs(ctx, field, obj)
+		case "probeModelLatencyMs":
+			out.Values[i] = ec._ChannelProbePoint_probeModelLatencyMs(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -76942,6 +77324,11 @@ func (ec *executionContext) _ChannelProbeSetting(ctx context.Context, sel ast.Se
 			}
 		case "activeProbeIdleChannels":
 			out.Values[i] = ec._ChannelProbeSetting_activeProbeIdleChannels(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "probeModelIdleChannels":
+			out.Values[i] = ec._ChannelProbeSetting_probeModelIdleChannels(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -80033,6 +80420,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "updateVideoStorageSettings":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateVideoStorageSettings(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "triggerChannelProbe":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_triggerChannelProbe(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++

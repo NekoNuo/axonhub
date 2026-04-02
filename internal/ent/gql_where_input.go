@@ -2545,6 +2545,30 @@ type ChannelProbeWhereInput struct {
 	AvgTimeToFirstTokenMsIsNil  bool      `json:"avgTimeToFirstTokenMsIsNil,omitempty"`
 	AvgTimeToFirstTokenMsNotNil bool      `json:"avgTimeToFirstTokenMsNotNil,omitempty"`
 
+	// "active_probe_latency_ms" field predicates.
+	ActiveProbeLatencyMs       *float64  `json:"activeProbeLatencyMs,omitempty"`
+	ActiveProbeLatencyMsNEQ    *float64  `json:"activeProbeLatencyMsNEQ,omitempty"`
+	ActiveProbeLatencyMsIn     []float64 `json:"activeProbeLatencyMsIn,omitempty"`
+	ActiveProbeLatencyMsNotIn  []float64 `json:"activeProbeLatencyMsNotIn,omitempty"`
+	ActiveProbeLatencyMsGT     *float64  `json:"activeProbeLatencyMsGT,omitempty"`
+	ActiveProbeLatencyMsGTE    *float64  `json:"activeProbeLatencyMsGTE,omitempty"`
+	ActiveProbeLatencyMsLT     *float64  `json:"activeProbeLatencyMsLT,omitempty"`
+	ActiveProbeLatencyMsLTE    *float64  `json:"activeProbeLatencyMsLTE,omitempty"`
+	ActiveProbeLatencyMsIsNil  bool      `json:"activeProbeLatencyMsIsNil,omitempty"`
+	ActiveProbeLatencyMsNotNil bool      `json:"activeProbeLatencyMsNotNil,omitempty"`
+
+	// "probe_model_latency_ms" field predicates.
+	ProbeModelLatencyMs       *float64  `json:"probeModelLatencyMs,omitempty"`
+	ProbeModelLatencyMsNEQ    *float64  `json:"probeModelLatencyMsNEQ,omitempty"`
+	ProbeModelLatencyMsIn     []float64 `json:"probeModelLatencyMsIn,omitempty"`
+	ProbeModelLatencyMsNotIn  []float64 `json:"probeModelLatencyMsNotIn,omitempty"`
+	ProbeModelLatencyMsGT     *float64  `json:"probeModelLatencyMsGT,omitempty"`
+	ProbeModelLatencyMsGTE    *float64  `json:"probeModelLatencyMsGTE,omitempty"`
+	ProbeModelLatencyMsLT     *float64  `json:"probeModelLatencyMsLT,omitempty"`
+	ProbeModelLatencyMsLTE    *float64  `json:"probeModelLatencyMsLTE,omitempty"`
+	ProbeModelLatencyMsIsNil  bool      `json:"probeModelLatencyMsIsNil,omitempty"`
+	ProbeModelLatencyMsNotNil bool      `json:"probeModelLatencyMsNotNil,omitempty"`
+
 	// "timestamp" field predicates.
 	Timestamp      *int64  `json:"timestamp,omitempty"`
 	TimestampNEQ   *int64  `json:"timestampNEQ,omitempty"`
@@ -2774,6 +2798,66 @@ func (i *ChannelProbeWhereInput) P() (predicate.ChannelProbe, error) {
 	}
 	if i.AvgTimeToFirstTokenMsNotNil {
 		predicates = append(predicates, channelprobe.AvgTimeToFirstTokenMsNotNil())
+	}
+	if i.ActiveProbeLatencyMs != nil {
+		predicates = append(predicates, channelprobe.ActiveProbeLatencyMsEQ(*i.ActiveProbeLatencyMs))
+	}
+	if i.ActiveProbeLatencyMsNEQ != nil {
+		predicates = append(predicates, channelprobe.ActiveProbeLatencyMsNEQ(*i.ActiveProbeLatencyMsNEQ))
+	}
+	if len(i.ActiveProbeLatencyMsIn) > 0 {
+		predicates = append(predicates, channelprobe.ActiveProbeLatencyMsIn(i.ActiveProbeLatencyMsIn...))
+	}
+	if len(i.ActiveProbeLatencyMsNotIn) > 0 {
+		predicates = append(predicates, channelprobe.ActiveProbeLatencyMsNotIn(i.ActiveProbeLatencyMsNotIn...))
+	}
+	if i.ActiveProbeLatencyMsGT != nil {
+		predicates = append(predicates, channelprobe.ActiveProbeLatencyMsGT(*i.ActiveProbeLatencyMsGT))
+	}
+	if i.ActiveProbeLatencyMsGTE != nil {
+		predicates = append(predicates, channelprobe.ActiveProbeLatencyMsGTE(*i.ActiveProbeLatencyMsGTE))
+	}
+	if i.ActiveProbeLatencyMsLT != nil {
+		predicates = append(predicates, channelprobe.ActiveProbeLatencyMsLT(*i.ActiveProbeLatencyMsLT))
+	}
+	if i.ActiveProbeLatencyMsLTE != nil {
+		predicates = append(predicates, channelprobe.ActiveProbeLatencyMsLTE(*i.ActiveProbeLatencyMsLTE))
+	}
+	if i.ActiveProbeLatencyMsIsNil {
+		predicates = append(predicates, channelprobe.ActiveProbeLatencyMsIsNil())
+	}
+	if i.ActiveProbeLatencyMsNotNil {
+		predicates = append(predicates, channelprobe.ActiveProbeLatencyMsNotNil())
+	}
+	if i.ProbeModelLatencyMs != nil {
+		predicates = append(predicates, channelprobe.ProbeModelLatencyMsEQ(*i.ProbeModelLatencyMs))
+	}
+	if i.ProbeModelLatencyMsNEQ != nil {
+		predicates = append(predicates, channelprobe.ProbeModelLatencyMsNEQ(*i.ProbeModelLatencyMsNEQ))
+	}
+	if len(i.ProbeModelLatencyMsIn) > 0 {
+		predicates = append(predicates, channelprobe.ProbeModelLatencyMsIn(i.ProbeModelLatencyMsIn...))
+	}
+	if len(i.ProbeModelLatencyMsNotIn) > 0 {
+		predicates = append(predicates, channelprobe.ProbeModelLatencyMsNotIn(i.ProbeModelLatencyMsNotIn...))
+	}
+	if i.ProbeModelLatencyMsGT != nil {
+		predicates = append(predicates, channelprobe.ProbeModelLatencyMsGT(*i.ProbeModelLatencyMsGT))
+	}
+	if i.ProbeModelLatencyMsGTE != nil {
+		predicates = append(predicates, channelprobe.ProbeModelLatencyMsGTE(*i.ProbeModelLatencyMsGTE))
+	}
+	if i.ProbeModelLatencyMsLT != nil {
+		predicates = append(predicates, channelprobe.ProbeModelLatencyMsLT(*i.ProbeModelLatencyMsLT))
+	}
+	if i.ProbeModelLatencyMsLTE != nil {
+		predicates = append(predicates, channelprobe.ProbeModelLatencyMsLTE(*i.ProbeModelLatencyMsLTE))
+	}
+	if i.ProbeModelLatencyMsIsNil {
+		predicates = append(predicates, channelprobe.ProbeModelLatencyMsIsNil())
+	}
+	if i.ProbeModelLatencyMsNotNil {
+		predicates = append(predicates, channelprobe.ProbeModelLatencyMsNotNil())
 	}
 	if i.Timestamp != nil {
 		predicates = append(predicates, channelprobe.TimestampEQ(*i.Timestamp))

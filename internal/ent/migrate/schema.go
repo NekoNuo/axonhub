@@ -199,6 +199,8 @@ var (
 		{Name: "success_request_count", Type: field.TypeInt},
 		{Name: "avg_tokens_per_second", Type: field.TypeFloat64, Nullable: true},
 		{Name: "avg_time_to_first_token_ms", Type: field.TypeFloat64, Nullable: true},
+		{Name: "active_probe_latency_ms", Type: field.TypeFloat64, Nullable: true},
+		{Name: "probe_model_latency_ms", Type: field.TypeFloat64, Nullable: true},
 		{Name: "timestamp", Type: field.TypeInt64},
 		{Name: "channel_id", Type: field.TypeInt},
 	}
@@ -210,7 +212,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "channel_probes_channels_channel_probes",
-				Columns:    []*schema.Column{ChannelProbesColumns[6]},
+				Columns:    []*schema.Column{ChannelProbesColumns[8]},
 				RefColumns: []*schema.Column{ChannelsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -219,7 +221,7 @@ var (
 			{
 				Name:    "channel_probes_by_channel_id_timestamp",
 				Unique:  false,
-				Columns: []*schema.Column{ChannelProbesColumns[6], ChannelProbesColumns[5]},
+				Columns: []*schema.Column{ChannelProbesColumns[8], ChannelProbesColumns[7]},
 			},
 		},
 	}

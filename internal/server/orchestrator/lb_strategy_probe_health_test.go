@@ -48,8 +48,10 @@ func TestProbeHealthStrategy_UnhealthyChannelGetsStrongPenalty(t *testing.T) {
 	provider := &mockProbeHealthProvider{
 		health: map[int]*biz.ChannelProbeHealth{
 			1: {
-				Alive:     false,
-				Timestamp: 1,
+				Alive:           false,
+				ModelsAlive:     false,
+				ProbeModelAlive: false,
+				Timestamp:       1,
 			},
 		},
 	}
@@ -63,19 +65,28 @@ func TestProbeHealthStrategy_LowLatencyPrefersFastChannels(t *testing.T) {
 	provider := &mockProbeHealthProvider{
 		health: map[int]*biz.ChannelProbeHealth{
 			1: {
-				Alive:     true,
-				LatencyMs: float64Ptr(200),
-				Timestamp: 1,
+				Alive:                true,
+				ModelsAlive:          true,
+				ProbeModelAlive:      true,
+				ActiveProbeLatencyMs: float64Ptr(300),
+				ProbeModelLatencyMs:  float64Ptr(200),
+				Timestamp:            1,
 			},
 			2: {
-				Alive:     true,
-				LatencyMs: float64Ptr(1800),
-				Timestamp: 1,
+				Alive:                true,
+				ModelsAlive:          true,
+				ProbeModelAlive:      true,
+				ActiveProbeLatencyMs: float64Ptr(1600),
+				ProbeModelLatencyMs:  float64Ptr(1800),
+				Timestamp:            1,
 			},
 			3: {
-				Alive:     true,
-				LatencyMs: float64Ptr(5000),
-				Timestamp: 1,
+				Alive:                true,
+				ModelsAlive:          true,
+				ProbeModelAlive:      true,
+				ActiveProbeLatencyMs: float64Ptr(4500),
+				ProbeModelLatencyMs:  float64Ptr(5000),
+				Timestamp:            1,
 			},
 		},
 	}
@@ -94,19 +105,28 @@ func TestProbeHealthStrategy_AvailabilityModeStillDeprioritizesHighLatency(t *te
 	provider := &mockProbeHealthProvider{
 		health: map[int]*biz.ChannelProbeHealth{
 			1: {
-				Alive:     true,
-				LatencyMs: float64Ptr(400),
-				Timestamp: 1,
+				Alive:                true,
+				ModelsAlive:          true,
+				ProbeModelAlive:      true,
+				ActiveProbeLatencyMs: float64Ptr(450),
+				ProbeModelLatencyMs:  float64Ptr(400),
+				Timestamp:            1,
 			},
 			2: {
-				Alive:     true,
-				LatencyMs: float64Ptr(4200),
-				Timestamp: 1,
+				Alive:                true,
+				ModelsAlive:          true,
+				ProbeModelAlive:      true,
+				ActiveProbeLatencyMs: float64Ptr(4000),
+				ProbeModelLatencyMs:  float64Ptr(4200),
+				Timestamp:            1,
 			},
 			3: {
-				Alive:     false,
-				LatencyMs: float64Ptr(200),
-				Timestamp: 1,
+				Alive:                false,
+				ModelsAlive:          true,
+				ProbeModelAlive:      false,
+				ActiveProbeLatencyMs: float64Ptr(200),
+				ProbeModelLatencyMs:  float64Ptr(200),
+				Timestamp:            1,
 			},
 		},
 	}
@@ -124,9 +144,12 @@ func TestProbeHealthStrategy_ScoreWithDebugIncludesModeAndHealth(t *testing.T) {
 	provider := &mockProbeHealthProvider{
 		health: map[int]*biz.ChannelProbeHealth{
 			1: {
-				Alive:     true,
-				LatencyMs: float64Ptr(350),
-				Timestamp: 123,
+				Alive:                true,
+				ModelsAlive:          true,
+				ProbeModelAlive:      true,
+				ActiveProbeLatencyMs: float64Ptr(380),
+				ProbeModelLatencyMs:  float64Ptr(350),
+				Timestamp:            123,
 			},
 		},
 	}
@@ -144,6 +167,34 @@ func TestProbeHealthStrategy_ScoreWithDebugIncludesModeAndHealth(t *testing.T) {
 	alive, ok := debug.Details["alive"].(bool)
 	require.True(t, ok)
 	assert.True(t, alive)
+}
+
+func TestProbeHealthStrategy_LowLatencyFallsBackToModelsLatencyWhenProbeModelLatencyMissing(t *testing.T) {
+	provider := &mockProbeHealthProvider{
+		health: map[int]*biz.ChannelProbeHealth{
+			1: {
+				Alive:                true,
+				ModelsAlive:          true,
+				ProbeModelAlive:      true,
+				ActiveProbeLatencyMs: float64Ptr(220),
+				Timestamp:            1,
+			},
+			2: {
+				Alive:                true,
+				ModelsAlive:          true,
+				ProbeModelAlive:      true,
+				ActiveProbeLatencyMs: float64Ptr(1400),
+				Timestamp:            1,
+			},
+		},
+	}
+
+	strategy := NewProbeHealthStrategy(provider, ProbeHealthModeLowLatency)
+	assert.Greater(
+		t,
+		strategy.Score(context.Background(), newLBTestChannel(1, "faster-models-fallback")),
+		strategy.Score(context.Background(), newLBTestChannel(2, "slower-models-fallback")),
+	)
 }
 
 func float64Ptr(v float64) *float64 {

@@ -1331,6 +1331,8 @@ const CHANNEL_PROBE_DATA_QUERY = `
         successRequestCount
         avgTokensPerSecond
         avgTimeToFirstTokenMs
+        activeProbeLatencyMs
+        probeModelLatencyMs
       }
     }
   }

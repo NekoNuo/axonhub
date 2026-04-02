@@ -676,7 +676,7 @@ func (_m *ChannelProbe) Node(ctx context.Context) (node *Node, err error) {
 	node = &Node{
 		ID:     _m.ID,
 		Type:   "ChannelProbe",
-		Fields: make([]*Field, 6),
+		Fields: make([]*Field, 8),
 		Edges:  make([]*Edge, 1),
 	}
 	var buf []byte
@@ -720,10 +720,26 @@ func (_m *ChannelProbe) Node(ctx context.Context) (node *Node, err error) {
 		Name:  "avg_time_to_first_token_ms",
 		Value: string(buf),
 	}
-	if buf, err = json.Marshal(_m.Timestamp); err != nil {
+	if buf, err = json.Marshal(_m.ActiveProbeLatencyMs); err != nil {
 		return nil, err
 	}
 	node.Fields[5] = &Field{
+		Type:  "float64",
+		Name:  "active_probe_latency_ms",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(_m.ProbeModelLatencyMs); err != nil {
+		return nil, err
+	}
+	node.Fields[6] = &Field{
+		Type:  "float64",
+		Name:  "probe_model_latency_ms",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(_m.Timestamp); err != nil {
+		return nil, err
+	}
+	node.Fields[7] = &Field{
 		Type:  "int64",
 		Name:  "timestamp",
 		Value: string(buf),

@@ -37,6 +37,8 @@ type ChannelProbePoint struct {
 	SuccessRequestCount   int      `json:"success_request_count"`
 	AvgTokensPerSecond    *float64 `json:"avg_tokens_per_second,omitempty"`
 	AvgTimeToFirstTokenMs *float64 `json:"avg_time_to_first_token_ms,omitempty"`
+	ActiveProbeLatencyMs  *float64 `json:"active_probe_latency_ms,omitempty"`
+	ProbeModelLatencyMs   *float64 `json:"probe_model_latency_ms,omitempty"`
 }
 
 // ChannelProbeData represents probe data for a single channel.
@@ -59,13 +61,14 @@ type ChannelProbeServiceParams struct {
 type ChannelProbeService struct {
 	*AbstractService
 
-	SystemService     *SystemService
-	ChannelService    *ChannelService
-	Executor          executors.ScheduledExecutor
-	mu                sync.Mutex
-	lastExecutionTime time.Time
-	modelFetcher      *ModelFetcher
-	idleChannelProber func(ctx context.Context, ch *ent.Channel) (time.Duration, bool, error)
+	SystemService          *SystemService
+	ChannelService         *ChannelService
+	Executor               executors.ScheduledExecutor
+	mu                     sync.Mutex
+	lastExecutionTime      time.Time
+	modelFetcher           *ModelFetcher
+	idleChannelProber      func(ctx context.Context, ch *ent.Channel) (time.Duration, bool, error)
+	idleChannelModelProber func(ctx context.Context, ch *ent.Channel, modelID string) (time.Duration, bool, error)
 }
 
 // NewChannelProbeService creates a new ChannelProbeService.
@@ -83,6 +86,12 @@ func NewChannelProbeService(params ChannelProbeServiceParams) *ChannelProbeServi
 	svc.idleChannelProber = svc.probeIdleChannelByFetchModels
 
 	return svc
+}
+
+func (svc *ChannelProbeService) SetIdleChannelModelProber(
+	prober func(ctx context.Context, ch *ent.Channel, modelID string) (time.Duration, bool, error),
+) {
+	svc.idleChannelModelProber = prober
 }
 
 // Start starts the channel probe service with scheduled task.
@@ -127,12 +136,16 @@ func getIntervalMinutesFromFrequency(frequency ProbeFrequency) int {
 }
 
 type channelProbeStats struct {
-	total                 int
-	success               int
-	alive                 bool
-	latencyMs             *float64
-	avgTokensPerSecond    *float64
-	avgTimeToFirstTokenMs *float64
+	total                     int
+	success                   int
+	alive                     bool
+	latencyMs                 *float64
+	activeProbeLatencyMs      *float64
+	activeProbeModelLatencyMs *float64
+	modelsAlive               bool
+	probeModelAlive           bool
+	avgTokensPerSecond        *float64
+	avgTimeToFirstTokenMs     *float64
 }
 
 // computeAllChannelProbeStats computes probe stats for all channels in a single batch query.
@@ -224,9 +237,11 @@ func (svc *ChannelProbeService) computeAllChannelProbeStats(
 		}
 
 		stats := &channelProbeStats{
-			total:   r.TotalCount,
-			success: r.SuccessCount,
-			alive:   r.SuccessCount > 0,
+			total:           r.TotalCount,
+			success:         r.SuccessCount,
+			alive:           r.SuccessCount > 0,
+			modelsAlive:     r.SuccessCount > 0,
+			probeModelAlive: r.SuccessCount > 0,
 		}
 
 		// Use average effective latency as health latency baseline.
@@ -286,10 +301,33 @@ func (svc *ChannelProbeService) probeIdleChannelByFetchModels(ctx context.Contex
 	return time.Since(start), true, nil
 }
 
+func preferredProbeLatency(stats *channelProbeStats) *float64 {
+	if stats == nil {
+		return nil
+	}
+
+	if stats.activeProbeModelLatencyMs != nil {
+		return stats.activeProbeModelLatencyMs
+	}
+
+	return stats.activeProbeLatencyMs
+}
+
 func (svc *ChannelProbeService) fillIdleChannelProbeStats(
 	ctx context.Context,
 	channels []*ent.Channel,
 	allStats map[int]*channelProbeStats,
+) (int, int) {
+	return svc.fillIdleChannelProbeStatsWithSettings(ctx, channels, allStats, ChannelProbeSetting{
+		ActiveProbeIdleChannels: true,
+	})
+}
+
+func (svc *ChannelProbeService) fillIdleChannelProbeStatsWithSettings(
+	ctx context.Context,
+	channels []*ent.Channel,
+	allStats map[int]*channelProbeStats,
+	setting ChannelProbeSetting,
 ) (int, int) {
 	if svc.idleChannelProber == nil || len(channels) == 0 {
 		return 0, 0
@@ -333,26 +371,53 @@ func (svc *ChannelProbeService) fillIdleChannelProbeStats(
 			}
 
 			stats := &channelProbeStats{
-				total:   1,
-				success: 0,
-				alive:   false,
-			}
-			if success {
-				stats.success = 1
-				stats.alive = true
+				total:       1,
+				success:     0,
+				alive:       false,
+				modelsAlive: success,
 			}
 
 			latencyMs := float64(latency.Milliseconds())
 			if latencyMs > 0 {
-				stats.latencyMs = lo.ToPtr(latencyMs)
-				// Persist active probe latency in existing probe latency field.
-				stats.avgTimeToFirstTokenMs = lo.ToPtr(latencyMs)
+				stats.activeProbeLatencyMs = lo.ToPtr(latencyMs)
 			}
+
+			probeModelAlive := success
+			probeModelLatencyMs := stats.activeProbeLatencyMs
+			if setting.ProbeModelIdleChannels {
+				if ch.DefaultTestModel != "" && svc.idleChannelModelProber != nil {
+					modelLatency, modelSuccess, modelErr := svc.idleChannelModelProber(probeCtx, ch, ch.DefaultTestModel)
+					if modelErr != nil {
+						log.Warn(ctx, "Active model probe for idle channel failed",
+							log.Int("channel_id", ch.ID),
+							log.String("channel_type", ch.Type.String()),
+							log.String("model_id", ch.DefaultTestModel),
+							log.Cause(modelErr),
+						)
+					}
+
+					probeModelAlive = modelSuccess
+					modelLatencyMs := float64(modelLatency.Milliseconds())
+					if modelLatencyMs > 0 {
+						probeModelLatencyMs = lo.ToPtr(modelLatencyMs)
+					} else {
+						probeModelLatencyMs = nil
+					}
+				}
+			}
+
+			stats.probeModelAlive = probeModelAlive
+			stats.alive = success && probeModelAlive
+			if stats.alive {
+				stats.success = 1
+			}
+			stats.activeProbeModelLatencyMs = probeModelLatencyMs
+			stats.latencyMs = preferredProbeLatency(stats)
 
 			mu.Lock()
 			allStats[ch.ID] = stats
 			probedCount++
-			if success {
+			if stats.alive {
 				successCount++
 			}
 			mu.Unlock()
@@ -406,7 +471,7 @@ func (svc *ChannelProbeService) runProbe(ctx context.Context) {
 	// Get all enabled channels
 	channels, err := svc.db.Channel.Query().
 		Where(channel.StatusEQ(channel.StatusEnabled)).
-		Select(channel.FieldID, channel.FieldType, channel.FieldBaseURL).
+		Select(channel.FieldID, channel.FieldType, channel.FieldBaseURL, channel.FieldDefaultTestModel).
 		All(ctx)
 	if err != nil {
 		log.Error(ctx, "Failed to query enabled channels", log.Cause(err))
@@ -435,7 +500,7 @@ func (svc *ChannelProbeService) runProbe(ctx context.Context) {
 	}
 
 	if setting.Probe.ActiveProbeIdleChannels {
-		probedIdle, successIdle := svc.fillIdleChannelProbeStats(ctx, channels, allStats)
+		probedIdle, successIdle := svc.fillIdleChannelProbeStatsWithSettings(ctx, channels, allStats, setting.Probe)
 		if probedIdle > 0 {
 			log.Debug(ctx, "Completed active probe for idle channels",
 				log.Int("probed_idle_channels", probedIdle),
@@ -455,9 +520,12 @@ func (svc *ChannelProbeService) runProbe(ctx context.Context) {
 
 		if svc.ChannelService != nil {
 			svc.ChannelService.UpdateChannelProbeHealth(ch.ID, &ChannelProbeHealth{
-				Alive:     stats.alive,
-				LatencyMs: stats.latencyMs,
-				Timestamp: timestamp,
+				Alive:                stats.alive,
+				ModelsAlive:          stats.modelsAlive,
+				ProbeModelAlive:      stats.probeModelAlive,
+				ActiveProbeLatencyMs: stats.activeProbeLatencyMs,
+				ProbeModelLatencyMs:  stats.activeProbeModelLatencyMs,
+				Timestamp:            timestamp,
 			})
 		}
 
@@ -467,6 +535,8 @@ func (svc *ChannelProbeService) runProbe(ctx context.Context) {
 			SetSuccessRequestCount(stats.success).
 			SetNillableAvgTokensPerSecond(stats.avgTokensPerSecond).
 			SetNillableAvgTimeToFirstTokenMs(stats.avgTimeToFirstTokenMs).
+			SetNillableActiveProbeLatencyMs(stats.activeProbeLatencyMs).
+			SetNillableProbeModelLatencyMs(stats.activeProbeModelLatencyMs).
 			SetTimestamp(timestamp),
 		)
 	}
@@ -559,6 +629,8 @@ func (svc *ChannelProbeService) QueryChannelProbes(ctx context.Context, channelI
 					SuccessRequestCount:   p.SuccessRequestCount,
 					AvgTokensPerSecond:    p.AvgTokensPerSecond,
 					AvgTimeToFirstTokenMs: p.AvgTimeToFirstTokenMs,
+					ActiveProbeLatencyMs:  p.ActiveProbeLatencyMs,
+					ProbeModelLatencyMs:   p.ProbeModelLatencyMs,
 				})
 			} else {
 				// Fill missing point with 0

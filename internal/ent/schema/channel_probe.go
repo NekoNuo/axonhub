@@ -29,6 +29,8 @@ func (ChannelProbe) Fields() []ent.Field {
 		field.Int("success_request_count").Immutable(),
 		field.Float("avg_tokens_per_second").Optional().Nillable().Immutable(),
 		field.Float("avg_time_to_first_token_ms").Optional().Nillable().Immutable(),
+		field.Float("active_probe_latency_ms").Optional().Nillable().Immutable(),
+		field.Float("probe_model_latency_ms").Optional().Nillable().Immutable(),
 		field.Int64("timestamp").Immutable(),
 	}
 }

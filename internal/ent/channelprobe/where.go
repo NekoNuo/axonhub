@@ -78,6 +78,16 @@ func AvgTimeToFirstTokenMs(v float64) predicate.ChannelProbe {
 	return predicate.ChannelProbe(sql.FieldEQ(FieldAvgTimeToFirstTokenMs, v))
 }
 
+// ActiveProbeLatencyMs applies equality check predicate on the "active_probe_latency_ms" field. It's identical to ActiveProbeLatencyMsEQ.
+func ActiveProbeLatencyMs(v float64) predicate.ChannelProbe {
+	return predicate.ChannelProbe(sql.FieldEQ(FieldActiveProbeLatencyMs, v))
+}
+
+// ProbeModelLatencyMs applies equality check predicate on the "probe_model_latency_ms" field. It's identical to ProbeModelLatencyMsEQ.
+func ProbeModelLatencyMs(v float64) predicate.ChannelProbe {
+	return predicate.ChannelProbe(sql.FieldEQ(FieldProbeModelLatencyMs, v))
+}
+
 // Timestamp applies equality check predicate on the "timestamp" field. It's identical to TimestampEQ.
 func Timestamp(v int64) predicate.ChannelProbe {
 	return predicate.ChannelProbe(sql.FieldEQ(FieldTimestamp, v))
@@ -281,6 +291,106 @@ func AvgTimeToFirstTokenMsIsNil() predicate.ChannelProbe {
 // AvgTimeToFirstTokenMsNotNil applies the NotNil predicate on the "avg_time_to_first_token_ms" field.
 func AvgTimeToFirstTokenMsNotNil() predicate.ChannelProbe {
 	return predicate.ChannelProbe(sql.FieldNotNull(FieldAvgTimeToFirstTokenMs))
+}
+
+// ActiveProbeLatencyMsEQ applies the EQ predicate on the "active_probe_latency_ms" field.
+func ActiveProbeLatencyMsEQ(v float64) predicate.ChannelProbe {
+	return predicate.ChannelProbe(sql.FieldEQ(FieldActiveProbeLatencyMs, v))
+}
+
+// ActiveProbeLatencyMsNEQ applies the NEQ predicate on the "active_probe_latency_ms" field.
+func ActiveProbeLatencyMsNEQ(v float64) predicate.ChannelProbe {
+	return predicate.ChannelProbe(sql.FieldNEQ(FieldActiveProbeLatencyMs, v))
+}
+
+// ActiveProbeLatencyMsIn applies the In predicate on the "active_probe_latency_ms" field.
+func ActiveProbeLatencyMsIn(vs ...float64) predicate.ChannelProbe {
+	return predicate.ChannelProbe(sql.FieldIn(FieldActiveProbeLatencyMs, vs...))
+}
+
+// ActiveProbeLatencyMsNotIn applies the NotIn predicate on the "active_probe_latency_ms" field.
+func ActiveProbeLatencyMsNotIn(vs ...float64) predicate.ChannelProbe {
+	return predicate.ChannelProbe(sql.FieldNotIn(FieldActiveProbeLatencyMs, vs...))
+}
+
+// ActiveProbeLatencyMsGT applies the GT predicate on the "active_probe_latency_ms" field.
+func ActiveProbeLatencyMsGT(v float64) predicate.ChannelProbe {
+	return predicate.ChannelProbe(sql.FieldGT(FieldActiveProbeLatencyMs, v))
+}
+
+// ActiveProbeLatencyMsGTE applies the GTE predicate on the "active_probe_latency_ms" field.
+func ActiveProbeLatencyMsGTE(v float64) predicate.ChannelProbe {
+	return predicate.ChannelProbe(sql.FieldGTE(FieldActiveProbeLatencyMs, v))
+}
+
+// ActiveProbeLatencyMsLT applies the LT predicate on the "active_probe_latency_ms" field.
+func ActiveProbeLatencyMsLT(v float64) predicate.ChannelProbe {
+	return predicate.ChannelProbe(sql.FieldLT(FieldActiveProbeLatencyMs, v))
+}
+
+// ActiveProbeLatencyMsLTE applies the LTE predicate on the "active_probe_latency_ms" field.
+func ActiveProbeLatencyMsLTE(v float64) predicate.ChannelProbe {
+	return predicate.ChannelProbe(sql.FieldLTE(FieldActiveProbeLatencyMs, v))
+}
+
+// ActiveProbeLatencyMsIsNil applies the IsNil predicate on the "active_probe_latency_ms" field.
+func ActiveProbeLatencyMsIsNil() predicate.ChannelProbe {
+	return predicate.ChannelProbe(sql.FieldIsNull(FieldActiveProbeLatencyMs))
+}
+
+// ActiveProbeLatencyMsNotNil applies the NotNil predicate on the "active_probe_latency_ms" field.
+func ActiveProbeLatencyMsNotNil() predicate.ChannelProbe {
+	return predicate.ChannelProbe(sql.FieldNotNull(FieldActiveProbeLatencyMs))
+}
+
+// ProbeModelLatencyMsEQ applies the EQ predicate on the "probe_model_latency_ms" field.
+func ProbeModelLatencyMsEQ(v float64) predicate.ChannelProbe {
+	return predicate.ChannelProbe(sql.FieldEQ(FieldProbeModelLatencyMs, v))
+}
+
+// ProbeModelLatencyMsNEQ applies the NEQ predicate on the "probe_model_latency_ms" field.
+func ProbeModelLatencyMsNEQ(v float64) predicate.ChannelProbe {
+	return predicate.ChannelProbe(sql.FieldNEQ(FieldProbeModelLatencyMs, v))
+}
+
+// ProbeModelLatencyMsIn applies the In predicate on the "probe_model_latency_ms" field.
+func ProbeModelLatencyMsIn(vs ...float64) predicate.ChannelProbe {
+	return predicate.ChannelProbe(sql.FieldIn(FieldProbeModelLatencyMs, vs...))
+}
+
+// ProbeModelLatencyMsNotIn applies the NotIn predicate on the "probe_model_latency_ms" field.
+func ProbeModelLatencyMsNotIn(vs ...float64) predicate.ChannelProbe {
+	return predicate.ChannelProbe(sql.FieldNotIn(FieldProbeModelLatencyMs, vs...))
+}
+
+// ProbeModelLatencyMsGT applies the GT predicate on the "probe_model_latency_ms" field.
+func ProbeModelLatencyMsGT(v float64) predicate.ChannelProbe {
+	return predicate.ChannelProbe(sql.FieldGT(FieldProbeModelLatencyMs, v))
+}
+
+// ProbeModelLatencyMsGTE applies the GTE predicate on the "probe_model_latency_ms" field.
+func ProbeModelLatencyMsGTE(v float64) predicate.ChannelProbe {
+	return predicate.ChannelProbe(sql.FieldGTE(FieldProbeModelLatencyMs, v))
+}
+
+// ProbeModelLatencyMsLT applies the LT predicate on the "probe_model_latency_ms" field.
+func ProbeModelLatencyMsLT(v float64) predicate.ChannelProbe {
+	return predicate.ChannelProbe(sql.FieldLT(FieldProbeModelLatencyMs, v))
+}
+
+// ProbeModelLatencyMsLTE applies the LTE predicate on the "probe_model_latency_ms" field.
+func ProbeModelLatencyMsLTE(v float64) predicate.ChannelProbe {
+	return predicate.ChannelProbe(sql.FieldLTE(FieldProbeModelLatencyMs, v))
+}
+
+// ProbeModelLatencyMsIsNil applies the IsNil predicate on the "probe_model_latency_ms" field.
+func ProbeModelLatencyMsIsNil() predicate.ChannelProbe {
+	return predicate.ChannelProbe(sql.FieldIsNull(FieldProbeModelLatencyMs))
+}
+
+// ProbeModelLatencyMsNotNil applies the NotNil predicate on the "probe_model_latency_ms" field.
+func ProbeModelLatencyMsNotNil() predicate.ChannelProbe {
+	return predicate.ChannelProbe(sql.FieldNotNull(FieldProbeModelLatencyMs))
 }
 
 // TimestampEQ applies the EQ predicate on the "timestamp" field.

@@ -4,6 +4,8 @@ type ChannelProbePoint {
   successRequestCount: Int!
   avgTokensPerSecond: Float
   avgTimeToFirstTokenMs: Float
+  activeProbeLatencyMs: Float
+  probeModelLatencyMs: Float
 }
 
 type ChannelProbeData {

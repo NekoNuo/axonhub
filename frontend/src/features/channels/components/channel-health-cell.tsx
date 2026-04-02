@@ -43,6 +43,8 @@ export const ChannelHealthCell = memo(({ points }: ChannelHealthCellProps) => {
                 <div>{t('channels.columns.healthTooltip.probeTime')}: {probeTime}</div>
                 <div>{t('channels.columns.healthTooltip.successRate')}: {point.successRequestCount}/{point.totalRequestCount}</div>
                 <div>{t('channels.columns.healthTooltip.firstTokenLatency')}: {point.avgTimeToFirstTokenMs != null ? formatDuration(point.avgTimeToFirstTokenMs) : '-'}</div>
+                <div>{t('channels.columns.healthTooltip.activeProbeLatency')}: {point.activeProbeLatencyMs != null ? formatDuration(point.activeProbeLatencyMs) : '-'}</div>
+                <div>{t('channels.columns.healthTooltip.probeModelLatency')}: {point.probeModelLatencyMs != null ? formatDuration(point.probeModelLatencyMs) : '-'}</div>
                 <div>{t('channels.columns.healthTooltip.tokensPerSecond')}: {point.avgTokensPerSecond != null ? point.avgTokensPerSecond.toFixed(1) : '-'}</div>
               </div>
             }

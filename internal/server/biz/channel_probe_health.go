@@ -4,8 +4,14 @@ package biz
 // It is maintained in-memory and refreshed by ChannelProbeService.
 type ChannelProbeHealth struct {
 	Alive bool
-	// LatencyMs is probe-observed latency in milliseconds (when available).
-	LatencyMs *float64
+	// ModelsAlive reflects active /models probe health when available.
+	ModelsAlive bool
+	// ProbeModelAlive reflects active defaultTestModel probe health when available.
+	ProbeModelAlive bool
+	// ActiveProbeLatencyMs stores active /models probe latency in milliseconds.
+	ActiveProbeLatencyMs *float64
+	// ProbeModelLatencyMs stores active defaultTestModel probe latency in milliseconds.
+	ProbeModelLatencyMs *float64
 	// Timestamp is the probe window timestamp (unix seconds).
 	Timestamp int64
 }
@@ -16,13 +22,20 @@ func (h *ChannelProbeHealth) Clone() *ChannelProbeHealth {
 	}
 
 	clone := &ChannelProbeHealth{
-		Alive:     h.Alive,
-		Timestamp: h.Timestamp,
+		Alive:           h.Alive,
+		ModelsAlive:     h.ModelsAlive,
+		ProbeModelAlive: h.ProbeModelAlive,
+		Timestamp:       h.Timestamp,
 	}
 
-	if h.LatencyMs != nil {
-		latency := *h.LatencyMs
-		clone.LatencyMs = &latency
+	if h.ActiveProbeLatencyMs != nil {
+		latency := *h.ActiveProbeLatencyMs
+		clone.ActiveProbeLatencyMs = &latency
+	}
+
+	if h.ProbeModelLatencyMs != nil {
+		latency := *h.ProbeModelLatencyMs
+		clone.ProbeModelLatencyMs = &latency
 	}
 
 	return clone

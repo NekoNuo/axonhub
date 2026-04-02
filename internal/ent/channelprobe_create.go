@@ -68,6 +68,34 @@ func (_c *ChannelProbeCreate) SetNillableAvgTimeToFirstTokenMs(v *float64) *Chan
 	return _c
 }
 
+// SetActiveProbeLatencyMs sets the "active_probe_latency_ms" field.
+func (_c *ChannelProbeCreate) SetActiveProbeLatencyMs(v float64) *ChannelProbeCreate {
+	_c.mutation.SetActiveProbeLatencyMs(v)
+	return _c
+}
+
+// SetNillableActiveProbeLatencyMs sets the "active_probe_latency_ms" field if the given value is not nil.
+func (_c *ChannelProbeCreate) SetNillableActiveProbeLatencyMs(v *float64) *ChannelProbeCreate {
+	if v != nil {
+		_c.SetActiveProbeLatencyMs(*v)
+	}
+	return _c
+}
+
+// SetProbeModelLatencyMs sets the "probe_model_latency_ms" field.
+func (_c *ChannelProbeCreate) SetProbeModelLatencyMs(v float64) *ChannelProbeCreate {
+	_c.mutation.SetProbeModelLatencyMs(v)
+	return _c
+}
+
+// SetNillableProbeModelLatencyMs sets the "probe_model_latency_ms" field if the given value is not nil.
+func (_c *ChannelProbeCreate) SetNillableProbeModelLatencyMs(v *float64) *ChannelProbeCreate {
+	if v != nil {
+		_c.SetProbeModelLatencyMs(*v)
+	}
+	return _c
+}
+
 // SetTimestamp sets the "timestamp" field.
 func (_c *ChannelProbeCreate) SetTimestamp(v int64) *ChannelProbeCreate {
 	_c.mutation.SetTimestamp(v)
@@ -171,6 +199,14 @@ func (_c *ChannelProbeCreate) createSpec() (*ChannelProbe, *sqlgraph.CreateSpec)
 		_spec.SetField(channelprobe.FieldAvgTimeToFirstTokenMs, field.TypeFloat64, value)
 		_node.AvgTimeToFirstTokenMs = &value
 	}
+	if value, ok := _c.mutation.ActiveProbeLatencyMs(); ok {
+		_spec.SetField(channelprobe.FieldActiveProbeLatencyMs, field.TypeFloat64, value)
+		_node.ActiveProbeLatencyMs = &value
+	}
+	if value, ok := _c.mutation.ProbeModelLatencyMs(); ok {
+		_spec.SetField(channelprobe.FieldProbeModelLatencyMs, field.TypeFloat64, value)
+		_node.ProbeModelLatencyMs = &value
+	}
 	if value, ok := _c.mutation.Timestamp(); ok {
 		_spec.SetField(channelprobe.FieldTimestamp, field.TypeInt64, value)
 		_node.Timestamp = value
@@ -269,6 +305,12 @@ func (u *ChannelProbeUpsertOne) UpdateNewValues() *ChannelProbeUpsertOne {
 		}
 		if _, exists := u.create.mutation.AvgTimeToFirstTokenMs(); exists {
 			s.SetIgnore(channelprobe.FieldAvgTimeToFirstTokenMs)
+		}
+		if _, exists := u.create.mutation.ActiveProbeLatencyMs(); exists {
+			s.SetIgnore(channelprobe.FieldActiveProbeLatencyMs)
+		}
+		if _, exists := u.create.mutation.ProbeModelLatencyMs(); exists {
+			s.SetIgnore(channelprobe.FieldProbeModelLatencyMs)
 		}
 		if _, exists := u.create.mutation.Timestamp(); exists {
 			s.SetIgnore(channelprobe.FieldTimestamp)
@@ -493,6 +535,12 @@ func (u *ChannelProbeUpsertBulk) UpdateNewValues() *ChannelProbeUpsertBulk {
 			}
 			if _, exists := b.mutation.AvgTimeToFirstTokenMs(); exists {
 				s.SetIgnore(channelprobe.FieldAvgTimeToFirstTokenMs)
+			}
+			if _, exists := b.mutation.ActiveProbeLatencyMs(); exists {
+				s.SetIgnore(channelprobe.FieldActiveProbeLatencyMs)
+			}
+			if _, exists := b.mutation.ProbeModelLatencyMs(); exists {
+				s.SetIgnore(channelprobe.FieldProbeModelLatencyMs)
 			}
 			if _, exists := b.mutation.Timestamp(); exists {
 				s.SetIgnore(channelprobe.FieldTimestamp)

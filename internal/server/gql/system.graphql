@@ -162,6 +162,7 @@ type ChannelProbeSetting {
   enabled: Boolean!
   frequency: ProbeFrequency!
   activeProbeIdleChannels: Boolean!
+  probeModelIdleChannels: Boolean!
 }
 
 type ChannelModelAutoSyncSetting {
@@ -177,6 +178,7 @@ input UpdateChannelProbeSettingInput {
   enabled: Boolean!
   frequency: ProbeFrequency!
   activeProbeIdleChannels: Boolean!
+  probeModelIdleChannels: Boolean!
 }
 
 input UpdateChannelModelAutoSyncSettingInput {
@@ -246,6 +248,7 @@ extend type Mutation {
   updateSystemChannelSettings(input: UpdateSystemChannelSettingsInput!): Boolean!
   updateSystemGeneralSettings(input: UpdateSystemGeneralSettingsInput!): Boolean!
   updateVideoStorageSettings(input: UpdateVideoStorageSettingsInput!): Boolean!
+  triggerChannelProbe: Boolean!
   checkProviderQuotas: Boolean!
   triggerGcCleanup: Boolean!
   saveProxyPreset(input: SaveProxyPresetInput!): Boolean!

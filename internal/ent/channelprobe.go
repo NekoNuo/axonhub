@@ -27,6 +27,10 @@ type ChannelProbe struct {
 	AvgTokensPerSecond *float64 `json:"avg_tokens_per_second,omitempty"`
 	// AvgTimeToFirstTokenMs holds the value of the "avg_time_to_first_token_ms" field.
 	AvgTimeToFirstTokenMs *float64 `json:"avg_time_to_first_token_ms,omitempty"`
+	// ActiveProbeLatencyMs holds the value of the "active_probe_latency_ms" field.
+	ActiveProbeLatencyMs *float64 `json:"active_probe_latency_ms,omitempty"`
+	// ProbeModelLatencyMs holds the value of the "probe_model_latency_ms" field.
+	ProbeModelLatencyMs *float64 `json:"probe_model_latency_ms,omitempty"`
 	// Timestamp holds the value of the "timestamp" field.
 	Timestamp int64 `json:"timestamp,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -62,7 +66,7 @@ func (*ChannelProbe) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case channelprobe.FieldAvgTokensPerSecond, channelprobe.FieldAvgTimeToFirstTokenMs:
+		case channelprobe.FieldAvgTokensPerSecond, channelprobe.FieldAvgTimeToFirstTokenMs, channelprobe.FieldActiveProbeLatencyMs, channelprobe.FieldProbeModelLatencyMs:
 			values[i] = new(sql.NullFloat64)
 		case channelprobe.FieldID, channelprobe.FieldChannelID, channelprobe.FieldTotalRequestCount, channelprobe.FieldSuccessRequestCount, channelprobe.FieldTimestamp:
 			values[i] = new(sql.NullInt64)
@@ -118,6 +122,20 @@ func (_m *ChannelProbe) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.AvgTimeToFirstTokenMs = new(float64)
 				*_m.AvgTimeToFirstTokenMs = value.Float64
+			}
+		case channelprobe.FieldActiveProbeLatencyMs:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field active_probe_latency_ms", values[i])
+			} else if value.Valid {
+				_m.ActiveProbeLatencyMs = new(float64)
+				*_m.ActiveProbeLatencyMs = value.Float64
+			}
+		case channelprobe.FieldProbeModelLatencyMs:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field probe_model_latency_ms", values[i])
+			} else if value.Valid {
+				_m.ProbeModelLatencyMs = new(float64)
+				*_m.ProbeModelLatencyMs = value.Float64
 			}
 		case channelprobe.FieldTimestamp:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -182,6 +200,16 @@ func (_m *ChannelProbe) String() string {
 	builder.WriteString(", ")
 	if v := _m.AvgTimeToFirstTokenMs; v != nil {
 		builder.WriteString("avg_time_to_first_token_ms=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.ActiveProbeLatencyMs; v != nil {
+		builder.WriteString("active_probe_latency_ms=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.ProbeModelLatencyMs; v != nil {
+		builder.WriteString("probe_model_latency_ms=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")

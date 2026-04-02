@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useChannelSetting, useUpdateChannelSetting, type AutoSyncFrequency, type ProbeFrequency } from '@/features/system/data/system';
+import { useChannelSetting, useTriggerChannelProbe, useUpdateChannelSetting, type ProbeFrequency } from '@/features/system/data/system';
 import { useChannels } from '../context/channels-context';
 
 const PROBE_FREQUENCY_OPTIONS: { value: ProbeFrequency; label: string }[] = [
@@ -29,18 +29,21 @@ export function ChannelsSystemSettingsDialog() {
   const { open, setOpen } = useChannels();
   const { data: settings, isLoading } = useChannelSetting();
   const updateSettings = useUpdateChannelSetting();
+  const triggerChannelProbe = useTriggerChannelProbe();
 
   const isOpen = open === 'channelSettings';
 
   const [probeEnabled, setProbeEnabled] = React.useState(false);
   const [probeFrequency, setProbeFrequency] = React.useState<ProbeFrequency>('ONE_MINUTE');
   const [activeProbeIdleChannels, setActiveProbeIdleChannels] = React.useState(false);
+  const [probeModelIdleChannels, setProbeModelIdleChannels] = React.useState(false);
 
   React.useEffect(() => {
     if (settings?.probe) {
       setProbeEnabled(settings.probe.enabled);
       setProbeFrequency(settings.probe.frequency);
       setActiveProbeIdleChannels(settings.probe.activeProbeIdleChannels);
+      setProbeModelIdleChannels(settings.probe.probeModelIdleChannels);
     }
     if (settings?.autoSync?.frequency) {
       setAutoSyncFrequency(settings.autoSync.frequency);
@@ -53,13 +56,14 @@ export function ChannelsSystemSettingsDialog() {
         enabled: probeEnabled,
         frequency: probeFrequency,
         activeProbeIdleChannels,
+        probeModelIdleChannels,
       },
       autoSync: {
         frequency: autoSyncFrequency,
       },
     });
     setOpen(null);
-  }, [updateSettings, probeEnabled, probeFrequency, activeProbeIdleChannels, setOpen]);
+  }, [updateSettings, probeEnabled, probeFrequency, activeProbeIdleChannels, probeModelIdleChannels, setOpen]);
 
   const handleClose = useCallback(() => {
     setOpen(null);
@@ -137,6 +141,37 @@ export function ChannelsSystemSettingsDialog() {
                         onCheckedChange={setActiveProbeIdleChannels}
                         disabled={updateSettings.isPending}
                       />
+                    </div>
+
+                    <div className='flex items-center justify-between'>
+                      <div className='flex-1 pr-4'>
+                        <p className='text-sm font-medium'>{t('channels.dialogs.systemSettings.channelProbe.probeModelIdleChannelsLabel')}</p>
+                        <p className='text-muted-foreground text-sm'>{t('channels.dialogs.systemSettings.channelProbe.probeModelIdleChannelsDescription')}</p>
+                      </div>
+                      <Switch
+                        id='probe-model-idle-channels'
+                        checked={probeModelIdleChannels}
+                        onCheckedChange={setProbeModelIdleChannels}
+                        disabled={updateSettings.isPending || !activeProbeIdleChannels}
+                      />
+                    </div>
+
+                    <div className='flex justify-end'>
+                      <Button
+                        type='button'
+                        variant='outline'
+                        onClick={() => triggerChannelProbe.mutate()}
+                        disabled={triggerChannelProbe.isPending || updateSettings.isPending}
+                      >
+                        {triggerChannelProbe.isPending ? (
+                          <>
+                            <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                            {t('channels.dialogs.systemSettings.channelProbe.testingButtonRunning')}
+                          </>
+                        ) : (
+                          t('channels.dialogs.systemSettings.channelProbe.testingButton')
+                        )}
+                      </Button>
                     </div>
                   </div>
                 )}

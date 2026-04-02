@@ -6174,6 +6174,10 @@ type ChannelProbeMutation struct {
 	addavg_tokens_per_second      *float64
 	avg_time_to_first_token_ms    *float64
 	addavg_time_to_first_token_ms *float64
+	active_probe_latency_ms       *float64
+	addactive_probe_latency_ms    *float64
+	probe_model_latency_ms        *float64
+	addprobe_model_latency_ms     *float64
 	timestamp                     *int64
 	addtimestamp                  *int64
 	clearedFields                 map[string]struct{}
@@ -6570,6 +6574,146 @@ func (m *ChannelProbeMutation) ResetAvgTimeToFirstTokenMs() {
 	delete(m.clearedFields, channelprobe.FieldAvgTimeToFirstTokenMs)
 }
 
+// SetActiveProbeLatencyMs sets the "active_probe_latency_ms" field.
+func (m *ChannelProbeMutation) SetActiveProbeLatencyMs(f float64) {
+	m.active_probe_latency_ms = &f
+	m.addactive_probe_latency_ms = nil
+}
+
+// ActiveProbeLatencyMs returns the value of the "active_probe_latency_ms" field in the mutation.
+func (m *ChannelProbeMutation) ActiveProbeLatencyMs() (r float64, exists bool) {
+	v := m.active_probe_latency_ms
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldActiveProbeLatencyMs returns the old "active_probe_latency_ms" field's value of the ChannelProbe entity.
+// If the ChannelProbe object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ChannelProbeMutation) OldActiveProbeLatencyMs(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldActiveProbeLatencyMs is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldActiveProbeLatencyMs requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldActiveProbeLatencyMs: %w", err)
+	}
+	return oldValue.ActiveProbeLatencyMs, nil
+}
+
+// AddActiveProbeLatencyMs adds f to the "active_probe_latency_ms" field.
+func (m *ChannelProbeMutation) AddActiveProbeLatencyMs(f float64) {
+	if m.addactive_probe_latency_ms != nil {
+		*m.addactive_probe_latency_ms += f
+	} else {
+		m.addactive_probe_latency_ms = &f
+	}
+}
+
+// AddedActiveProbeLatencyMs returns the value that was added to the "active_probe_latency_ms" field in this mutation.
+func (m *ChannelProbeMutation) AddedActiveProbeLatencyMs() (r float64, exists bool) {
+	v := m.addactive_probe_latency_ms
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearActiveProbeLatencyMs clears the value of the "active_probe_latency_ms" field.
+func (m *ChannelProbeMutation) ClearActiveProbeLatencyMs() {
+	m.active_probe_latency_ms = nil
+	m.addactive_probe_latency_ms = nil
+	m.clearedFields[channelprobe.FieldActiveProbeLatencyMs] = struct{}{}
+}
+
+// ActiveProbeLatencyMsCleared returns if the "active_probe_latency_ms" field was cleared in this mutation.
+func (m *ChannelProbeMutation) ActiveProbeLatencyMsCleared() bool {
+	_, ok := m.clearedFields[channelprobe.FieldActiveProbeLatencyMs]
+	return ok
+}
+
+// ResetActiveProbeLatencyMs resets all changes to the "active_probe_latency_ms" field.
+func (m *ChannelProbeMutation) ResetActiveProbeLatencyMs() {
+	m.active_probe_latency_ms = nil
+	m.addactive_probe_latency_ms = nil
+	delete(m.clearedFields, channelprobe.FieldActiveProbeLatencyMs)
+}
+
+// SetProbeModelLatencyMs sets the "probe_model_latency_ms" field.
+func (m *ChannelProbeMutation) SetProbeModelLatencyMs(f float64) {
+	m.probe_model_latency_ms = &f
+	m.addprobe_model_latency_ms = nil
+}
+
+// ProbeModelLatencyMs returns the value of the "probe_model_latency_ms" field in the mutation.
+func (m *ChannelProbeMutation) ProbeModelLatencyMs() (r float64, exists bool) {
+	v := m.probe_model_latency_ms
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProbeModelLatencyMs returns the old "probe_model_latency_ms" field's value of the ChannelProbe entity.
+// If the ChannelProbe object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ChannelProbeMutation) OldProbeModelLatencyMs(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProbeModelLatencyMs is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProbeModelLatencyMs requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProbeModelLatencyMs: %w", err)
+	}
+	return oldValue.ProbeModelLatencyMs, nil
+}
+
+// AddProbeModelLatencyMs adds f to the "probe_model_latency_ms" field.
+func (m *ChannelProbeMutation) AddProbeModelLatencyMs(f float64) {
+	if m.addprobe_model_latency_ms != nil {
+		*m.addprobe_model_latency_ms += f
+	} else {
+		m.addprobe_model_latency_ms = &f
+	}
+}
+
+// AddedProbeModelLatencyMs returns the value that was added to the "probe_model_latency_ms" field in this mutation.
+func (m *ChannelProbeMutation) AddedProbeModelLatencyMs() (r float64, exists bool) {
+	v := m.addprobe_model_latency_ms
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearProbeModelLatencyMs clears the value of the "probe_model_latency_ms" field.
+func (m *ChannelProbeMutation) ClearProbeModelLatencyMs() {
+	m.probe_model_latency_ms = nil
+	m.addprobe_model_latency_ms = nil
+	m.clearedFields[channelprobe.FieldProbeModelLatencyMs] = struct{}{}
+}
+
+// ProbeModelLatencyMsCleared returns if the "probe_model_latency_ms" field was cleared in this mutation.
+func (m *ChannelProbeMutation) ProbeModelLatencyMsCleared() bool {
+	_, ok := m.clearedFields[channelprobe.FieldProbeModelLatencyMs]
+	return ok
+}
+
+// ResetProbeModelLatencyMs resets all changes to the "probe_model_latency_ms" field.
+func (m *ChannelProbeMutation) ResetProbeModelLatencyMs() {
+	m.probe_model_latency_ms = nil
+	m.addprobe_model_latency_ms = nil
+	delete(m.clearedFields, channelprobe.FieldProbeModelLatencyMs)
+}
+
 // SetTimestamp sets the "timestamp" field.
 func (m *ChannelProbeMutation) SetTimestamp(i int64) {
 	m.timestamp = &i
@@ -6687,7 +6831,7 @@ func (m *ChannelProbeMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ChannelProbeMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 8)
 	if m.channel != nil {
 		fields = append(fields, channelprobe.FieldChannelID)
 	}
@@ -6702,6 +6846,12 @@ func (m *ChannelProbeMutation) Fields() []string {
 	}
 	if m.avg_time_to_first_token_ms != nil {
 		fields = append(fields, channelprobe.FieldAvgTimeToFirstTokenMs)
+	}
+	if m.active_probe_latency_ms != nil {
+		fields = append(fields, channelprobe.FieldActiveProbeLatencyMs)
+	}
+	if m.probe_model_latency_ms != nil {
+		fields = append(fields, channelprobe.FieldProbeModelLatencyMs)
 	}
 	if m.timestamp != nil {
 		fields = append(fields, channelprobe.FieldTimestamp)
@@ -6724,6 +6874,10 @@ func (m *ChannelProbeMutation) Field(name string) (ent.Value, bool) {
 		return m.AvgTokensPerSecond()
 	case channelprobe.FieldAvgTimeToFirstTokenMs:
 		return m.AvgTimeToFirstTokenMs()
+	case channelprobe.FieldActiveProbeLatencyMs:
+		return m.ActiveProbeLatencyMs()
+	case channelprobe.FieldProbeModelLatencyMs:
+		return m.ProbeModelLatencyMs()
 	case channelprobe.FieldTimestamp:
 		return m.Timestamp()
 	}
@@ -6745,6 +6899,10 @@ func (m *ChannelProbeMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldAvgTokensPerSecond(ctx)
 	case channelprobe.FieldAvgTimeToFirstTokenMs:
 		return m.OldAvgTimeToFirstTokenMs(ctx)
+	case channelprobe.FieldActiveProbeLatencyMs:
+		return m.OldActiveProbeLatencyMs(ctx)
+	case channelprobe.FieldProbeModelLatencyMs:
+		return m.OldProbeModelLatencyMs(ctx)
 	case channelprobe.FieldTimestamp:
 		return m.OldTimestamp(ctx)
 	}
@@ -6791,6 +6949,20 @@ func (m *ChannelProbeMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetAvgTimeToFirstTokenMs(v)
 		return nil
+	case channelprobe.FieldActiveProbeLatencyMs:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetActiveProbeLatencyMs(v)
+		return nil
+	case channelprobe.FieldProbeModelLatencyMs:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProbeModelLatencyMs(v)
+		return nil
 	case channelprobe.FieldTimestamp:
 		v, ok := value.(int64)
 		if !ok {
@@ -6818,6 +6990,12 @@ func (m *ChannelProbeMutation) AddedFields() []string {
 	if m.addavg_time_to_first_token_ms != nil {
 		fields = append(fields, channelprobe.FieldAvgTimeToFirstTokenMs)
 	}
+	if m.addactive_probe_latency_ms != nil {
+		fields = append(fields, channelprobe.FieldActiveProbeLatencyMs)
+	}
+	if m.addprobe_model_latency_ms != nil {
+		fields = append(fields, channelprobe.FieldProbeModelLatencyMs)
+	}
 	if m.addtimestamp != nil {
 		fields = append(fields, channelprobe.FieldTimestamp)
 	}
@@ -6837,6 +7015,10 @@ func (m *ChannelProbeMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedAvgTokensPerSecond()
 	case channelprobe.FieldAvgTimeToFirstTokenMs:
 		return m.AddedAvgTimeToFirstTokenMs()
+	case channelprobe.FieldActiveProbeLatencyMs:
+		return m.AddedActiveProbeLatencyMs()
+	case channelprobe.FieldProbeModelLatencyMs:
+		return m.AddedProbeModelLatencyMs()
 	case channelprobe.FieldTimestamp:
 		return m.AddedTimestamp()
 	}
@@ -6876,6 +7058,20 @@ func (m *ChannelProbeMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddAvgTimeToFirstTokenMs(v)
 		return nil
+	case channelprobe.FieldActiveProbeLatencyMs:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddActiveProbeLatencyMs(v)
+		return nil
+	case channelprobe.FieldProbeModelLatencyMs:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddProbeModelLatencyMs(v)
+		return nil
 	case channelprobe.FieldTimestamp:
 		v, ok := value.(int64)
 		if !ok {
@@ -6897,6 +7093,12 @@ func (m *ChannelProbeMutation) ClearedFields() []string {
 	if m.FieldCleared(channelprobe.FieldAvgTimeToFirstTokenMs) {
 		fields = append(fields, channelprobe.FieldAvgTimeToFirstTokenMs)
 	}
+	if m.FieldCleared(channelprobe.FieldActiveProbeLatencyMs) {
+		fields = append(fields, channelprobe.FieldActiveProbeLatencyMs)
+	}
+	if m.FieldCleared(channelprobe.FieldProbeModelLatencyMs) {
+		fields = append(fields, channelprobe.FieldProbeModelLatencyMs)
+	}
 	return fields
 }
 
@@ -6916,6 +7118,12 @@ func (m *ChannelProbeMutation) ClearField(name string) error {
 		return nil
 	case channelprobe.FieldAvgTimeToFirstTokenMs:
 		m.ClearAvgTimeToFirstTokenMs()
+		return nil
+	case channelprobe.FieldActiveProbeLatencyMs:
+		m.ClearActiveProbeLatencyMs()
+		return nil
+	case channelprobe.FieldProbeModelLatencyMs:
+		m.ClearProbeModelLatencyMs()
 		return nil
 	}
 	return fmt.Errorf("unknown ChannelProbe nullable field %s", name)
@@ -6939,6 +7147,12 @@ func (m *ChannelProbeMutation) ResetField(name string) error {
 		return nil
 	case channelprobe.FieldAvgTimeToFirstTokenMs:
 		m.ResetAvgTimeToFirstTokenMs()
+		return nil
+	case channelprobe.FieldActiveProbeLatencyMs:
+		m.ResetActiveProbeLatencyMs()
+		return nil
+	case channelprobe.FieldProbeModelLatencyMs:
+		m.ResetProbeModelLatencyMs()
 		return nil
 	case channelprobe.FieldTimestamp:
 		m.ResetTimestamp()
