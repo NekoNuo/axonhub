@@ -821,6 +821,10 @@ function ProfileCard({
                           ? t('system.retry.loadBalancerStrategy.documentation.failover')
                           : field.value === 'circuit-breaker'
                           ? t('system.retry.loadBalancerStrategy.documentation.circuit-breaker')
+                          : field.value === 'high-availability'
+                          ? t('system.retry.loadBalancerStrategy.documentation.high-availability')
+                          : field.value === 'low-latency'
+                          ? t('system.retry.loadBalancerStrategy.documentation.low-latency')
                           : t('apikeys.profiles.loadBalancerStrategyDescription')}
                       </FormDescription>
                     </div>
@@ -837,6 +841,8 @@ function ProfileCard({
                           <SelectItem value='adaptive'>{t('system.retry.loadBalancerStrategy.options.adaptive')}</SelectItem>
                           <SelectItem value='failover'>{t('system.retry.loadBalancerStrategy.options.failover')}</SelectItem>
                           <SelectItem value='circuit-breaker'>{t('system.retry.loadBalancerStrategy.options.circuitBreaker')}</SelectItem>
+                          <SelectItem value='high-availability'>{t('system.retry.loadBalancerStrategy.options.highAvailability')}</SelectItem>
+                          <SelectItem value='low-latency'>{t('system.retry.loadBalancerStrategy.options.lowLatency')}</SelectItem>
                         </SelectContent>
                       </Select>
                     </FormControl>

@@ -89,6 +89,7 @@ func NewChannelService(params ChannelServiceParams) *ChannelService {
 		channelPerfMetrics: make(map[int]*channelMetrics),
 		channelErrorCounts: make(map[int]map[int]int),
 		apiKeyErrorCounts:  make(map[int]map[string]map[int]int),
+		channelProbeHealth: make(map[int]*ChannelProbeHealth),
 		perfCh:             make(chan *PerformanceRecord, 1024),
 	}
 	svc.initChannelPerformances(context.Background())
@@ -162,6 +163,10 @@ type ChannelService struct {
 	// channelID -> statusCode -> count
 	channelErrorCounts     map[int]map[int]int
 	channelErrorCountsLock sync.Mutex
+
+	// channelProbeHealth stores the latest probe-based health status per channel.
+	channelProbeHealth     map[int]*ChannelProbeHealth
+	channelProbeHealthLock sync.RWMutex
 
 	// apiKeyErrorCounts stores the error counts for each API key and status code
 	// channelID -> apiKey -> statusCode -> count

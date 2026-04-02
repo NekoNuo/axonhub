@@ -51,6 +51,22 @@ func NewChatCompletionOrchestrator(
 	circuitBreakerLoadBalancer := NewLoadBalancer(systemService, channelService,
 		NewWeightStrategy(), NewModelAwareCircuitBreakerStrategy(modelCircuitBreaker), rateLimitStrategy)
 
+	highAvailabilityLoadBalancer := NewLoadBalancer(systemService, channelService,
+		NewTraceAwareStrategy(requestService),
+		NewProbeHealthStrategy(channelService, ProbeHealthModeAvailability),
+		NewErrorAwareStrategy(channelService),
+		NewWeightRoundRobinStrategy(channelService),
+		NewConnectionAwareStrategy(channelService, connectionTracker),
+	)
+
+	lowLatencyLoadBalancer := NewLoadBalancer(systemService, channelService,
+		NewTraceAwareStrategy(requestService),
+		NewProbeHealthStrategy(channelService, ProbeHealthModeLowLatency),
+		NewErrorAwareStrategy(channelService),
+		NewWeightRoundRobinStrategy(channelService),
+		NewConnectionAwareStrategy(channelService, connectionTracker),
+	)
+
 	return &ChatCompletionOrchestrator{
 		Inbound:         inbound,
 		RequestService:  requestService,
@@ -64,17 +80,19 @@ func NewChatCompletionOrchestrator(
 			cc.StripBillingHeaderCCH(),
 			stream.EnsureUsage(),
 		},
-		PipelineFactory:            pipeline.NewFactory(httpClient),
-		ModelMapper:                NewModelMapper(),
-		channelSelector:            NewDefaultSelector(channelService, modelService, systemService),
-		selectedChannelIds:         []int{},
-		connectionTracker:          connectionTracker,
-		rateLimitTracker:           rateLimitTracker,
-		adaptiveLoadBalancer:       adaptiveLoadBalancer,
-		failoverLoadBalancer:       failoverLoadBalancer,
-		circuitBreakerLoadBalancer: circuitBreakerLoadBalancer,
-		modelCircuitBreaker:        modelCircuitBreaker,
-		proxy:                      nil,
+		PipelineFactory:              pipeline.NewFactory(httpClient),
+		ModelMapper:                  NewModelMapper(),
+		channelSelector:              NewDefaultSelector(channelService, modelService, systemService),
+		selectedChannelIds:           []int{},
+		connectionTracker:            connectionTracker,
+		rateLimitTracker:             rateLimitTracker,
+		adaptiveLoadBalancer:         adaptiveLoadBalancer,
+		failoverLoadBalancer:         failoverLoadBalancer,
+		circuitBreakerLoadBalancer:   circuitBreakerLoadBalancer,
+		highAvailabilityLoadBalancer: highAvailabilityLoadBalancer,
+		lowLatencyLoadBalancer:       lowLatencyLoadBalancer,
+		modelCircuitBreaker:          modelCircuitBreaker,
+		proxy:                        nil,
 	}
 }
 
@@ -98,10 +116,12 @@ type ChatCompletionOrchestrator struct {
 	// The runtime selected channel ids.
 	selectedChannelIds []int
 	// The load balancer for channel load balancing.
-	adaptiveLoadBalancer       *LoadBalancer
-	failoverLoadBalancer       *LoadBalancer
-	circuitBreakerLoadBalancer *LoadBalancer
-	// The connection tracker used for request lifetime tracking and rate-limit concurrency fallback.
+	adaptiveLoadBalancer         *LoadBalancer
+	failoverLoadBalancer         *LoadBalancer
+	circuitBreakerLoadBalancer   *LoadBalancer
+	highAvailabilityLoadBalancer *LoadBalancer
+	lowLatencyLoadBalancer       *LoadBalancer
+	// The connection tracker used for request lifetime tracking and connection-aware load balancing.
 	connectionTracker ConnectionTracker
 	// The rate limit tracker for rate limit aware load balancing.
 	rateLimitTracker *ChannelRequestTracker
@@ -168,6 +188,10 @@ func (processor *ChatCompletionOrchestrator) Process(ctx context.Context, reques
 		loadBalancer = processor.failoverLoadBalancer
 	case biz.LoadBalancerStrategyCircuitBreaker:
 		loadBalancer = processor.circuitBreakerLoadBalancer
+	case biz.LoadBalancerStrategyHighAvailability:
+		loadBalancer = processor.highAvailabilityLoadBalancer
+	case biz.LoadBalancerStrategyLowLatency:
+		loadBalancer = processor.lowLatencyLoadBalancer
 	default:
 		// Default to adaptive load balancer
 	}

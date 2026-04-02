@@ -913,14 +913,14 @@ func TestComputeAllChannelProbeStats_FailedExecutions(t *testing.T) {
 
 func TestFillIdleChannelProbeStats(t *testing.T) {
 	svc := &ChannelProbeService{}
-	svc.idleChannelProber = func(_ context.Context, ch *ent.Channel) (bool, error) {
+	svc.idleChannelProber = func(_ context.Context, ch *ent.Channel) (time.Duration, bool, error) {
 		switch ch.ID {
 		case 2:
-			return false, fmt.Errorf("probe failed")
+			return 120 * time.Millisecond, false, fmt.Errorf("probe failed")
 		case 3:
-			return true, nil
+			return 80 * time.Millisecond, true, nil
 		default:
-			return false, nil
+			return 50 * time.Millisecond, false, nil
 		}
 	}
 
@@ -944,6 +944,14 @@ func TestFillIdleChannelProbeStats(t *testing.T) {
 	assert.Equal(t, 2, allStats[1].total, "existing stats should not be overwritten")
 	assert.Equal(t, 1, allStats[2].total)
 	assert.Equal(t, 0, allStats[2].success)
+	require.NotNil(t, allStats[2].avgTimeToFirstTokenMs)
+	assert.InDelta(t, 120.0, *allStats[2].avgTimeToFirstTokenMs, 0.01)
+	require.NotNil(t, allStats[2].latencyMs)
+	assert.InDelta(t, 120.0, *allStats[2].latencyMs, 0.01)
 	assert.Equal(t, 1, allStats[3].total)
 	assert.Equal(t, 1, allStats[3].success)
+	require.NotNil(t, allStats[3].avgTimeToFirstTokenMs)
+	assert.InDelta(t, 80.0, *allStats[3].avgTimeToFirstTokenMs, 0.01)
+	require.NotNil(t, allStats[3].latencyMs)
+	assert.InDelta(t, 80.0, *allStats[3].latencyMs, 0.01)
 }

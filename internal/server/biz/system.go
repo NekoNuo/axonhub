@@ -164,6 +164,12 @@ const (
 
 	// LoadBalancerStrategyCircuitBreaker is a dynamic load balancer strategy that monitors the health of channels and fails over to a backup channel when the primary channel is unhealthy.
 	LoadBalancerStrategyCircuitBreaker = "circuit-breaker"
+
+	// LoadBalancerStrategyHighAvailability strongly avoids unavailable channels and de-prioritizes degraded ones.
+	LoadBalancerStrategyHighAvailability = "high-availability"
+
+	// LoadBalancerStrategyLowLatency aggressively prioritizes channels with low probe latency.
+	LoadBalancerStrategyLowLatency = "low-latency"
 )
 
 // RetryPolicy represents the retry policy configuration.
@@ -177,7 +183,7 @@ type RetryPolicy struct {
 	// RetryDelayMs defines the delay between retries in milliseconds
 	RetryDelayMs int `json:"retry_delay_ms"`
 	// LoadBalancerStrategy defines which channel load balancer strategy to use.
-	// Supported values: "adaptive", "failover", "circuit-breaker".
+	// Supported values: "adaptive", "failover", "circuit-breaker", "high-availability", "low-latency".
 	LoadBalancerStrategy string `json:"load_balancer_strategy"`
 
 	// AutoDisableChannel controls whether to auto-disable a channel or API key when it exceeds the maximum number of retries.

@@ -146,6 +146,8 @@ export function RetrySettings() {
                     <SelectItem value='adaptive'>{t('system.retry.loadBalancerStrategy.options.adaptive')}</SelectItem>
                     <SelectItem value='failover'>{t('system.retry.loadBalancerStrategy.options.failover')}</SelectItem>
                     <SelectItem value='circuit-breaker'>{t('system.retry.loadBalancerStrategy.options.circuitBreaker')}</SelectItem>
+                    <SelectItem value='high-availability'>{t('system.retry.loadBalancerStrategy.options.highAvailability')}</SelectItem>
+                    <SelectItem value='low-latency'>{t('system.retry.loadBalancerStrategy.options.lowLatency')}</SelectItem>
                   </SelectContent>
                 </Select>
 

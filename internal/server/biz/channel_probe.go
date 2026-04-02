@@ -65,7 +65,7 @@ type ChannelProbeService struct {
 	mu                sync.Mutex
 	lastExecutionTime time.Time
 	modelFetcher      *ModelFetcher
-	idleChannelProber func(ctx context.Context, ch *ent.Channel) (bool, error)
+	idleChannelProber func(ctx context.Context, ch *ent.Channel) (time.Duration, bool, error)
 }
 
 // NewChannelProbeService creates a new ChannelProbeService.
@@ -129,6 +129,8 @@ func getIntervalMinutesFromFrequency(frequency ProbeFrequency) int {
 type channelProbeStats struct {
 	total                 int
 	success               int
+	alive                 bool
+	latencyMs             *float64
 	avgTokensPerSecond    *float64
 	avgTimeToFirstTokenMs *float64
 }
@@ -224,6 +226,13 @@ func (svc *ChannelProbeService) computeAllChannelProbeStats(
 		stats := &channelProbeStats{
 			total:   r.TotalCount,
 			success: r.SuccessCount,
+			alive:   r.SuccessCount > 0,
+		}
+
+		// Use average effective latency as health latency baseline.
+		if r.EffectiveLatencyMs > 0 && r.RequestCount > 0 {
+			avgLatencyMs := float64(r.EffectiveLatencyMs) / float64(r.RequestCount)
+			stats.latencyMs = &avgLatencyMs
 		}
 
 		// Calculate avg tokens per second using effective latency
@@ -250,9 +259,11 @@ func (svc *ChannelProbeService) computeAllChannelProbeStats(
 	return result, nil
 }
 
-func (svc *ChannelProbeService) probeIdleChannelByFetchModels(ctx context.Context, ch *ent.Channel) (bool, error) {
+func (svc *ChannelProbeService) probeIdleChannelByFetchModels(ctx context.Context, ch *ent.Channel) (time.Duration, bool, error) {
+	start := time.Now()
+
 	if svc.modelFetcher == nil {
-		return false, fmt.Errorf("model fetcher is not initialized")
+		return time.Since(start), false, fmt.Errorf("model fetcher is not initialized")
 	}
 
 	result, err := svc.modelFetcher.FetchModels(ctx, FetchModelsInput{
@@ -261,18 +272,18 @@ func (svc *ChannelProbeService) probeIdleChannelByFetchModels(ctx context.Contex
 		ChannelID:   lo.ToPtr(ch.ID),
 	})
 	if err != nil {
-		return false, err
+		return time.Since(start), false, err
 	}
 
 	if result == nil {
-		return false, fmt.Errorf("empty fetch models result")
+		return time.Since(start), false, fmt.Errorf("empty fetch models result")
 	}
 
 	if result.Error != nil {
-		return false, fmt.Errorf("fetch models returned error: %s", *result.Error)
+		return time.Since(start), false, fmt.Errorf("fetch models returned error: %s", *result.Error)
 	}
 
-	return true, nil
+	return time.Since(start), true, nil
 }
 
 func (svc *ChannelProbeService) fillIdleChannelProbeStats(
@@ -312,7 +323,7 @@ func (svc *ChannelProbeService) fillIdleChannelProbeStats(
 			probeCtx, cancel := context.WithTimeout(ctx, activeProbeTimeout)
 			defer cancel()
 
-			success, err := svc.idleChannelProber(probeCtx, ch)
+			latency, success, err := svc.idleChannelProber(probeCtx, ch)
 			if err != nil {
 				log.Warn(ctx, "Active probe for idle channel failed",
 					log.Int("channel_id", ch.ID),
@@ -324,9 +335,18 @@ func (svc *ChannelProbeService) fillIdleChannelProbeStats(
 			stats := &channelProbeStats{
 				total:   1,
 				success: 0,
+				alive:   false,
 			}
 			if success {
 				stats.success = 1
+				stats.alive = true
+			}
+
+			latencyMs := float64(latency.Milliseconds())
+			if latencyMs > 0 {
+				stats.latencyMs = lo.ToPtr(latencyMs)
+				// Persist active probe latency in existing probe latency field.
+				stats.avgTimeToFirstTokenMs = lo.ToPtr(latencyMs)
 			}
 
 			mu.Lock()
@@ -431,6 +451,14 @@ func (svc *ChannelProbeService) runProbe(ctx context.Context) {
 		stats, ok := allStats[ch.ID]
 		if !ok || stats.total == 0 {
 			continue
+		}
+
+		if svc.ChannelService != nil {
+			svc.ChannelService.UpdateChannelProbeHealth(ch.ID, &ChannelProbeHealth{
+				Alive:     stats.alive,
+				LatencyMs: stats.latencyMs,
+				Timestamp: timestamp,
+			})
 		}
 
 		probes = append(probes, svc.db.ChannelProbe.Create().
