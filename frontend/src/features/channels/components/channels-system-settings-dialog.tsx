@@ -8,7 +8,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { useChannelSetting, useTriggerChannelProbe, useUpdateChannelSetting, type ProbeFrequency } from '@/features/system/data/system';
+import {
+  useChannelSetting,
+  useTriggerChannelProbe,
+  useUpdateChannelSetting,
+  type AutoSyncFrequency,
+  type ProbeFrequency,
+} from '@/features/system/data/system';
 import { useChannels } from '../context/channels-context';
 
 const PROBE_FREQUENCY_OPTIONS: { value: ProbeFrequency; label: string }[] = [
@@ -35,6 +41,7 @@ export function ChannelsSystemSettingsDialog() {
 
   const [probeEnabled, setProbeEnabled] = React.useState(false);
   const [probeFrequency, setProbeFrequency] = React.useState<ProbeFrequency>('ONE_MINUTE');
+  const [autoSyncFrequency, setAutoSyncFrequency] = React.useState<AutoSyncFrequency>('ONE_HOUR');
   const [activeProbeIdleChannels, setActiveProbeIdleChannels] = React.useState(false);
   const [probeModelIdleChannels, setProbeModelIdleChannels] = React.useState(false);
 
@@ -63,7 +70,7 @@ export function ChannelsSystemSettingsDialog() {
       },
     });
     setOpen(null);
-  }, [updateSettings, probeEnabled, probeFrequency, activeProbeIdleChannels, probeModelIdleChannels, setOpen]);
+  }, [updateSettings, probeEnabled, probeFrequency, autoSyncFrequency, activeProbeIdleChannels, probeModelIdleChannels, setOpen]);
 
   const handleClose = useCallback(() => {
     setOpen(null);
