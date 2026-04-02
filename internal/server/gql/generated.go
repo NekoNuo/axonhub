@@ -64,6 +64,7 @@ type Config struct {
 type ResolverRoot interface {
 	APIKey() APIKeyResolver
 	Channel() ChannelResolver
+	ChannelHealthSnapshot() ChannelHealthSnapshotResolver
 	ChannelModelPrice() ChannelModelPriceResolver
 	ChannelModelPriceVersion() ChannelModelPriceVersionResolver
 	ChannelOverrideTemplate() ChannelOverrideTemplateResolver
@@ -303,6 +304,21 @@ type ComplexityRoot struct {
 	ChannelEdge struct {
 		Cursor func(childComplexity int) int
 		Node   func(childComplexity int) int
+	}
+
+	ChannelHealthSnapshot struct {
+		ActiveProbeLatencyMs   func(childComplexity int) int
+		Alive                  func(childComplexity int) int
+		ChannelID              func(childComplexity int) int
+		ModelsAlive            func(childComplexity int) int
+		ObservedAlive          func(childComplexity int) int
+		ObservedHealthRecorded func(childComplexity int) int
+		ObservedLatencyMs      func(childComplexity int) int
+		ObservedTimestamp      func(childComplexity int) int
+		ProbeHealthRecorded    func(childComplexity int) int
+		ProbeModelAlive        func(childComplexity int) int
+		ProbeModelLatencyMs    func(childComplexity int) int
+		ProbeTimestamp         func(childComplexity int) int
 	}
 
 	ChannelModelAssociation struct {
@@ -1092,6 +1108,7 @@ type ComplexityRoot struct {
 		FastestChannels              func(childComplexity int, input FastestChannelsInput) int
 		FastestModels                func(childComplexity int, input FastestChannelsInput) int
 		FetchModels                  func(childComplexity int, input biz.FetchModelsInput) int
+		LatestChannelHealthSnapshots func(childComplexity int, input biz.GetChannelHealthSnapshotsInput) int
 		Me                           func(childComplexity int) int
 		ModelPerformanceStats        func(childComplexity int) int
 		Models                       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.ModelOrder, where *ent.ModelWhereInput) int
@@ -1749,6 +1766,9 @@ type ChannelResolver interface {
 	Credentials(ctx context.Context, obj *ent.Channel) (*objects.ChannelCredentials, error)
 	DisabledAPIKeys(ctx context.Context, obj *ent.Channel) ([]*objects.DisabledAPIKey, error)
 }
+type ChannelHealthSnapshotResolver interface {
+	ChannelID(ctx context.Context, obj *biz.ChannelHealthSnapshot) (*objects.GUID, error)
+}
 type ChannelModelPriceResolver interface {
 	ID(ctx context.Context, obj *ent.ChannelModelPrice) (*objects.GUID, error)
 
@@ -1965,6 +1985,7 @@ type QueryResolver interface {
 	QueryUnassociatedChannels(ctx context.Context) ([]*biz.UnassociatedChannel, error)
 	AutoBackupSettings(ctx context.Context) (*biz.AutoBackupSettings, error)
 	ChannelProbeData(ctx context.Context, input biz.GetChannelProbeDataInput) ([]*biz.ChannelProbeData, error)
+	LatestChannelHealthSnapshots(ctx context.Context, input biz.GetChannelHealthSnapshotsInput) ([]*biz.ChannelHealthSnapshot, error)
 }
 type RequestResolver interface {
 	ID(ctx context.Context, obj *ent.Request) (*objects.GUID, error)
@@ -2879,6 +2900,79 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.ChannelEdge.Node(childComplexity), true
+
+	case "ChannelHealthSnapshot.activeProbeLatencyMs":
+		if e.complexity.ChannelHealthSnapshot.ActiveProbeLatencyMs == nil {
+			break
+		}
+
+		return e.complexity.ChannelHealthSnapshot.ActiveProbeLatencyMs(childComplexity), true
+	case "ChannelHealthSnapshot.alive":
+		if e.complexity.ChannelHealthSnapshot.Alive == nil {
+			break
+		}
+
+		return e.complexity.ChannelHealthSnapshot.Alive(childComplexity), true
+	case "ChannelHealthSnapshot.channelID":
+		if e.complexity.ChannelHealthSnapshot.ChannelID == nil {
+			break
+		}
+
+		return e.complexity.ChannelHealthSnapshot.ChannelID(childComplexity), true
+	case "ChannelHealthSnapshot.modelsAlive":
+		if e.complexity.ChannelHealthSnapshot.ModelsAlive == nil {
+			break
+		}
+
+		return e.complexity.ChannelHealthSnapshot.ModelsAlive(childComplexity), true
+	case "ChannelHealthSnapshot.observedAlive":
+		if e.complexity.ChannelHealthSnapshot.ObservedAlive == nil {
+			break
+		}
+
+		return e.complexity.ChannelHealthSnapshot.ObservedAlive(childComplexity), true
+	case "ChannelHealthSnapshot.observedHealthRecorded":
+		if e.complexity.ChannelHealthSnapshot.ObservedHealthRecorded == nil {
+			break
+		}
+
+		return e.complexity.ChannelHealthSnapshot.ObservedHealthRecorded(childComplexity), true
+	case "ChannelHealthSnapshot.observedLatencyMs":
+		if e.complexity.ChannelHealthSnapshot.ObservedLatencyMs == nil {
+			break
+		}
+
+		return e.complexity.ChannelHealthSnapshot.ObservedLatencyMs(childComplexity), true
+	case "ChannelHealthSnapshot.observedTimestamp":
+		if e.complexity.ChannelHealthSnapshot.ObservedTimestamp == nil {
+			break
+		}
+
+		return e.complexity.ChannelHealthSnapshot.ObservedTimestamp(childComplexity), true
+	case "ChannelHealthSnapshot.probeHealthRecorded":
+		if e.complexity.ChannelHealthSnapshot.ProbeHealthRecorded == nil {
+			break
+		}
+
+		return e.complexity.ChannelHealthSnapshot.ProbeHealthRecorded(childComplexity), true
+	case "ChannelHealthSnapshot.probeModelAlive":
+		if e.complexity.ChannelHealthSnapshot.ProbeModelAlive == nil {
+			break
+		}
+
+		return e.complexity.ChannelHealthSnapshot.ProbeModelAlive(childComplexity), true
+	case "ChannelHealthSnapshot.probeModelLatencyMs":
+		if e.complexity.ChannelHealthSnapshot.ProbeModelLatencyMs == nil {
+			break
+		}
+
+		return e.complexity.ChannelHealthSnapshot.ProbeModelLatencyMs(childComplexity), true
+	case "ChannelHealthSnapshot.probeTimestamp":
+		if e.complexity.ChannelHealthSnapshot.ProbeTimestamp == nil {
+			break
+		}
+
+		return e.complexity.ChannelHealthSnapshot.ProbeTimestamp(childComplexity), true
 
 	case "ChannelModelAssociation.channelId":
 		if e.complexity.ChannelModelAssociation.ChannelID == nil {
@@ -6583,6 +6677,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.FetchModels(childComplexity, args["input"].(biz.FetchModelsInput)), true
+	case "Query.latestChannelHealthSnapshots":
+		if e.complexity.Query.LatestChannelHealthSnapshots == nil {
+			break
+		}
+
+		args, err := ec.field_Query_latestChannelHealthSnapshots_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.LatestChannelHealthSnapshots(childComplexity, args["input"].(biz.GetChannelHealthSnapshotsInput)), true
 	case "Query.me":
 		if e.complexity.Query.Me == nil {
 			break
@@ -9352,6 +9457,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputFetchModelsInput,
 		ec.unmarshalInputGCPCredentialInput,
 		ec.unmarshalInputGCSInput,
+		ec.unmarshalInputGetChannelHealthSnapshotsInput,
 		ec.unmarshalInputGetChannelProbeDataInput,
 		ec.unmarshalInputHeaderEntryInput,
 		ec.unmarshalInputInitializeSystemInput,
@@ -11523,6 +11629,17 @@ func (ec *executionContext) field_Query_fetchModels_args(ctx context.Context, ra
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNFetchModelsInput2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋbizᚐFetchModelsInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_latestChannelHealthSnapshots_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNGetChannelHealthSnapshotsInput2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋbizᚐGetChannelHealthSnapshotsInput)
 	if err != nil {
 		return nil, err
 	}
@@ -16762,6 +16879,354 @@ func (ec *executionContext) fieldContext_ChannelEdge_cursor(_ context.Context, f
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Cursor does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ChannelHealthSnapshot_channelID(ctx context.Context, field graphql.CollectedField, obj *biz.ChannelHealthSnapshot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ChannelHealthSnapshot_channelID,
+		func(ctx context.Context) (any, error) {
+			return ec.resolvers.ChannelHealthSnapshot().ChannelID(ctx, obj)
+		},
+		nil,
+		ec.marshalNID2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐGUID,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ChannelHealthSnapshot_channelID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ChannelHealthSnapshot",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ChannelHealthSnapshot_probeHealthRecorded(ctx context.Context, field graphql.CollectedField, obj *biz.ChannelHealthSnapshot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ChannelHealthSnapshot_probeHealthRecorded,
+		func(ctx context.Context) (any, error) {
+			return obj.ProbeHealthRecorded, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ChannelHealthSnapshot_probeHealthRecorded(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ChannelHealthSnapshot",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ChannelHealthSnapshot_alive(ctx context.Context, field graphql.CollectedField, obj *biz.ChannelHealthSnapshot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ChannelHealthSnapshot_alive,
+		func(ctx context.Context) (any, error) {
+			return obj.Alive, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ChannelHealthSnapshot_alive(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ChannelHealthSnapshot",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ChannelHealthSnapshot_modelsAlive(ctx context.Context, field graphql.CollectedField, obj *biz.ChannelHealthSnapshot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ChannelHealthSnapshot_modelsAlive,
+		func(ctx context.Context) (any, error) {
+			return obj.ModelsAlive, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ChannelHealthSnapshot_modelsAlive(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ChannelHealthSnapshot",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ChannelHealthSnapshot_probeModelAlive(ctx context.Context, field graphql.CollectedField, obj *biz.ChannelHealthSnapshot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ChannelHealthSnapshot_probeModelAlive,
+		func(ctx context.Context) (any, error) {
+			return obj.ProbeModelAlive, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ChannelHealthSnapshot_probeModelAlive(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ChannelHealthSnapshot",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ChannelHealthSnapshot_activeProbeLatencyMs(ctx context.Context, field graphql.CollectedField, obj *biz.ChannelHealthSnapshot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ChannelHealthSnapshot_activeProbeLatencyMs,
+		func(ctx context.Context) (any, error) {
+			return obj.ActiveProbeLatencyMs, nil
+		},
+		nil,
+		ec.marshalOFloat2ᚖfloat64,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ChannelHealthSnapshot_activeProbeLatencyMs(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ChannelHealthSnapshot",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ChannelHealthSnapshot_probeModelLatencyMs(ctx context.Context, field graphql.CollectedField, obj *biz.ChannelHealthSnapshot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ChannelHealthSnapshot_probeModelLatencyMs,
+		func(ctx context.Context) (any, error) {
+			return obj.ProbeModelLatencyMs, nil
+		},
+		nil,
+		ec.marshalOFloat2ᚖfloat64,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ChannelHealthSnapshot_probeModelLatencyMs(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ChannelHealthSnapshot",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ChannelHealthSnapshot_probeTimestamp(ctx context.Context, field graphql.CollectedField, obj *biz.ChannelHealthSnapshot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ChannelHealthSnapshot_probeTimestamp,
+		func(ctx context.Context) (any, error) {
+			return obj.ProbeTimestamp, nil
+		},
+		nil,
+		ec.marshalNInt2int64,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ChannelHealthSnapshot_probeTimestamp(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ChannelHealthSnapshot",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ChannelHealthSnapshot_observedHealthRecorded(ctx context.Context, field graphql.CollectedField, obj *biz.ChannelHealthSnapshot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ChannelHealthSnapshot_observedHealthRecorded,
+		func(ctx context.Context) (any, error) {
+			return obj.ObservedHealthRecorded, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ChannelHealthSnapshot_observedHealthRecorded(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ChannelHealthSnapshot",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ChannelHealthSnapshot_observedAlive(ctx context.Context, field graphql.CollectedField, obj *biz.ChannelHealthSnapshot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ChannelHealthSnapshot_observedAlive,
+		func(ctx context.Context) (any, error) {
+			return obj.ObservedAlive, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ChannelHealthSnapshot_observedAlive(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ChannelHealthSnapshot",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ChannelHealthSnapshot_observedLatencyMs(ctx context.Context, field graphql.CollectedField, obj *biz.ChannelHealthSnapshot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ChannelHealthSnapshot_observedLatencyMs,
+		func(ctx context.Context) (any, error) {
+			return obj.ObservedLatencyMs, nil
+		},
+		nil,
+		ec.marshalOFloat2ᚖfloat64,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ChannelHealthSnapshot_observedLatencyMs(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ChannelHealthSnapshot",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ChannelHealthSnapshot_observedTimestamp(ctx context.Context, field graphql.CollectedField, obj *biz.ChannelHealthSnapshot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ChannelHealthSnapshot_observedTimestamp,
+		func(ctx context.Context) (any, error) {
+			return obj.ObservedTimestamp, nil
+		},
+		nil,
+		ec.marshalNInt2int64,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ChannelHealthSnapshot_observedTimestamp(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ChannelHealthSnapshot",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -37135,6 +37600,73 @@ func (ec *executionContext) fieldContext_Query_channelProbeData(ctx context.Cont
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_channelProbeData_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_latestChannelHealthSnapshots(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_latestChannelHealthSnapshots,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().LatestChannelHealthSnapshots(ctx, fc.Args["input"].(biz.GetChannelHealthSnapshotsInput))
+		},
+		nil,
+		ec.marshalNChannelHealthSnapshot2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋbizᚐChannelHealthSnapshotᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_latestChannelHealthSnapshots(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "channelID":
+				return ec.fieldContext_ChannelHealthSnapshot_channelID(ctx, field)
+			case "probeHealthRecorded":
+				return ec.fieldContext_ChannelHealthSnapshot_probeHealthRecorded(ctx, field)
+			case "alive":
+				return ec.fieldContext_ChannelHealthSnapshot_alive(ctx, field)
+			case "modelsAlive":
+				return ec.fieldContext_ChannelHealthSnapshot_modelsAlive(ctx, field)
+			case "probeModelAlive":
+				return ec.fieldContext_ChannelHealthSnapshot_probeModelAlive(ctx, field)
+			case "activeProbeLatencyMs":
+				return ec.fieldContext_ChannelHealthSnapshot_activeProbeLatencyMs(ctx, field)
+			case "probeModelLatencyMs":
+				return ec.fieldContext_ChannelHealthSnapshot_probeModelLatencyMs(ctx, field)
+			case "probeTimestamp":
+				return ec.fieldContext_ChannelHealthSnapshot_probeTimestamp(ctx, field)
+			case "observedHealthRecorded":
+				return ec.fieldContext_ChannelHealthSnapshot_observedHealthRecorded(ctx, field)
+			case "observedAlive":
+				return ec.fieldContext_ChannelHealthSnapshot_observedAlive(ctx, field)
+			case "observedLatencyMs":
+				return ec.fieldContext_ChannelHealthSnapshot_observedLatencyMs(ctx, field)
+			case "observedTimestamp":
+				return ec.fieldContext_ChannelHealthSnapshot_observedTimestamp(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ChannelHealthSnapshot", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_latestChannelHealthSnapshots_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -58773,6 +59305,37 @@ func (ec *executionContext) unmarshalInputGCSInput(ctx context.Context, obj any)
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputGetChannelHealthSnapshotsInput(ctx context.Context, obj any) (biz.GetChannelHealthSnapshotsInput, error) {
+	var it biz.GetChannelHealthSnapshotsInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"channelIDs"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "channelIDs":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channelIDs"))
+			data, err := ec.unmarshalNID2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐGUIDᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			converted, err := objects.ConvertGUIDPtrsToInts(data)
+			if err != nil {
+				return it, graphql.ErrorOnPath(ctx, err)
+			}
+			it.ChannelIDs = converted
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputGetChannelProbeDataInput(ctx context.Context, obj any) (biz.GetChannelProbeDataInput, error) {
 	var it biz.GetChannelProbeDataInput
 	asMap := map[string]any{}
@@ -76021,6 +76584,122 @@ func (ec *executionContext) _ChannelEdge(ctx context.Context, sel ast.SelectionS
 	return out
 }
 
+var channelHealthSnapshotImplementors = []string{"ChannelHealthSnapshot"}
+
+func (ec *executionContext) _ChannelHealthSnapshot(ctx context.Context, sel ast.SelectionSet, obj *biz.ChannelHealthSnapshot) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, channelHealthSnapshotImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ChannelHealthSnapshot")
+		case "channelID":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ChannelHealthSnapshot_channelID(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "probeHealthRecorded":
+			out.Values[i] = ec._ChannelHealthSnapshot_probeHealthRecorded(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "alive":
+			out.Values[i] = ec._ChannelHealthSnapshot_alive(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "modelsAlive":
+			out.Values[i] = ec._ChannelHealthSnapshot_modelsAlive(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "probeModelAlive":
+			out.Values[i] = ec._ChannelHealthSnapshot_probeModelAlive(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "activeProbeLatencyMs":
+			out.Values[i] = ec._ChannelHealthSnapshot_activeProbeLatencyMs(ctx, field, obj)
+		case "probeModelLatencyMs":
+			out.Values[i] = ec._ChannelHealthSnapshot_probeModelLatencyMs(ctx, field, obj)
+		case "probeTimestamp":
+			out.Values[i] = ec._ChannelHealthSnapshot_probeTimestamp(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "observedHealthRecorded":
+			out.Values[i] = ec._ChannelHealthSnapshot_observedHealthRecorded(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "observedAlive":
+			out.Values[i] = ec._ChannelHealthSnapshot_observedAlive(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "observedLatencyMs":
+			out.Values[i] = ec._ChannelHealthSnapshot_observedLatencyMs(ctx, field, obj)
+		case "observedTimestamp":
+			out.Values[i] = ec._ChannelHealthSnapshot_observedTimestamp(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var channelModelAssociationImplementors = []string{"ChannelModelAssociation"}
 
 func (ec *executionContext) _ChannelModelAssociation(ctx context.Context, sel ast.SelectionSet, obj *objects.ChannelModelAssociation) graphql.Marshaler {
@@ -84103,6 +84782,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "latestChannelHealthSnapshots":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_latestChannelHealthSnapshots(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "__type":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___type(ctx, field)
@@ -91488,6 +92189,60 @@ func (ec *executionContext) unmarshalNChannelCredentialsInput2githubᚗcomᚋloo
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNChannelHealthSnapshot2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋbizᚐChannelHealthSnapshotᚄ(ctx context.Context, sel ast.SelectionSet, v []*biz.ChannelHealthSnapshot) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNChannelHealthSnapshot2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋbizᚐChannelHealthSnapshot(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNChannelHealthSnapshot2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋbizᚐChannelHealthSnapshot(ctx context.Context, sel ast.SelectionSet, v *biz.ChannelHealthSnapshot) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ChannelHealthSnapshot(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNChannelModelAutoSyncSetting2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋbizᚐChannelModelAutoSyncSetting(ctx context.Context, sel ast.SelectionSet, v biz.ChannelModelAutoSyncSetting) graphql.Marshaler {
 	return ec._ChannelModelAutoSyncSetting(ctx, sel, &v)
 }
@@ -92792,6 +93547,11 @@ func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.S
 		}
 	}
 	return graphql.WrapContextMarshaler(ctx, res)
+}
+
+func (ec *executionContext) unmarshalNGetChannelHealthSnapshotsInput2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋbizᚐGetChannelHealthSnapshotsInput(ctx context.Context, v any) (biz.GetChannelHealthSnapshotsInput, error) {
+	res, err := ec.unmarshalInputGetChannelHealthSnapshotsInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNGetChannelProbeDataInput2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋbizᚐGetChannelProbeDataInput(ctx context.Context, v any) (biz.GetChannelProbeDataInput, error) {

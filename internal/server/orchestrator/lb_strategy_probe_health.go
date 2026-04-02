@@ -2,6 +2,7 @@ package orchestrator
 
 import (
 	"context"
+	"time"
 
 	"github.com/looplj/axonhub/internal/server/biz"
 )
@@ -27,6 +28,7 @@ type ProbeHealthStrategy struct {
 
 	softLatencyMs float64
 	hardLatencyMs float64
+	observedTTL   time.Duration
 }
 
 func NewProbeHealthStrategy(provider ChannelProbeHealthProvider, connectionTracker ConnectionTracker, mode ProbeHealthMode) *ProbeHealthStrategy {
@@ -36,6 +38,7 @@ func NewProbeHealthStrategy(provider ChannelProbeHealthProvider, connectionTrack
 		mode:              mode,
 		softLatencyMs:     1200,
 		hardLatencyMs:     3000,
+		observedTTL:       5 * time.Minute,
 	}
 }
 
@@ -46,7 +49,11 @@ func (s *ProbeHealthStrategy) Score(ctx context.Context, channel *biz.Channel) f
 
 	health, ok := s.provider.GetChannelProbeHealth(channel.ID)
 	if !ok || health == nil {
-		return s.scoreWithoutProbeHealth(channel)
+		return s.scoreWithoutProbeHealth(channel, nil)
+	}
+
+	if !s.hasRecordedProbeHealth(health) {
+		return s.scoreWithoutProbeHealth(channel, health)
 	}
 
 	return s.score(health)
@@ -66,10 +73,10 @@ func (s *ProbeHealthStrategy) ScoreWithDebug(ctx context.Context, channel *biz.C
 
 	health, ok := s.provider.GetChannelProbeHealth(channel.ID)
 	if !ok || health == nil {
-		score := s.scoreWithoutProbeHealth(channel)
+		score := s.scoreWithoutProbeHealth(channel, nil)
 		hasActiveConnections := s.hasActiveConnections(channel)
 
-		return 0, StrategyScore{
+		return score, StrategyScore{
 			StrategyName: s.Name(),
 			Score:        score,
 			Details: map[string]any{
@@ -82,16 +89,41 @@ func (s *ProbeHealthStrategy) ScoreWithDebug(ctx context.Context, channel *biz.C
 		}
 	}
 
+	if !s.hasRecordedProbeHealth(health) {
+		score := s.scoreWithoutProbeHealth(channel, health)
+		details := map[string]any{
+			"mode":                     string(s.mode),
+			"health_found":             true,
+			"probe_health_recorded":    false,
+			"observed_health_recorded": health.ObservedHealthRecorded,
+			"observed_alive":           health.ObservedAlive,
+			"observed_timestamp":       health.ObservedTimestamp,
+			"active_connections":       s.activeConnections(channel),
+			"fallback_reason":          "observed_traffic_health",
+		}
+		if health.ObservedLatencyMs != nil {
+			details["observed_latency_ms"] = *health.ObservedLatencyMs
+		}
+
+		return score, StrategyScore{
+			StrategyName: s.Name(),
+			Score:        score,
+			Details:      details,
+		}
+	}
+
 	score := s.score(health)
 	details := map[string]any{
-		"mode":              string(s.mode),
-		"health_found":      true,
-		"alive":             health.Alive,
-		"models_alive":      health.ModelsAlive,
-		"probe_model_alive": health.ProbeModelAlive,
-		"soft_latency_ms":   s.softLatencyMs,
-		"hard_latency_ms":   s.hardLatencyMs,
-		"timestamp":         health.Timestamp,
+		"mode":               string(s.mode),
+		"health_found":       true,
+		"alive":              health.Alive,
+		"models_alive":       health.ModelsAlive,
+		"probe_model_alive":  health.ProbeModelAlive,
+		"soft_latency_ms":    s.softLatencyMs,
+		"hard_latency_ms":    s.hardLatencyMs,
+		"timestamp":          health.Timestamp,
+		"observed_alive":     health.ObservedAlive,
+		"observed_timestamp": health.ObservedTimestamp,
 	}
 	if latency := s.preferredLatency(health); latency != nil {
 		details["latency_ms"] = *latency
@@ -101,6 +133,9 @@ func (s *ProbeHealthStrategy) ScoreWithDebug(ctx context.Context, channel *biz.C
 	}
 	if health.ProbeModelLatencyMs != nil {
 		details["probe_model_latency_ms"] = *health.ProbeModelLatencyMs
+	}
+	if health.ObservedLatencyMs != nil {
+		details["observed_latency_ms"] = *health.ObservedLatencyMs
 	}
 
 	return score, StrategyScore{
@@ -114,7 +149,11 @@ func (s *ProbeHealthStrategy) Name() string {
 	return "ProbeHealth"
 }
 
-func (s *ProbeHealthStrategy) scoreWithoutProbeHealth(channel *biz.Channel) float64 {
+func (s *ProbeHealthStrategy) scoreWithoutProbeHealth(channel *biz.Channel, health *biz.ChannelProbeHealth) float64 {
+	if observedScore, ok := s.scoreObservedHealth(health); ok {
+		return observedScore
+	}
+
 	if s.hasActiveConnections(channel) {
 		switch s.mode {
 		case ProbeHealthModeLowLatency:
@@ -197,7 +236,15 @@ func (s *ProbeHealthStrategy) preferredLatency(health *biz.ChannelProbeHealth) *
 		return health.ProbeModelLatencyMs
 	}
 
-	return health.ActiveProbeLatencyMs
+	if health.ActiveProbeLatencyMs != nil {
+		return health.ActiveProbeLatencyMs
+	}
+
+	if s.observedHealthUsable(health) {
+		return health.ObservedLatencyMs
+	}
+
+	return nil
 }
 
 func (s *ProbeHealthStrategy) hasActiveConnections(channel *biz.Channel) bool {
@@ -210,4 +257,72 @@ func (s *ProbeHealthStrategy) activeConnections(channel *biz.Channel) int {
 	}
 
 	return s.connectionTracker.GetActiveConnections(channel.ID)
+}
+
+func (s *ProbeHealthStrategy) scoreObservedHealth(health *biz.ChannelProbeHealth) (float64, bool) {
+	if !s.observedHealthUsable(health) {
+		return 0, false
+	}
+
+	latency := health.ObservedLatencyMs
+	switch s.mode {
+	case ProbeHealthModeLowLatency:
+		base := 420.0
+		if latency == nil {
+			return base, true
+		}
+
+		value := *latency
+		if value > s.hardLatencyMs {
+			return -800, true
+		}
+
+		if value <= s.softLatencyMs {
+			return base + 180, true
+		}
+
+		ratio := (value - s.softLatencyMs) / (s.hardLatencyMs - s.softLatencyMs)
+		return (base + 180) - (ratio * 520), true
+	default:
+		base := 340.0
+		if latency == nil {
+			return base, true
+		}
+
+		value := *latency
+		if value > s.hardLatencyMs {
+			return -250, true
+		}
+
+		if value <= s.softLatencyMs {
+			return base + 100, true
+		}
+
+		ratio := (value - s.softLatencyMs) / (s.hardLatencyMs - s.softLatencyMs)
+		return (base + 100) - (ratio * 260), true
+	}
+}
+
+func (s *ProbeHealthStrategy) observedHealthUsable(health *biz.ChannelProbeHealth) bool {
+	if health == nil || !health.ObservedHealthRecorded || !health.ObservedAlive || health.ObservedTimestamp <= 0 {
+		return false
+	}
+
+	return time.Since(time.Unix(health.ObservedTimestamp, 0)) <= s.observedTTL
+}
+
+func (s *ProbeHealthStrategy) hasRecordedProbeHealth(health *biz.ChannelProbeHealth) bool {
+	if health == nil {
+		return false
+	}
+
+	if health.ProbeHealthRecorded {
+		return true
+	}
+
+	if health.Timestamp > 0 {
+		return true
+	}
+
+	return health.ActiveProbeLatencyMs != nil || health.ProbeModelLatencyMs != nil || health.Alive || health.ModelsAlive || health.ProbeModelAlive
 }

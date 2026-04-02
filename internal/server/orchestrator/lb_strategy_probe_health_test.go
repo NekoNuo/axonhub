@@ -3,6 +3,7 @@ package orchestrator
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -88,6 +89,32 @@ func TestProbeHealthStrategy_ActiveChannelWithoutProbeHealthGetsPositiveFallback
 
 	score := strategy.Score(context.Background(), newLBTestChannel(1, "active-no-probe"))
 	assert.Greater(t, score, 0.0)
+}
+
+func TestProbeHealthStrategy_ObservedTrafficHealthFallbackPrefersFasterChannels(t *testing.T) {
+	now := time.Now().Unix()
+	provider := &mockProbeHealthProvider{
+		health: map[int]*biz.ChannelProbeHealth{
+			1: {
+				ObservedHealthRecorded: true,
+				ObservedAlive:          true,
+				ObservedLatencyMs:      float64Ptr(180),
+				ObservedTimestamp:      now,
+			},
+			2: {
+				ObservedHealthRecorded: true,
+				ObservedAlive:          true,
+				ObservedLatencyMs:      float64Ptr(1600),
+				ObservedTimestamp:      now,
+			},
+		},
+	}
+
+	strategy := NewProbeHealthStrategy(provider, nil, ProbeHealthModeLowLatency)
+
+	fast := strategy.Score(context.Background(), newLBTestChannel(1, "fast-observed"))
+	slow := strategy.Score(context.Background(), newLBTestChannel(2, "slow-observed"))
+	assert.Greater(t, fast, slow)
 }
 
 func TestProbeHealthStrategy_UnhealthyChannelGetsStrongPenalty(t *testing.T) {

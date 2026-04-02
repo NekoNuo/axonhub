@@ -13,6 +13,14 @@ import (
 )
 
 // ChannelID is the resolver for the channelID field.
+func (r *channelHealthSnapshotResolver) ChannelID(ctx context.Context, obj *biz.ChannelHealthSnapshot) (*objects.GUID, error) {
+	return &objects.GUID{
+		Type: "Channel",
+		ID:   obj.ChannelID,
+	}, nil
+}
+
+// ChannelID is the resolver for the channelID field.
 func (r *channelProbeDataResolver) ChannelID(ctx context.Context, obj *biz.ChannelProbeData) (*objects.GUID, error) {
 	return &objects.GUID{
 		Type: "Channel",
@@ -25,7 +33,18 @@ func (r *queryResolver) ChannelProbeData(ctx context.Context, input biz.GetChann
 	return r.channelProbeService.BatchQueryChannelProbes(ctx, input)
 }
 
+// LatestChannelHealthSnapshots is the resolver for the latestChannelHealthSnapshots field.
+func (r *queryResolver) LatestChannelHealthSnapshots(ctx context.Context, input biz.GetChannelHealthSnapshotsInput) ([]*biz.ChannelHealthSnapshot, error) {
+	return r.channelProbeService.QueryLatestChannelHealthSnapshots(ctx, input)
+}
+
+// ChannelHealthSnapshot returns ChannelHealthSnapshotResolver implementation.
+func (r *Resolver) ChannelHealthSnapshot() ChannelHealthSnapshotResolver {
+	return &channelHealthSnapshotResolver{r}
+}
+
 // ChannelProbeData returns ChannelProbeDataResolver implementation.
 func (r *Resolver) ChannelProbeData() ChannelProbeDataResolver { return &channelProbeDataResolver{r} }
 
+type channelHealthSnapshotResolver struct{ *Resolver }
 type channelProbeDataResolver struct{ *Resolver }

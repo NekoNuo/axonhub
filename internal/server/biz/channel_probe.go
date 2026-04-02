@@ -47,6 +47,21 @@ type ChannelProbeData struct {
 	Points    []*ChannelProbePoint `json:"points"`
 }
 
+type ChannelHealthSnapshot struct {
+	ChannelID              int      `json:"channel_id"`
+	ProbeHealthRecorded    bool     `json:"probe_health_recorded"`
+	Alive                  bool     `json:"alive"`
+	ModelsAlive            bool     `json:"models_alive"`
+	ProbeModelAlive        bool     `json:"probe_model_alive"`
+	ActiveProbeLatencyMs   *float64 `json:"active_probe_latency_ms,omitempty"`
+	ProbeModelLatencyMs    *float64 `json:"probe_model_latency_ms,omitempty"`
+	ProbeTimestamp         int64    `json:"probe_timestamp"`
+	ObservedHealthRecorded bool     `json:"observed_health_recorded"`
+	ObservedAlive          bool     `json:"observed_alive"`
+	ObservedLatencyMs      *float64 `json:"observed_latency_ms,omitempty"`
+	ObservedTimestamp      int64    `json:"observed_timestamp"`
+}
+
 // ChannelProbeServiceParams contains dependencies for ChannelProbeService.
 type ChannelProbeServiceParams struct {
 	fx.In
@@ -673,6 +688,41 @@ func (svc *ChannelProbeService) GetProbesByChannelID(ctx context.Context, channe
 // GetChannelProbeDataInput is the input for batch query.
 type GetChannelProbeDataInput struct {
 	ChannelIDs []int `json:"channel_ids"`
+}
+
+type GetChannelHealthSnapshotsInput struct {
+	ChannelIDs []int `json:"channel_ids"`
+}
+
+func (svc *ChannelProbeService) QueryLatestChannelHealthSnapshots(_ context.Context, input GetChannelHealthSnapshotsInput) ([]*ChannelHealthSnapshot, error) {
+	if svc.ChannelService == nil || len(input.ChannelIDs) == 0 {
+		return []*ChannelHealthSnapshot{}, nil
+	}
+
+	snapshots := make([]*ChannelHealthSnapshot, 0, len(input.ChannelIDs))
+	for _, channelID := range input.ChannelIDs {
+		health, ok := svc.ChannelService.GetChannelProbeHealth(channelID)
+		if !ok || health == nil {
+			continue
+		}
+
+		snapshots = append(snapshots, &ChannelHealthSnapshot{
+			ChannelID:              channelID,
+			ProbeHealthRecorded:    health.ProbeHealthRecorded,
+			Alive:                  health.Alive,
+			ModelsAlive:            health.ModelsAlive,
+			ProbeModelAlive:        health.ProbeModelAlive,
+			ActiveProbeLatencyMs:   cloneFloat64Ptr(health.ActiveProbeLatencyMs),
+			ProbeModelLatencyMs:    cloneFloat64Ptr(health.ProbeModelLatencyMs),
+			ProbeTimestamp:         health.Timestamp,
+			ObservedHealthRecorded: health.ObservedHealthRecorded,
+			ObservedAlive:          health.ObservedAlive,
+			ObservedLatencyMs:      cloneFloat64Ptr(health.ObservedLatencyMs),
+			ObservedTimestamp:      health.ObservedTimestamp,
+		})
+	}
+
+	return snapshots, nil
 }
 
 // BatchQueryChannelProbes is an alias for QueryChannelProbes for GraphQL.

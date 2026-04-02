@@ -13,10 +13,30 @@ type ChannelProbeData {
   points: [ChannelProbePoint!]!
 }
 
+type ChannelHealthSnapshot {
+  channelID: ID!
+  probeHealthRecorded: Boolean!
+  alive: Boolean!
+  modelsAlive: Boolean!
+  probeModelAlive: Boolean!
+  activeProbeLatencyMs: Float
+  probeModelLatencyMs: Float
+  probeTimestamp: Int!
+  observedHealthRecorded: Boolean!
+  observedAlive: Boolean!
+  observedLatencyMs: Float
+  observedTimestamp: Int!
+}
+
 input GetChannelProbeDataInput {
+  channelIDs: [ID!]!
+}
+
+input GetChannelHealthSnapshotsInput {
   channelIDs: [ID!]!
 }
 
 extend type Query {
   channelProbeData(input: GetChannelProbeDataInput!): [ChannelProbeData!]!
+  latestChannelHealthSnapshots(input: GetChannelHealthSnapshotsInput!): [ChannelHealthSnapshot!]!
 }

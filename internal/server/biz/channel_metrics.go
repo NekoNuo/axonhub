@@ -378,6 +378,7 @@ func (svc *ChannelService) RecordPerformance(ctx context.Context, perf *Performa
 	// Record success or failure
 	if perf.Success {
 		cm.recordSuccess(slot, perf)
+		svc.UpdateChannelObservedHealth(perf.ChannelID, observedLatencyFromPerformance(perf), perf.EndTime)
 	} else if !perf.Canceled {
 		cm.recordFailure(slot, perf)
 	}
@@ -603,4 +604,13 @@ func (m *PerformanceRecord) MarkCanceled() {
 // IsValid checks if metrics are valid for recording.
 func (m *PerformanceRecord) IsValid() bool {
 	return m.ChannelID > 0 && m.RequestCompleted
+}
+
+func observedLatencyFromPerformance(perf *PerformanceRecord) *float64 {
+	if perf == nil || perf.StartTime.IsZero() || perf.EndTime.IsZero() {
+		return nil
+	}
+
+	latencyMs := float64(ClampLatency(perf.EndTime.Sub(perf.StartTime).Milliseconds()))
+	return &latencyMs
 }

@@ -25,6 +25,7 @@ import {
   ChannelModelPrice,
   SaveChannelModelPriceInput,
   channelModelPriceSchema,
+  channelHealthSnapshotSchema,
 } from './schema';
 
 const QUERY_CHANNEL_NAMES_QUERY = `
@@ -1338,6 +1339,25 @@ const CHANNEL_PROBE_DATA_QUERY = `
   }
 `;
 
+const CHANNEL_HEALTH_SNAPSHOTS_QUERY = `
+  query GetChannelHealthSnapshots($input: GetChannelHealthSnapshotsInput!) {
+    latestChannelHealthSnapshots(input: $input) {
+      channelID
+      probeHealthRecorded
+      alive
+      modelsAlive
+      probeModelAlive
+      activeProbeLatencyMs
+      probeModelLatencyMs
+      probeTimestamp
+      observedHealthRecorded
+      observedAlive
+      observedLatencyMs
+      observedTimestamp
+    }
+  }
+`;
+
 export function useChannelProbeData(channelIDs: string[], options?: { enabled?: boolean }) {
   const { handleError } = useErrorHandler();
   const { t } = useTranslation();
@@ -1358,6 +1378,29 @@ export function useChannelProbeData(channelIDs: string[], options?: { enabled?: 
     enabled: channelIDs.length > 0 && options?.enabled !== false,
     staleTime: 1 * 60 * 1000, // 1 minute
     refetchInterval: 1 * 60 * 1000, // Keep visible channel health data refreshed
+  });
+}
+
+export function useChannelHealthSnapshots(channelIDs: string[], options?: { enabled?: boolean }) {
+  const { handleError } = useErrorHandler();
+  const { t } = useTranslation();
+
+  return useQuery({
+    queryKey: ['channelHealthSnapshots', channelIDs],
+    queryFn: async () => {
+      try {
+        const data = await graphqlRequest<{ latestChannelHealthSnapshots: unknown[] }>(CHANNEL_HEALTH_SNAPSHOTS_QUERY, {
+          input: { channelIDs },
+        });
+        return z.array(channelHealthSnapshotSchema).parse(data.latestChannelHealthSnapshots || []);
+      } catch (error) {
+        handleError(error, t('channels.errors.fetchProbeData'));
+        return [];
+      }
+    },
+    enabled: channelIDs.length > 0 && options?.enabled !== false,
+    staleTime: 1 * 60 * 1000,
+    refetchInterval: 1 * 60 * 1000,
   });
 }
 

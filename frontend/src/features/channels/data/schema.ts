@@ -152,6 +152,22 @@ export const channelRateLimitSchema = z.object({
 });
 export type ChannelRateLimit = z.infer<typeof channelRateLimitSchema>;
 
+export const channelHealthSnapshotSchema = z.object({
+  channelID: z.string(),
+  probeHealthRecorded: z.boolean(),
+  alive: z.boolean(),
+  modelsAlive: z.boolean(),
+  probeModelAlive: z.boolean(),
+  activeProbeLatencyMs: z.number().optional().nullable(),
+  probeModelLatencyMs: z.number().optional().nullable(),
+  probeTimestamp: z.number(),
+  observedHealthRecorded: z.boolean(),
+  observedAlive: z.boolean(),
+  observedLatencyMs: z.number().optional().nullable(),
+  observedTimestamp: z.number(),
+});
+export type ChannelHealthSnapshot = z.infer<typeof channelHealthSnapshotSchema>;
+
 // Channel Settings
 export const channelSettingsSchema = z.object({
   extraModelPrefix: z.string().optional(),

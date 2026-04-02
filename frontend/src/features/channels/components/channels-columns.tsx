@@ -737,9 +737,10 @@ export const createColumns = (t: ReturnType<typeof useTranslation>['t'], canWrit
       header: ({ column }) => <DataTableColumnHeader column={column} title={t('channels.columns.health')} className='justify-center' />,
       cell: ({ row }: { row: Row<Channel> }) => {
         const probePoints = (row.original as any).probePoints || [];
+        const healthSnapshot = (row.original as any).healthSnapshot;
         return (
           <div className='flex justify-center'>
-            <ChannelHealthCell points={probePoints} />
+            <ChannelHealthCell points={probePoints} snapshot={healthSnapshot} />
           </div>
         );
       },

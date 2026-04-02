@@ -23,6 +23,8 @@
   "channels.columns.healthTooltip.firstTokenLatency": "TTFT",
   "channels.columns.healthTooltip.activeProbeLatency": "/models Probe",
   "channels.columns.healthTooltip.probeModelLatency": "Model Probe",
+  "channels.columns.healthTooltip.observedLatency": "Observed Traffic",
+  "channels.columns.healthTooltip.observedTime": "Observed Time",
   "channels.columns.healthTooltip.tokensPerSecond": "Tokens/s",
   "channels.columns.tags": "Tags",
   "channels.columns.baseURL": "Base URL",

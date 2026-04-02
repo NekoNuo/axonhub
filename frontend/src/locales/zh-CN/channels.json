@@ -23,6 +23,8 @@
   "channels.columns.healthTooltip.firstTokenLatency": "首字延迟",
   "channels.columns.healthTooltip.activeProbeLatency": "/models 探活延迟",
   "channels.columns.healthTooltip.probeModelLatency": "模型探活延迟",
+  "channels.columns.healthTooltip.observedLatency": "真实流量延迟",
+  "channels.columns.healthTooltip.observedTime": "观测时间",
   "channels.columns.healthTooltip.tokensPerSecond": "吞吐速度",
   "channels.columns.tags": "标签",
   "channels.columns.baseURL": "Base URL",

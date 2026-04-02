@@ -12,7 +12,7 @@ import { ChannelsPrimaryButtons } from './components/channels-primary-buttons';
 import { ChannelsTable } from './components/channels-table';
 import { ChannelsTypeTabs } from './components/channels-type-tabs';
 import ChannelsProvider from './context/channels-context';
-import { useQueryChannels, useChannelTypes, useErrorChannelsCount, useChannelProbeData } from './data/channels';
+import { useQueryChannels, useChannelTypes, useErrorChannelsCount, useChannelProbeData, useChannelHealthSnapshots } from './data/channels';
 import { useProvidersData } from '@/features/models/data/providers';
 
 const ChannelsDialogs = lazy(() => import('./components/channels-dialogs').then((m) => ({ default: m.ChannelsDialogs })));
@@ -146,17 +146,20 @@ function ChannelsContent() {
   }, [data?.edges]);
 
   const { data: probeData } = useChannelProbeData(channelIDs, { enabled: isHealthColumnVisible });
+  const { data: healthSnapshots } = useChannelHealthSnapshots(channelIDs, { enabled: isHealthColumnVisible });
 
   const channelsWithProbeData = useMemo(() => {
     if (!data?.edges) return [];
     
     const probeMap = new Map(probeData?.map((probe) => [probe.channelID, probe.points]) || []);
+    const healthSnapshotMap = new Map(healthSnapshots?.map((snapshot) => [snapshot.channelID, snapshot]) || []);
     
     return data.edges.map((edge) => ({
       ...edge.node,
       probePoints: probeMap.get(edge.node.id) || [],
+      healthSnapshot: healthSnapshotMap.get(edge.node.id),
     }));
-  }, [data?.edges, probeData]);
+  }, [data?.edges, probeData, healthSnapshots]);
 
   const handleNextPage = useCallback(() => {
     if (data?.pageInfo?.hasNextPage && data?.pageInfo?.endCursor) {

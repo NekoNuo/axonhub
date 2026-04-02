@@ -569,6 +569,12 @@ models:
   GetChannelProbeDataInput:
     model:
       - github.com/looplj/axonhub/internal/server/biz.GetChannelProbeDataInput
+  ChannelHealthSnapshot:
+    model:
+      - github.com/looplj/axonhub/internal/server/biz.ChannelHealthSnapshot
+  GetChannelHealthSnapshotsInput:
+    model:
+      - github.com/looplj/axonhub/internal/server/biz.GetChannelHealthSnapshotsInput
   ProbeFrequency:
     model:
       - github.com/looplj/axonhub/internal/server/biz.ProbeFrequency

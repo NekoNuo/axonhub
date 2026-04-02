@@ -4,13 +4,14 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { formatDuration } from '@/utils/format-duration';
 import { InteractiveTooltip } from '@/components/ui/interactive-tooltip';
-import { ChannelProbePoint } from '../data/schema';
+import { ChannelHealthSnapshot, ChannelProbePoint } from '../data/schema';
 
 interface ChannelHealthCellProps {
   points: ChannelProbePoint[];
+  snapshot?: ChannelHealthSnapshot;
 }
 
-export const ChannelHealthCell = memo(({ points }: ChannelHealthCellProps) => {
+export const ChannelHealthCell = memo(({ points, snapshot }: ChannelHealthCellProps) => {
   const { t } = useTranslation();
 
   if (!points || points.length === 0) {
@@ -45,6 +46,8 @@ export const ChannelHealthCell = memo(({ points }: ChannelHealthCellProps) => {
                 <div>{t('channels.columns.healthTooltip.firstTokenLatency')}: {point.avgTimeToFirstTokenMs != null ? formatDuration(point.avgTimeToFirstTokenMs) : '-'}</div>
                 <div>{t('channels.columns.healthTooltip.activeProbeLatency')}: {point.activeProbeLatencyMs != null ? formatDuration(point.activeProbeLatencyMs) : '-'}</div>
                 <div>{t('channels.columns.healthTooltip.probeModelLatency')}: {point.probeModelLatencyMs != null ? formatDuration(point.probeModelLatencyMs) : '-'}</div>
+                <div>{t('channels.columns.healthTooltip.observedLatency')}: {snapshot?.observedLatencyMs != null ? formatDuration(snapshot.observedLatencyMs) : '-'}</div>
+                <div>{t('channels.columns.healthTooltip.observedTime')}: {snapshot?.observedTimestamp ? format(new Date(snapshot.observedTimestamp * 1000), 'MM-dd HH:mm') : '-'}</div>
                 <div>{t('channels.columns.healthTooltip.tokensPerSecond')}: {point.avgTokensPerSecond != null ? point.avgTokensPerSecond.toFixed(1) : '-'}</div>
               </div>
             }
