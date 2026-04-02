@@ -20,6 +20,7 @@ type PersistenceState struct {
 	RetryPolicyProvider RetryPolicyProvider
 	CandidateSelector   CandidateSelector
 	LoadBalancer        *LoadBalancer
+	ConnectionTracker   ConnectionTracker
 
 	// Request state
 	ModelMapper *ModelMapper

@@ -43,13 +43,15 @@ export function ChannelsRateLimitDialog({ open, onOpenChange, currentRow }: Prop
   });
 
   useEffect(() => {
-    if (open) {
-      form.reset({
-        rpm: currentRow.settings?.rateLimit?.rpm ?? '',
-        tpm: currentRow.settings?.rateLimit?.tpm ?? '',
-        maxConcurrent: currentRow.settings?.rateLimit?.maxConcurrent ?? '',
-      });
+    if (!open) {
+      return;
     }
+
+    form.reset({
+      rpm: currentRow.settings?.rateLimit?.rpm ?? '',
+      tpm: currentRow.settings?.rateLimit?.tpm ?? '',
+      maxConcurrent: currentRow.settings?.rateLimit?.maxConcurrent ?? '',
+    });
   }, [open, currentRow, form]);
 
   const onSubmit = async (values: RateLimitFormValues) => {

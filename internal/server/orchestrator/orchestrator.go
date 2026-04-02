@@ -182,6 +182,7 @@ func (processor *ChatCompletionOrchestrator) Process(ctx context.Context, reques
 		RetryPolicyProvider:   processor.SystemService,
 		CandidateSelector:     processor.channelSelector,
 		LoadBalancer:          loadBalancer,
+		ConnectionTracker:     processor.connectionTracker,
 		ModelMapper:           processor.ModelMapper,
 		Proxy:                 processor.proxy,
 		CurrentCandidateIndex: 0,

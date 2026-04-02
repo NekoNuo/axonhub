@@ -79,6 +79,8 @@ type ChannelSettings {
   autoTrimedModelPrefixes: [String!]
   hideOriginalModels: Boolean
   hideMappedModels: Boolean
+  rpm: Int
+  concurrency: Int
   proxy: ProxyConfig
   transformOptions: TransformOptions
   headerOverrideOperations: [OverrideOperation!]! @goField(forceResolver: true)
@@ -112,6 +114,8 @@ input ChannelSettingsInput {
   autoTrimedModelPrefixes: [String!]
   hideOriginalModels: Boolean
   hideMappedModels: Boolean
+  rpm: Int
+  concurrency: Int
   proxy: ProxyConfigInput
   transformOptions: TransformOptionsInput
   headerOverrideOperations: [OverrideOperationInput!]

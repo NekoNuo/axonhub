@@ -504,6 +504,76 @@ func matchChannelTagsFilter(allowedTags []string, matchMode objects.ChannelTagsM
 	}
 }
 
+// ChannelCapacitySelector filters out channels that exceed configured rpm/concurrency limits.
+// If all candidates exceed limits, it returns the original candidates as a fallback.
+type ChannelCapacitySelector struct {
+	wrapped           CandidateSelector
+	channelService    *biz.ChannelService
+	connectionTracker ConnectionTracker
+}
+
+// WithChannelCapacitySelector creates a selector that applies per-channel rpm/concurrency guards.
+func WithChannelCapacitySelector(
+	wrapped CandidateSelector,
+	channelService *biz.ChannelService,
+	connectionTracker ConnectionTracker,
+) *ChannelCapacitySelector {
+	return &ChannelCapacitySelector{
+		wrapped:           wrapped,
+		channelService:    channelService,
+		connectionTracker: connectionTracker,
+	}
+}
+
+func (s *ChannelCapacitySelector) Select(ctx context.Context, req *llm.Request) ([]*ChannelModelsCandidate, error) {
+	candidates, err := s.wrapped.Select(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(candidates) <= 1 {
+		return candidates, nil
+	}
+
+	now := time.Now()
+	filtered := lo.Filter(candidates, func(c *ChannelModelsCandidate, _ int) bool {
+		if c == nil || c.Channel == nil || c.Channel.Settings == nil {
+			return true
+		}
+
+		settings := c.Channel.Settings
+
+		if settings.RPM > 0 && s.channelService != nil {
+			count := s.channelService.GetChannelRecentRequestCount(c.Channel.ID, now.Add(-time.Minute))
+			if count >= int64(settings.RPM) {
+				return false
+			}
+		}
+
+		if settings.Concurrency > 0 && s.connectionTracker != nil {
+			active := s.connectionTracker.GetActiveConnections(c.Channel.ID)
+			if active >= settings.Concurrency {
+				return false
+			}
+		}
+
+		return true
+	})
+
+	if len(filtered) > 0 {
+		return filtered, nil
+	}
+
+	if log.DebugEnabled(ctx) {
+		log.Debug(ctx, "all candidates exceed channel capacity limits, fallback to original candidates",
+			log.Int("candidate_count", len(candidates)),
+			log.String("model", req.Model),
+		)
+	}
+
+	return candidates, nil
+}
+
 // SpecifiedChannelSelector allows selecting specific channels (including disabled ones) for testing.
 type SpecifiedChannelSelector struct {
 	ChannelService *biz.ChannelService

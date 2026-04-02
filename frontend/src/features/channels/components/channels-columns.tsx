@@ -158,6 +158,15 @@ const ActionCell = memo(({ row }: { row: Row<Channel> }) => {
           <DropdownMenuItem
             onClick={() => {
               setCurrentRow(channel);
+              setOpen('rateLimit');
+            }}
+          >
+            <IconWeight size={16} className='mr-2' />
+            {t('channels.actions.rateLimit')}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => {
+              setCurrentRow(channel);
               setOpen('overrides');
             }}
           >

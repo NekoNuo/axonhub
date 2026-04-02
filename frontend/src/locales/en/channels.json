@@ -117,6 +117,7 @@
   "channels.actions.bulkTest": "Health Check",
   "channels.actions.settings": "Settings",
   "channels.actions.modelPrice": "Model Price",
+  "channels.actions.rateLimit": "Rate Limits",
   "channels.actions.errorResolved": "Error Resolved",
   "channels.actions.markErrorResolved": "Mark Error as Resolved",
   "channels.actions.viewModels": "View Models",

@@ -360,19 +360,18 @@ func (svc *ChannelService) RecordPerformance(ctx context.Context, perf *Performa
 	// Get or create time slot for this second
 	slot := cm.getOrCreateTimeSlot(ts, perf.EndTime, windowSize)
 
-	// Update slot request count for sliding window metrics.
-	// Note: aggregatedMetrics.RequestCount is NOT incremented here because it was already
-	// incremented in IncrementChannelSelection() at selection time for immediate load balancing effect.
-	// The cleanup logic will subtract slot.RequestCount from aggregatedMetrics when the slot expires.
-	if !perf.Canceled {
-		slot.RequestCount++
-	} else {
-		// If canceled, decrement the aggregated request count that was incremented at selection time.
-		// We don't increment slot.RequestCount, so it won't be subtracted later.
+	// RequestCount is incremented at selection time in IncrementChannelSelection().
+	// For canceled requests, roll back that selection-time increment.
+	if perf.Canceled {
 		svc.channelPerfMetricsLock.Lock()
+		if cm.aggregatedMetrics.RequestCount > 0 {
+			cm.aggregatedMetrics.RequestCount--
+		}
 
-		cm.aggregatedMetrics.RequestCount--
-
+		selectionTs := perf.StartTime.Unix()
+		if selectedSlot, ok := cm.window.Get(selectionTs); ok && selectedSlot != nil && selectedSlot.RequestCount > 0 {
+			selectedSlot.RequestCount--
+		}
 		svc.channelPerfMetricsLock.Unlock()
 	}
 
@@ -446,6 +445,33 @@ func (svc *ChannelService) GetChannelMetrics(ctx context.Context, channelID int)
 	return cm.aggregatedMetrics.Clone(), nil
 }
 
+// GetChannelRecentRequestCount returns the number of requests selected in [since, now].
+// This is based on in-memory rolling window metrics used by load balancing.
+func (svc *ChannelService) GetChannelRecentRequestCount(channelID int, since time.Time) int64 {
+	svc.channelPerfMetricsLock.RLock()
+	defer svc.channelPerfMetricsLock.RUnlock()
+
+	cm, exists := svc.channelPerfMetrics[channelID]
+	if !exists || cm == nil {
+		return 0
+	}
+
+	sinceTs := since.Unix()
+	var count int64
+
+	cm.window.Range(func(ts int64, metrics *timeSlotMetrics) bool {
+		if ts < sinceTs {
+			return true
+		}
+		if metrics != nil {
+			count += metrics.RequestCount
+		}
+		return true
+	})
+
+	return count
+}
+
 // IncrementChannelSelection increments the request count for a channel at selection time.
 // This is called when a channel is selected by the load balancer to ensure immediate
 // impact on subsequent selections, preventing the same channel from being selected
@@ -470,6 +496,14 @@ func (svc *ChannelService) IncrementChannelSelection(channelID int) {
 	if cm.aggregatedMetrics.LastSelectedAt == nil || cm.aggregatedMetrics.LastSelectedAt.Before(now) {
 		cm.aggregatedMetrics.LastSelectedAt = &now
 	}
+
+	// Also increment current time-slot count for rolling-window queries (e.g. RPM checks).
+	var windowSize int64 = defaultPerformanceWindowSize
+	if svc.perfWindowSeconds > 0 {
+		windowSize = svc.perfWindowSeconds
+	}
+	slot := cm.getOrCreateTimeSlot(now.Unix(), now, windowSize)
+	slot.RequestCount++
 
 	// Log debug message if enabled
 	if log.DebugEnabled(context.Background()) {

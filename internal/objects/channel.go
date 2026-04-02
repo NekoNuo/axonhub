@@ -103,6 +103,14 @@ type ChannelSettings struct {
 	// When enabled, only the original model names (from field) will be exposed, not the mapped model names (to field).
 	HideMappedModels bool `json:"hideMappedModels"`
 
+	// RPM limits requests per minute for this channel.
+	// <= 0 means unlimited.
+	RPM int `json:"rpm,omitempty"`
+
+	// Concurrency limits concurrent in-flight requests for this channel.
+	// <= 0 means unlimited.
+	Concurrency int `json:"concurrency,omitempty"`
+
 	// OverrideParameters sets the channel override the request body.
 	// A json string.
 	// e.g. {"max_tokens": 100}, {"temperature": 0.7}

@@ -117,6 +117,7 @@
   "channels.actions.bulkTest": "健康检查",
   "channels.actions.settings": "设置",
   "channels.actions.modelPrice": "模型价格",
+  "channels.actions.rateLimit": "速率限制",
   "channels.actions.errorResolved": "错误已解决",
   "channels.actions.markErrorResolved": "标记错误已解决",
   "channels.actions.viewModels": "查看模型",

@@ -157,6 +157,8 @@ export const channelSettingsSchema = z.object({
   autoTrimedModelPrefixes: z.array(z.string()).optional().nullable(),
   hideOriginalModels: z.boolean().optional(),
   hideMappedModels: z.boolean().optional(),
+  rpm: z.number().int().optional().nullable(),
+  concurrency: z.number().int().optional().nullable(),
   bodyOverrideOperations: z.array(overrideOperationSchema).optional(),
   headerOverrideOperations: z.array(overrideOperationSchema).optional(),
   proxy: proxyConfigSchema.optional().nullable(),
