@@ -143,6 +143,22 @@ export const routeConfigs: RouteGroup[] = [
       },
     ],
   },
+  {
+    title: 'Health',
+    scopeLevel: 'system',
+    routes: [
+      {
+        path: '/health/channels',
+        requiredScopes: ['read_channels'],
+        mode: 'hidden',
+      },
+      {
+        path: '/health/models',
+        requiredScopes: ['read_channels'],
+        mode: 'hidden',
+      },
+    ],
+  },
 ];
 
 // 获取路由配置的辅助函数

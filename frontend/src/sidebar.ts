@@ -20,6 +20,24 @@ import { useRoutePermissions } from '@/hooks/useRoutePermissions';
 import { useMe } from '@/features/auth/data/auth';
 import { type SidebarData, type NavGroup, type NavLink } from './components/layout/types';
 
+export function getHealthNavGroup(t: (key: string) => string): NavGroup {
+  return {
+    title: t('sidebar.groups.health'),
+    items: [
+      {
+        title: t('sidebar.items.channelHealth'),
+        url: '/health/channels',
+        icon: IconActivity,
+      } as NavLink,
+      {
+        title: t('sidebar.items.modelHealth'),
+        url: '/health/models',
+        icon: IconRobot,
+      } as NavLink,
+    ],
+  };
+}
+
 export function useSidebarData(): SidebarData {
   const { t } = useTranslation();
   const { user: authUser } = useAuthStore((state) => state.auth);
@@ -187,6 +205,7 @@ export function useSidebarData(): SidebarData {
         // } as NavLink,
       ],
     },
+    getHealthNavGroup(t),
   ];
 
   // 使用权限过滤导航组
