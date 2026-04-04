@@ -657,6 +657,30 @@ type ComplexityRoot struct {
 		User    func(childComplexity int) int
 	}
 
+	LoadBalancerPreview struct {
+		Candidates func(childComplexity int) int
+		ModelID    func(childComplexity int) int
+		Steps      func(childComplexity int) int
+		Strategy   func(childComplexity int) int
+		Summary    func(childComplexity int) int
+	}
+
+	LoadBalancerPreviewCandidate struct {
+		ChannelName func(childComplexity int) int
+	}
+
+	LoadBalancerPreviewStep struct {
+		Attempt            func(childComplexity int) int
+		ChannelName        func(childComplexity int) int
+		WaitMsAfterFailure func(childComplexity int) int
+	}
+
+	LoadBalancerPreviewSummary struct {
+		FallbackChannelName   func(childComplexity int) int
+		FirstRetryChannelName func(childComplexity int) int
+		PrimaryChannelName    func(childComplexity int) int
+	}
+
 	Model struct {
 		AssociatedChannelCount func(childComplexity int) int
 		CreatedAt              func(childComplexity int) int
@@ -1109,6 +1133,7 @@ type ComplexityRoot struct {
 		FastestModels                func(childComplexity int, input FastestChannelsInput) int
 		FetchModels                  func(childComplexity int, input biz.FetchModelsInput) int
 		LatestChannelHealthSnapshots func(childComplexity int, input biz.GetChannelHealthSnapshotsInput) int
+		LoadBalancerPreview          func(childComplexity int) int
 		Me                           func(childComplexity int) int
 		ModelPerformanceStats        func(childComplexity int) int
 		Models                       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.ModelOrder, where *ent.ModelWhereInput) int
@@ -1943,6 +1968,7 @@ type QueryResolver interface {
 	QueryChannels(ctx context.Context, input biz.QueryChannelsInput) (*ent.ChannelConnection, error)
 	APIKeyQuotaUsages(ctx context.Context, apiKeyID objects.GUID) ([]*APIKeyProfileQuotaUsage, error)
 	DashboardOverview(ctx context.Context) (*DashboardOverview, error)
+	LoadBalancerPreview(ctx context.Context) (*LoadBalancerPreview, error)
 	RequestStats(ctx context.Context) (*RequestStats, error)
 	RequestStatsByChannel(ctx context.Context, timeWindow *string) ([]*RequestStatsByChannel, error)
 	RequestStatsByModel(ctx context.Context, timeWindow *string) ([]*RequestStatsByModel, error)
@@ -4200,6 +4226,82 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.InitializeSystemPayload.User(childComplexity), true
+
+	case "LoadBalancerPreview.candidates":
+		if e.complexity.LoadBalancerPreview.Candidates == nil {
+			break
+		}
+
+		return e.complexity.LoadBalancerPreview.Candidates(childComplexity), true
+	case "LoadBalancerPreview.modelId":
+		if e.complexity.LoadBalancerPreview.ModelID == nil {
+			break
+		}
+
+		return e.complexity.LoadBalancerPreview.ModelID(childComplexity), true
+	case "LoadBalancerPreview.steps":
+		if e.complexity.LoadBalancerPreview.Steps == nil {
+			break
+		}
+
+		return e.complexity.LoadBalancerPreview.Steps(childComplexity), true
+	case "LoadBalancerPreview.strategy":
+		if e.complexity.LoadBalancerPreview.Strategy == nil {
+			break
+		}
+
+		return e.complexity.LoadBalancerPreview.Strategy(childComplexity), true
+	case "LoadBalancerPreview.summary":
+		if e.complexity.LoadBalancerPreview.Summary == nil {
+			break
+		}
+
+		return e.complexity.LoadBalancerPreview.Summary(childComplexity), true
+
+	case "LoadBalancerPreviewCandidate.channelName":
+		if e.complexity.LoadBalancerPreviewCandidate.ChannelName == nil {
+			break
+		}
+
+		return e.complexity.LoadBalancerPreviewCandidate.ChannelName(childComplexity), true
+
+	case "LoadBalancerPreviewStep.attempt":
+		if e.complexity.LoadBalancerPreviewStep.Attempt == nil {
+			break
+		}
+
+		return e.complexity.LoadBalancerPreviewStep.Attempt(childComplexity), true
+	case "LoadBalancerPreviewStep.channelName":
+		if e.complexity.LoadBalancerPreviewStep.ChannelName == nil {
+			break
+		}
+
+		return e.complexity.LoadBalancerPreviewStep.ChannelName(childComplexity), true
+	case "LoadBalancerPreviewStep.waitMsAfterFailure":
+		if e.complexity.LoadBalancerPreviewStep.WaitMsAfterFailure == nil {
+			break
+		}
+
+		return e.complexity.LoadBalancerPreviewStep.WaitMsAfterFailure(childComplexity), true
+
+	case "LoadBalancerPreviewSummary.fallbackChannelName":
+		if e.complexity.LoadBalancerPreviewSummary.FallbackChannelName == nil {
+			break
+		}
+
+		return e.complexity.LoadBalancerPreviewSummary.FallbackChannelName(childComplexity), true
+	case "LoadBalancerPreviewSummary.firstRetryChannelName":
+		if e.complexity.LoadBalancerPreviewSummary.FirstRetryChannelName == nil {
+			break
+		}
+
+		return e.complexity.LoadBalancerPreviewSummary.FirstRetryChannelName(childComplexity), true
+	case "LoadBalancerPreviewSummary.primaryChannelName":
+		if e.complexity.LoadBalancerPreviewSummary.PrimaryChannelName == nil {
+			break
+		}
+
+		return e.complexity.LoadBalancerPreviewSummary.PrimaryChannelName(childComplexity), true
 
 	case "Model.associatedChannelCount":
 		if e.complexity.Model.AssociatedChannelCount == nil {
@@ -6688,6 +6790,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.LatestChannelHealthSnapshots(childComplexity, args["input"].(biz.GetChannelHealthSnapshotsInput)), true
+	case "Query.loadBalancerPreview":
+		if e.complexity.Query.LoadBalancerPreview == nil {
+			break
+		}
+
+		return e.complexity.Query.LoadBalancerPreview(childComplexity), true
 	case "Query.me":
 		if e.complexity.Query.Me == nil {
 			break
@@ -23493,6 +23601,374 @@ func (ec *executionContext) fieldContext_InitializeSystemPayload_token(_ context
 	return fc, nil
 }
 
+func (ec *executionContext) _LoadBalancerPreview_modelId(ctx context.Context, field graphql.CollectedField, obj *LoadBalancerPreview) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LoadBalancerPreview_modelId,
+		func(ctx context.Context) (any, error) {
+			return obj.ModelID, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LoadBalancerPreview_modelId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LoadBalancerPreview",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LoadBalancerPreview_strategy(ctx context.Context, field graphql.CollectedField, obj *LoadBalancerPreview) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LoadBalancerPreview_strategy,
+		func(ctx context.Context) (any, error) {
+			return obj.Strategy, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LoadBalancerPreview_strategy(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LoadBalancerPreview",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LoadBalancerPreview_summary(ctx context.Context, field graphql.CollectedField, obj *LoadBalancerPreview) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LoadBalancerPreview_summary,
+		func(ctx context.Context) (any, error) {
+			return obj.Summary, nil
+		},
+		nil,
+		ec.marshalNLoadBalancerPreviewSummary2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋgqlᚐLoadBalancerPreviewSummary,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LoadBalancerPreview_summary(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LoadBalancerPreview",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "primaryChannelName":
+				return ec.fieldContext_LoadBalancerPreviewSummary_primaryChannelName(ctx, field)
+			case "firstRetryChannelName":
+				return ec.fieldContext_LoadBalancerPreviewSummary_firstRetryChannelName(ctx, field)
+			case "fallbackChannelName":
+				return ec.fieldContext_LoadBalancerPreviewSummary_fallbackChannelName(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LoadBalancerPreviewSummary", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LoadBalancerPreview_candidates(ctx context.Context, field graphql.CollectedField, obj *LoadBalancerPreview) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LoadBalancerPreview_candidates,
+		func(ctx context.Context) (any, error) {
+			return obj.Candidates, nil
+		},
+		nil,
+		ec.marshalNLoadBalancerPreviewCandidate2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋgqlᚐLoadBalancerPreviewCandidateᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LoadBalancerPreview_candidates(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LoadBalancerPreview",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "channelName":
+				return ec.fieldContext_LoadBalancerPreviewCandidate_channelName(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LoadBalancerPreviewCandidate", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LoadBalancerPreview_steps(ctx context.Context, field graphql.CollectedField, obj *LoadBalancerPreview) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LoadBalancerPreview_steps,
+		func(ctx context.Context) (any, error) {
+			return obj.Steps, nil
+		},
+		nil,
+		ec.marshalNLoadBalancerPreviewStep2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋgqlᚐLoadBalancerPreviewStepᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LoadBalancerPreview_steps(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LoadBalancerPreview",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "attempt":
+				return ec.fieldContext_LoadBalancerPreviewStep_attempt(ctx, field)
+			case "channelName":
+				return ec.fieldContext_LoadBalancerPreviewStep_channelName(ctx, field)
+			case "waitMsAfterFailure":
+				return ec.fieldContext_LoadBalancerPreviewStep_waitMsAfterFailure(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LoadBalancerPreviewStep", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LoadBalancerPreviewCandidate_channelName(ctx context.Context, field graphql.CollectedField, obj *LoadBalancerPreviewCandidate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LoadBalancerPreviewCandidate_channelName,
+		func(ctx context.Context) (any, error) {
+			return obj.ChannelName, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LoadBalancerPreviewCandidate_channelName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LoadBalancerPreviewCandidate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LoadBalancerPreviewStep_attempt(ctx context.Context, field graphql.CollectedField, obj *LoadBalancerPreviewStep) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LoadBalancerPreviewStep_attempt,
+		func(ctx context.Context) (any, error) {
+			return obj.Attempt, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LoadBalancerPreviewStep_attempt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LoadBalancerPreviewStep",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LoadBalancerPreviewStep_channelName(ctx context.Context, field graphql.CollectedField, obj *LoadBalancerPreviewStep) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LoadBalancerPreviewStep_channelName,
+		func(ctx context.Context) (any, error) {
+			return obj.ChannelName, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LoadBalancerPreviewStep_channelName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LoadBalancerPreviewStep",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LoadBalancerPreviewStep_waitMsAfterFailure(ctx context.Context, field graphql.CollectedField, obj *LoadBalancerPreviewStep) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LoadBalancerPreviewStep_waitMsAfterFailure,
+		func(ctx context.Context) (any, error) {
+			return obj.WaitMsAfterFailure, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LoadBalancerPreviewStep_waitMsAfterFailure(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LoadBalancerPreviewStep",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LoadBalancerPreviewSummary_primaryChannelName(ctx context.Context, field graphql.CollectedField, obj *LoadBalancerPreviewSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LoadBalancerPreviewSummary_primaryChannelName,
+		func(ctx context.Context) (any, error) {
+			return obj.PrimaryChannelName, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_LoadBalancerPreviewSummary_primaryChannelName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LoadBalancerPreviewSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LoadBalancerPreviewSummary_firstRetryChannelName(ctx context.Context, field graphql.CollectedField, obj *LoadBalancerPreviewSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LoadBalancerPreviewSummary_firstRetryChannelName,
+		func(ctx context.Context) (any, error) {
+			return obj.FirstRetryChannelName, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_LoadBalancerPreviewSummary_firstRetryChannelName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LoadBalancerPreviewSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LoadBalancerPreviewSummary_fallbackChannelName(ctx context.Context, field graphql.CollectedField, obj *LoadBalancerPreviewSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LoadBalancerPreviewSummary_fallbackChannelName,
+		func(ctx context.Context) (any, error) {
+			return obj.FallbackChannelName, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_LoadBalancerPreviewSummary_fallbackChannelName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LoadBalancerPreviewSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Model_id(ctx context.Context, field graphql.CollectedField, obj *ent.Model) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -35719,6 +36195,47 @@ func (ec *executionContext) fieldContext_Query_dashboardOverview(_ context.Conte
 				return ec.fieldContext_DashboardOverview_averageResponseTime(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DashboardOverview", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_loadBalancerPreview(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_loadBalancerPreview,
+		func(ctx context.Context) (any, error) {
+			return ec.resolvers.Query().LoadBalancerPreview(ctx)
+		},
+		nil,
+		ec.marshalOLoadBalancerPreview2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋgqlᚐLoadBalancerPreview,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_loadBalancerPreview(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "modelId":
+				return ec.fieldContext_LoadBalancerPreview_modelId(ctx, field)
+			case "strategy":
+				return ec.fieldContext_LoadBalancerPreview_strategy(ctx, field)
+			case "summary":
+				return ec.fieldContext_LoadBalancerPreview_summary(ctx, field)
+			case "candidates":
+				return ec.fieldContext_LoadBalancerPreview_candidates(ctx, field)
+			case "steps":
+				return ec.fieldContext_LoadBalancerPreview_steps(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LoadBalancerPreview", field.Name)
 		},
 	}
 	return fc, nil
@@ -79759,6 +80276,193 @@ func (ec *executionContext) _InitializeSystemPayload(ctx context.Context, sel as
 	return out
 }
 
+var loadBalancerPreviewImplementors = []string{"LoadBalancerPreview"}
+
+func (ec *executionContext) _LoadBalancerPreview(ctx context.Context, sel ast.SelectionSet, obj *LoadBalancerPreview) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, loadBalancerPreviewImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LoadBalancerPreview")
+		case "modelId":
+			out.Values[i] = ec._LoadBalancerPreview_modelId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "strategy":
+			out.Values[i] = ec._LoadBalancerPreview_strategy(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "summary":
+			out.Values[i] = ec._LoadBalancerPreview_summary(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "candidates":
+			out.Values[i] = ec._LoadBalancerPreview_candidates(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "steps":
+			out.Values[i] = ec._LoadBalancerPreview_steps(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var loadBalancerPreviewCandidateImplementors = []string{"LoadBalancerPreviewCandidate"}
+
+func (ec *executionContext) _LoadBalancerPreviewCandidate(ctx context.Context, sel ast.SelectionSet, obj *LoadBalancerPreviewCandidate) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, loadBalancerPreviewCandidateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LoadBalancerPreviewCandidate")
+		case "channelName":
+			out.Values[i] = ec._LoadBalancerPreviewCandidate_channelName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var loadBalancerPreviewStepImplementors = []string{"LoadBalancerPreviewStep"}
+
+func (ec *executionContext) _LoadBalancerPreviewStep(ctx context.Context, sel ast.SelectionSet, obj *LoadBalancerPreviewStep) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, loadBalancerPreviewStepImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LoadBalancerPreviewStep")
+		case "attempt":
+			out.Values[i] = ec._LoadBalancerPreviewStep_attempt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "channelName":
+			out.Values[i] = ec._LoadBalancerPreviewStep_channelName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "waitMsAfterFailure":
+			out.Values[i] = ec._LoadBalancerPreviewStep_waitMsAfterFailure(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var loadBalancerPreviewSummaryImplementors = []string{"LoadBalancerPreviewSummary"}
+
+func (ec *executionContext) _LoadBalancerPreviewSummary(ctx context.Context, sel ast.SelectionSet, obj *LoadBalancerPreviewSummary) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, loadBalancerPreviewSummaryImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LoadBalancerPreviewSummary")
+		case "primaryChannelName":
+			out.Values[i] = ec._LoadBalancerPreviewSummary_primaryChannelName(ctx, field, obj)
+		case "firstRetryChannelName":
+			out.Values[i] = ec._LoadBalancerPreviewSummary_firstRetryChannelName(ctx, field, obj)
+		case "fallbackChannelName":
+			out.Values[i] = ec._LoadBalancerPreviewSummary_fallbackChannelName(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var modelImplementors = []string{"Model", "Node"}
 
 func (ec *executionContext) _Model(ctx context.Context, sel ast.SelectionSet, obj *ent.Model) graphql.Marshaler {
@@ -83855,6 +84559,25 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "loadBalancerPreview":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_loadBalancerPreview(ctx, field)
 				return res
 			}
 
@@ -93727,6 +94450,124 @@ func (ec *executionContext) marshalNJSONRawMessageInput2githubᚗcomᚋloopljᚋ
 	return v
 }
 
+func (ec *executionContext) marshalNLoadBalancerPreviewCandidate2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋgqlᚐLoadBalancerPreviewCandidateᚄ(ctx context.Context, sel ast.SelectionSet, v []*LoadBalancerPreviewCandidate) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNLoadBalancerPreviewCandidate2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋgqlᚐLoadBalancerPreviewCandidate(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNLoadBalancerPreviewCandidate2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋgqlᚐLoadBalancerPreviewCandidate(ctx context.Context, sel ast.SelectionSet, v *LoadBalancerPreviewCandidate) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._LoadBalancerPreviewCandidate(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNLoadBalancerPreviewStep2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋgqlᚐLoadBalancerPreviewStepᚄ(ctx context.Context, sel ast.SelectionSet, v []*LoadBalancerPreviewStep) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNLoadBalancerPreviewStep2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋgqlᚐLoadBalancerPreviewStep(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNLoadBalancerPreviewStep2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋgqlᚐLoadBalancerPreviewStep(ctx context.Context, sel ast.SelectionSet, v *LoadBalancerPreviewStep) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._LoadBalancerPreviewStep(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNLoadBalancerPreviewSummary2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋgqlᚐLoadBalancerPreviewSummary(ctx context.Context, sel ast.SelectionSet, v *LoadBalancerPreviewSummary) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._LoadBalancerPreviewSummary(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNMap2map(ctx context.Context, v any) (map[string]any, error) {
 	res, err := graphql.UnmarshalMap(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -99139,6 +99980,13 @@ func (ec *executionContext) marshalOJSONRawMessageInput2ᚕgithubᚗcomᚋlooplj
 	}
 
 	return ret
+}
+
+func (ec *executionContext) marshalOLoadBalancerPreview2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋgqlᚐLoadBalancerPreview(ctx context.Context, sel ast.SelectionSet, v *LoadBalancerPreview) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._LoadBalancerPreview(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOModel2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐModel(ctx context.Context, sel ast.SelectionSet, v *ent.Model) graphql.Marshaler {

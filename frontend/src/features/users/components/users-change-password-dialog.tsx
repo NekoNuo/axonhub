@@ -46,8 +46,8 @@ export function UsersChangePasswordDialog({ currentRow, open, onOpenChange }: Pr
       form.reset();
       onOpenChange(false);
     } catch (error) {
-          toast.error(t('common.errors.internalServerError'));
-        }
+      toast.error(t('users.messages.passwordChangeError'));
+    }
   };
 
   return (

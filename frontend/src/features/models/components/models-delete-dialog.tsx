@@ -27,8 +27,7 @@ export function ModelsDeleteDialog() {
         await deleteModel.mutateAsync(model.id);
       }
       setOpen(null);
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
   const handleClose = () => {

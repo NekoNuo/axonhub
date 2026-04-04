@@ -14,11 +14,11 @@ import {
 } from '@tanstack/react-table';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import type { DateTimeRangeValue } from '@/utils/date-range';
 import { useAnimatedList } from '@/hooks/useAnimatedList';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TableSkeleton } from '@/components/ui/table-skeleton';
 import { ServerSidePagination } from '@/components/server-side-pagination';
-import type { DateTimeRangeValue } from '@/utils/date-range';
 import { Trace, TraceConnection } from '../data/schema';
 import { DataTableToolbar } from './data-table-toolbar';
 import { useTracesColumns } from './traces-columns';

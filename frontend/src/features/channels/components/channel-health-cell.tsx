@@ -25,9 +25,7 @@ export const ChannelHealthCell = memo(({ points, snapshot }: ChannelHealthCellPr
     <div className='flex items-center gap-0.5'>
       {displayPoints.map((point, index) => {
         const hasRequests = point.totalRequestCount > 0;
-        const successRate = hasRequests
-          ? point.successRequestCount / point.totalRequestCount
-          : 0;
+        const successRate = hasRequests ? point.successRequestCount / point.totalRequestCount : 0;
 
         const isHealthy = hasRequests && successRate >= 0.9;
         const isWarning = hasRequests && successRate >= 0.5 && successRate < 0.9;
@@ -41,14 +39,36 @@ export const ChannelHealthCell = memo(({ points, snapshot }: ChannelHealthCellPr
             key={`${point.timestamp}-${index}`}
             content={
               <div className='space-y-1 text-xs'>
-                <div>{t('channels.columns.healthTooltip.probeTime')}: {probeTime}</div>
-                <div>{t('channels.columns.healthTooltip.successRate')}: {point.successRequestCount}/{point.totalRequestCount}</div>
-                <div>{t('channels.columns.healthTooltip.firstTokenLatency')}: {point.avgTimeToFirstTokenMs != null ? formatDuration(point.avgTimeToFirstTokenMs) : '-'}</div>
-                <div>{t('channels.columns.healthTooltip.activeProbeLatency')}: {point.activeProbeLatencyMs != null ? formatDuration(point.activeProbeLatencyMs) : '-'}</div>
-                <div>{t('channels.columns.healthTooltip.probeModelLatency')}: {point.probeModelLatencyMs != null ? formatDuration(point.probeModelLatencyMs) : '-'}</div>
-                <div>{t('channels.columns.healthTooltip.observedLatency')}: {snapshot?.observedLatencyMs != null ? formatDuration(snapshot.observedLatencyMs) : '-'}</div>
-                <div>{t('channels.columns.healthTooltip.observedTime')}: {snapshot?.observedTimestamp ? format(new Date(snapshot.observedTimestamp * 1000), 'MM-dd HH:mm') : '-'}</div>
-                <div>{t('channels.columns.healthTooltip.tokensPerSecond')}: {point.avgTokensPerSecond != null ? point.avgTokensPerSecond.toFixed(1) : '-'}</div>
+                <div>
+                  {t('channels.columns.healthTooltip.probeTime')}: {probeTime}
+                </div>
+                <div>
+                  {t('channels.columns.healthTooltip.successRate')}: {point.successRequestCount}/{point.totalRequestCount}
+                </div>
+                <div>
+                  {t('channels.columns.healthTooltip.firstTokenLatency')}:{' '}
+                  {point.avgTimeToFirstTokenMs != null ? formatDuration(point.avgTimeToFirstTokenMs) : '-'}
+                </div>
+                <div>
+                  {t('channels.columns.healthTooltip.activeProbeLatency')}:{' '}
+                  {point.activeProbeLatencyMs != null ? formatDuration(point.activeProbeLatencyMs) : '-'}
+                </div>
+                <div>
+                  {t('channels.columns.healthTooltip.probeModelLatency')}:{' '}
+                  {point.probeModelLatencyMs != null ? formatDuration(point.probeModelLatencyMs) : '-'}
+                </div>
+                <div>
+                  {t('channels.columns.healthTooltip.observedLatency')}:{' '}
+                  {snapshot?.observedLatencyMs != null ? formatDuration(snapshot.observedLatencyMs) : '-'}
+                </div>
+                <div>
+                  {t('channels.columns.healthTooltip.observedTime')}:{' '}
+                  {snapshot?.observedTimestamp ? format(new Date(snapshot.observedTimestamp * 1000), 'MM-dd HH:mm') : '-'}
+                </div>
+                <div>
+                  {t('channels.columns.healthTooltip.tokensPerSecond')}:{' '}
+                  {point.avgTokensPerSecond != null ? point.avgTokensPerSecond.toFixed(1) : '-'}
+                </div>
               </div>
             }
           >

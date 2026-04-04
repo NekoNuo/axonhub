@@ -6,6 +6,7 @@ import { usePaginationSearch } from '@/hooks/use-pagination-search';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Header } from '@/components/layout/header';
 import { Main } from '@/components/layout/main';
+import { useProvidersData } from '@/features/models/data/providers';
 import { createColumns } from './components/channels-columns';
 import { ChannelsErrorBanner } from './components/channels-error-banner';
 import { ChannelsPrimaryButtons } from './components/channels-primary-buttons';
@@ -13,7 +14,6 @@ import { ChannelsTable } from './components/channels-table';
 import { ChannelsTypeTabs } from './components/channels-type-tabs';
 import ChannelsProvider from './context/channels-context';
 import { useQueryChannels, useChannelTypes, useErrorChannelsCount, useChannelProbeData, useChannelHealthSnapshots } from './data/channels';
-import { useProvidersData } from '@/features/models/data/providers';
 
 const ChannelsDialogs = lazy(() => import('./components/channels-dialogs').then((m) => ({ default: m.ChannelsDialogs })));
 
@@ -150,10 +150,10 @@ function ChannelsContent() {
 
   const channelsWithProbeData = useMemo(() => {
     if (!data?.edges) return [];
-    
+
     const probeMap = new Map(probeData?.map((probe) => [probe.channelID, probe.points]) || []);
     const healthSnapshotMap = new Map(healthSnapshots?.map((snapshot) => [snapshot.channelID, snapshot]) || []);
-    
+
     return data.edges.map((edge) => ({
       ...edge.node,
       probePoints: probeMap.get(edge.node.id) || [],
@@ -300,7 +300,7 @@ export default function ChannelsManagement() {
         <div className='flex w-full flex-1 flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-0'>
           <div className='min-w-0'>
             <h2 className='text-xl font-bold tracking-tight'>{t('channels.title')}</h2>
-            <p className='text-sm text-muted-foreground'>{t('channels.description')}</p>
+            <p className='text-muted-foreground text-sm'>{t('channels.description')}</p>
           </div>
           <ChannelsPrimaryButtons />
         </div>

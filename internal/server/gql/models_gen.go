@@ -236,6 +236,30 @@ type InitializeSystemPayload struct {
 	Token   *string   `json:"token,omitempty"`
 }
 
+type LoadBalancerPreview struct {
+	ModelID    string                          `json:"modelId"`
+	Strategy   string                          `json:"strategy"`
+	Summary    *LoadBalancerPreviewSummary     `json:"summary"`
+	Candidates []*LoadBalancerPreviewCandidate `json:"candidates"`
+	Steps      []*LoadBalancerPreviewStep      `json:"steps"`
+}
+
+type LoadBalancerPreviewCandidate struct {
+	ChannelName string `json:"channelName"`
+}
+
+type LoadBalancerPreviewStep struct {
+	Attempt            int    `json:"attempt"`
+	ChannelName        string `json:"channelName"`
+	WaitMsAfterFailure int    `json:"waitMsAfterFailure"`
+}
+
+type LoadBalancerPreviewSummary struct {
+	PrimaryChannelName    *string `json:"primaryChannelName,omitempty"`
+	FirstRetryChannelName *string `json:"firstRetryChannelName,omitempty"`
+	FallbackChannelName   *string `json:"fallbackChannelName,omitempty"`
+}
+
 // Performance statistics for a specific model on a given date
 type ModelPerformanceStat struct {
 	Date         string   `json:"date"`

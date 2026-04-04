@@ -14,11 +14,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import LongText from '@/components/long-text';
+import { useProxyPresets, useSaveProxyPreset } from '@/features/system/data/system';
 import { useUpdateChannel, useTestChannel } from '../data/channels';
 import { Channel } from '../data/schema';
-import { mergeChannelSettingsForUpdate } from '../utils/merge';
 import { ErrorDisplay } from '../utils/error-formatter';
-import { useProxyPresets, useSaveProxyPreset } from '@/features/system/data/system';
+import { mergeChannelSettingsForUpdate } from '../utils/merge';
 
 interface Props {
   open: boolean;

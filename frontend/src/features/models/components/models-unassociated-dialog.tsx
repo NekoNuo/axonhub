@@ -90,9 +90,7 @@ export function ModelsUnassociatedDialog() {
                 <ChannelModelsList
                   channels={channelsForList}
                   emptyMessage={
-                    debouncedSearchQuery.trim()
-                      ? t('models.unassociated.noSearchResults')
-                      : t('models.unassociated.noUnassociated')
+                    debouncedSearchQuery.trim() ? t('models.unassociated.noSearchResults') : t('models.unassociated.noUnassociated')
                   }
                 />
               </ScrollArea>

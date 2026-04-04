@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { IconPlus, IconTrash, IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 import { useQueryModels } from '@/gql/models';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { extractNumberIDAsNumber } from '@/lib/utils';
 import { useDebounce } from '@/hooks/use-debounce';
 import { Badge } from '@/components/ui/badge';
@@ -12,8 +13,8 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { TagsAutocompleteInput } from '@/components/ui/tags-autocomplete-input';
 import { AutoComplete } from '@/components/auto-complete';
 import { AutoCompleteSelect } from '@/components/auto-complete-select';
@@ -23,22 +24,13 @@ import { useModels } from '../context/models-context';
 import { useQueryModelChannelConnections, ModelAssociationInput, ModelChannelConnection } from '../data/models';
 import { useUpdateModel } from '../data/models';
 import { ModelAssociation } from '../data/schema';
-import { toast } from 'sonner';
 import { ChannelModelsList } from './channel-models-list';
 
 const associationFormSchema = z.object({
   associations: z
     .array(
       z.object({
-        type: z.enum([
-          'channel_model',
-          'channel_regex',
-          'model',
-          'regex',
-          'channel_tags_model',
-          'channel_tags_regex',
-          'provider',
-        ]),
+        type: z.enum(['channel_model', 'channel_regex', 'model', 'regex', 'channel_tags_model', 'channel_tags_regex', 'provider']),
         priority: z.number().min(0, 'Priority must be at least 0').max(10, 'Priority cannot exceed 10'),
         disabled: z.boolean().default(false),
         channelId: z.number().optional(),
@@ -517,8 +509,7 @@ export function ModelsAssociationDialog() {
 
     // Get the priority of the last rule (highest priority)
     const currentAssociations = form.getValues('associations') || [];
-    const lastPriority =
-      currentAssociations.length > 0 ? Math.max(...currentAssociations.map((a) => a.priority ?? 0)) : 0;
+    const lastPriority = currentAssociations.length > 0 ? Math.max(...currentAssociations.map((a) => a.priority ?? 0)) : 0;
 
     append({
       type: 'channel_model',
@@ -564,7 +555,9 @@ export function ModelsAssociationDialog() {
                   {fields.length > 0 && (
                     <div className='grid grid-cols-[2.25rem_3rem_14rem_1fr_2.25rem] items-center gap-2 border-b px-[13px] pb-2'>
                       <div />
-                      <div className='text-muted-foreground text-center text-xs font-medium'>{t('models.dialogs.association.priority')}</div>
+                      <div className='text-muted-foreground text-center text-xs font-medium'>
+                        {t('models.dialogs.association.priority')}
+                      </div>
                       <div className='text-muted-foreground text-center text-xs font-medium'>{t('models.dialogs.association.type')}</div>
                       <div className='text-muted-foreground text-center text-xs font-medium'>{t('models.dialogs.association.rule')}</div>
                       <div />
@@ -572,15 +565,15 @@ export function ModelsAssociationDialog() {
                   )}
 
                   {fields.map((field, index) => (
-                      <AssociationRow
-                        key={field.id}
-                        index={index}
-                        form={form}
-                        channelOptions={channelOptions}
-                        providerOptions={providerOptions}
-                        allModelOptions={allModelOptions}
-                        allTags={allTags}
-                        onRemove={() => remove(index)}
+                    <AssociationRow
+                      key={field.id}
+                      index={index}
+                      form={form}
+                      channelOptions={channelOptions}
+                      providerOptions={providerOptions}
+                      allModelOptions={allModelOptions}
+                      allTags={allTags}
+                      onRemove={() => remove(index)}
                       portalContainer={dialogContentRef.current}
                     />
                   ))}
@@ -646,7 +639,16 @@ interface AssociationRowProps {
   portalContainer: HTMLElement | null;
 }
 
-function AssociationRow({ index, form, channelOptions, providerOptions, allModelOptions, allTags, onRemove, portalContainer }: AssociationRowProps) {
+function AssociationRow({
+  index,
+  form,
+  channelOptions,
+  providerOptions,
+  allModelOptions,
+  allTags,
+  onRemove,
+  portalContainer,
+}: AssociationRowProps) {
   const { t } = useTranslation();
 
   const type = form.watch(`associations.${index}.type`);

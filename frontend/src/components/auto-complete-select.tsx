@@ -110,7 +110,7 @@ export function AutoCompleteSelect<T extends string>({
                 e.preventDefault();
               }
             }}
-            className='min-w-[var(--radix-popover-trigger-width)] w-max max-w-[min(400px,90vw)] p-0'
+            className='w-max max-w-[min(400px,90vw)] min-w-[var(--radix-popover-trigger-width)] p-0'
             container={portalContainer}
           >
             <CommandList>

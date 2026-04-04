@@ -30,9 +30,7 @@ export function PromptsBulkEnableDialog() {
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{t('prompts.dialogs.bulkEnable.title')}</AlertDialogTitle>
-          <AlertDialogDescription>
-            {t('prompts.dialogs.bulkEnable.description', { count: selectedPrompts.length })}
-          </AlertDialogDescription>
+          <AlertDialogDescription>{t('prompts.dialogs.bulkEnable.description', { count: selectedPrompts.length })}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>{t('common.buttons.cancel')}</AlertDialogCancel>

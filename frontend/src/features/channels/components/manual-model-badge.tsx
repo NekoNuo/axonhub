@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 interface ManualModelBadgeProps {
   isManual?: boolean;
@@ -22,9 +22,9 @@ export function ManualModelBadge({ isManual = false, className }: ManualModelBad
 
   return (
     <Badge
-      variant="secondary"
+      variant='secondary'
       className={cn(
-        'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800',
+        'border-amber-200 bg-amber-100 text-amber-800 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
         className
       )}
     >

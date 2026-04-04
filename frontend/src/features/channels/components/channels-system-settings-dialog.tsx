@@ -6,8 +6,8 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { useChannelSetting, useTriggerChannelProbe, useUpdateChannelSetting, type ProbeFrequency } from '@/features/system/data/system';
 import { useChannels } from '../context/channels-context';
 
@@ -98,14 +98,11 @@ export function ChannelsSystemSettingsDialog() {
                   <div className='flex-1 pr-4'>
                     <p className='text-sm font-medium'>{t('channels.dialogs.systemSettings.channelProbe.enabledLabel')}</p>
                     <p className='text-muted-foreground text-sm'>{t('channels.dialogs.systemSettings.channelProbe.enabledDescription')}</p>
-                    <p className='text-muted-foreground text-xs mt-1'>{t('channels.dialogs.systemSettings.channelProbe.probeDescription')}</p>
+                    <p className='text-muted-foreground mt-1 text-xs'>
+                      {t('channels.dialogs.systemSettings.channelProbe.probeDescription')}
+                    </p>
                   </div>
-                  <Switch
-                    id='probe-enabled'
-                    checked={probeEnabled}
-                    onCheckedChange={setProbeEnabled}
-                    disabled={updateSettings.isPending}
-                  />
+                  <Switch id='probe-enabled' checked={probeEnabled} onCheckedChange={setProbeEnabled} disabled={updateSettings.isPending} />
                 </div>
 
                 {probeEnabled && (
@@ -126,14 +123,22 @@ export function ChannelsSystemSettingsDialog() {
                           ))}
                         </SelectContent>
                       </Select>
-                      <p className='text-muted-foreground text-xs'>{t('channels.dialogs.systemSettings.channelProbe.frequencyDescription')}</p>
-                      <p className='text-muted-foreground text-xs mt-1'>{t('channels.dialogs.systemSettings.channelProbe.frequencyWarning')}</p>
+                      <p className='text-muted-foreground text-xs'>
+                        {t('channels.dialogs.systemSettings.channelProbe.frequencyDescription')}
+                      </p>
+                      <p className='text-muted-foreground mt-1 text-xs'>
+                        {t('channels.dialogs.systemSettings.channelProbe.frequencyWarning')}
+                      </p>
                     </div>
 
                     <div className='flex items-center justify-between'>
                       <div className='flex-1 pr-4'>
-                        <p className='text-sm font-medium'>{t('channels.dialogs.systemSettings.channelProbe.activeProbeIdleChannelsLabel')}</p>
-                        <p className='text-muted-foreground text-sm'>{t('channels.dialogs.systemSettings.channelProbe.activeProbeIdleChannelsDescription')}</p>
+                        <p className='text-sm font-medium'>
+                          {t('channels.dialogs.systemSettings.channelProbe.activeProbeIdleChannelsLabel')}
+                        </p>
+                        <p className='text-muted-foreground text-sm'>
+                          {t('channels.dialogs.systemSettings.channelProbe.activeProbeIdleChannelsDescription')}
+                        </p>
                       </div>
                       <Switch
                         id='active-probe-idle-channels'
@@ -145,8 +150,12 @@ export function ChannelsSystemSettingsDialog() {
 
                     <div className='flex items-center justify-between'>
                       <div className='flex-1 pr-4'>
-                        <p className='text-sm font-medium'>{t('channels.dialogs.systemSettings.channelProbe.probeModelIdleChannelsLabel')}</p>
-                        <p className='text-muted-foreground text-sm'>{t('channels.dialogs.systemSettings.channelProbe.probeModelIdleChannelsDescription')}</p>
+                        <p className='text-sm font-medium'>
+                          {t('channels.dialogs.systemSettings.channelProbe.probeModelIdleChannelsLabel')}
+                        </p>
+                        <p className='text-muted-foreground text-sm'>
+                          {t('channels.dialogs.systemSettings.channelProbe.probeModelIdleChannelsDescription')}
+                        </p>
                       </div>
                       <Switch
                         id='probe-model-idle-channels'

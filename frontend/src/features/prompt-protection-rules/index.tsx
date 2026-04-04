@@ -9,10 +9,10 @@ import { Button } from '@/components/ui/button';
 import { Header } from '@/components/layout/header';
 import { Main } from '@/components/layout/main';
 import { PermissionGuard } from '@/components/permission-guard';
-import PromptProtectionRulesProvider, { usePromptProtectionRules } from './context/rules-context';
 import { createColumns } from './components/rules-columns';
 import { RulesDialogs } from './components/rules-dialogs';
 import { RulesTable } from './components/rules-table';
+import PromptProtectionRulesProvider, { usePromptProtectionRules } from './context/rules-context';
 import { useQueryPromptProtectionRules } from './data/rules';
 
 function RulesContent() {
@@ -154,7 +154,7 @@ export default function PromptProtectionRulesManagement() {
         <div className='flex flex-1 items-center justify-between'>
           <div>
             <h2 className='text-xl font-bold tracking-tight'>{t('promptProtectionRules.title')}</h2>
-            <p className='text-sm text-muted-foreground'>{t('promptProtectionRules.description')}</p>
+            <p className='text-muted-foreground text-sm'>{t('promptProtectionRules.description')}</p>
           </div>
           <ActionButtons />
         </div>

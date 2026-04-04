@@ -17,13 +17,7 @@ import { useSidebarData } from '../sidebar';
 import { ScrollArea } from './ui/scroll-area';
 
 // Inner component that uses sidebar data
-function CommandMenuContent({
-  open,
-  setOpen,
-}: {
-  open: boolean;
-  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
-}) {
+function CommandMenuContent({ open, setOpen }: { open: boolean; setOpen: React.Dispatch<React.SetStateAction<boolean>> }) {
   const navigate = useNavigate();
   const { setTheme } = useTheme();
   const sidebarData = useSidebarData();

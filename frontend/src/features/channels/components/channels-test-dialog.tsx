@@ -275,12 +275,7 @@ export function ChannelsTestDialog({ open, onOpenChange, channel }: Props) {
                       <p className='text-muted-foreground text-sm'>{t('channels.dialogs.test.removeFailedConfirm')}</p>
                     </div>
                     <div className='flex justify-end gap-2'>
-                      <Button
-                        size='sm'
-                        variant='destructive'
-                        onClick={handleRemoveFailed}
-                        disabled={updateChannel.isPending}
-                      >
+                      <Button size='sm' variant='destructive' onClick={handleRemoveFailed} disabled={updateChannel.isPending}>
                         {updateChannel.isPending ? t('common.buttons.saving') : t('common.buttons.confirm')}
                       </Button>
                     </div>

@@ -12,8 +12,8 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { SelectDropdown } from '@/components/select-dropdown';
 import { ScopesSelect } from '@/components/scopes-select';
+import { SelectDropdown } from '@/components/select-dropdown';
 import { useProjects } from '@/features/projects/data/projects';
 import { User } from '../data/schema';
 

@@ -189,15 +189,9 @@ export function ProjectUserActionDialog({ currentRow, open, onOpenChange }: Prop
     >
       <DialogContent className='sm:max-w-2xl' ref={setDialogContent}>
         <DialogHeader className='text-left'>
-          <DialogTitle>
-            {isEdit
-              ? t('users.dialogs.edit.title')
-              : t('users.dialogs.addToProject.title')}
-          </DialogTitle>
+          <DialogTitle>{isEdit ? t('users.dialogs.edit.title') : t('users.dialogs.addToProject.title')}</DialogTitle>
           <DialogDescription>
-            {isEdit
-              ? t('users.dialogs.edit.description')
-              : t('users.dialogs.addToProject.description')}
+            {isEdit ? t('users.dialogs.edit.description') : t('users.dialogs.addToProject.description')}
           </DialogDescription>
         </DialogHeader>
 

@@ -43,6 +43,11 @@ export function mergeOverrideHeaders(existing: OverrideOperation[], template: Ov
   }
 
   for (const templateOp of template) {
+    if (templateOp.op === 'set' && templateOp.path) {
+      const index = result.findIndex((op) => op.op === 'set' && op.path?.toLowerCase() === templateOp.path?.toLowerCase());
+      if (index >= 0) {
+        result[index] = templateOp;
+      } else {
     result.push(templateOp);
   }
 
@@ -76,7 +81,12 @@ export function mergeOverrideOperations(existing: OverrideOperation[], template:
     result.push(existingOp);
   }
 
-  for (const templateOp of template) {
+    // For set and delete ops, match by path
+    if ((templateOp.op === 'set' || templateOp.op === 'delete') && templateOp.path) {
+      const index = result.findIndex((op) => (op.op === 'set' || op.op === 'delete') && op.path === templateOp.path);
+      if (index >= 0) {
+        result[index] = templateOp;
+      } else {
     result.push(templateOp);
   }
 

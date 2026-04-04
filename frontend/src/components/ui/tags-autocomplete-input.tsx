@@ -26,7 +26,6 @@ export const TagsAutocompleteInput = forwardRef<HTMLDivElement, TagsAutocomplete
     const containerRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
-
     // Filter suggestions based on input and not already selected (capped for performance)
     const filteredSuggestions = useMemo(() => {
       const result: string[] = [];

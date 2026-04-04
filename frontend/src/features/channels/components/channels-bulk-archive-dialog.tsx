@@ -29,8 +29,7 @@ export function ChannelsBulkArchiveDialog() {
       resetRowSelection();
       setSelectedChannels([]);
       setOpen(null);
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
   return (

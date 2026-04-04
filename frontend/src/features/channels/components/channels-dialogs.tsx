@@ -18,10 +18,10 @@ import { ChannelsOverrideDialog } from './channels-override-dialog';
 import { ChannelsProxyDialog } from './channels-proxy-dialog';
 import { ChannelsRateLimitDialog } from './channels-rate-limit-dialog';
 import { ChannelsStatusDialog } from './channels-status-dialog';
+import { ChannelsSystemSettingsDialog } from './channels-system-settings-dialog';
 import { ChannelsTestDialog } from './channels-test-dialog';
 import { ChannelsRateLimitDialog } from './channels-rate-limit-dialog';
 import { ChannelsTransformOptionsDialog } from './channels-transform-options-dialog';
-import { ChannelsSystemSettingsDialog } from './channels-system-settings-dialog';
 
 export function ChannelsDialogs() {
   const { open, setOpen, currentRow, setCurrentRow, selectedChannels } = useChannels();

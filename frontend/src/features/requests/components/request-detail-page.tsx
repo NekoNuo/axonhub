@@ -6,6 +6,8 @@ import { zhCN, enUS } from 'date-fns/locale';
 import { Copy, Clock, Key, Database, ArrowLeft, FileText, Layers, Download, Terminal } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { getTokenFromStorage } from '@/stores/authStore';
+import { useSelectedProjectId } from '@/stores/projectStore';
 import { extractNumberID } from '@/lib/utils';
 import { usePaginationSearch } from '@/hooks/use-pagination-search';
 import { Badge } from '@/components/ui/badge';
@@ -17,14 +19,12 @@ import { JsonViewer } from '@/components/json-tree-view';
 import { Header } from '@/components/layout/header';
 import { Main } from '@/components/layout/main';
 import { useGeneralSettings } from '@/features/system/data/system';
-import { useSelectedProjectId } from '@/stores/projectStore';
-import { getTokenFromStorage } from '@/stores/authStore';
-import { useUsageLogs } from '../data/usage-logs';
 import { useRequest, useRequestExecutions } from '../data';
+import { useUsageLogs } from '../data/usage-logs';
+import { generateRequestCurl, generateExecutionCurl } from '../utils/curl-generator';
 import { ChunksDialog } from './chunks-dialog';
 import { CurlPreviewDialog } from './curl-preview-dialog';
 import { getStatusColor } from './help';
-import { generateRequestCurl, generateExecutionCurl } from '../utils/curl-generator';
 
 export default function RequestDetailPage() {
   const { t, i18n } = useTranslation();
@@ -150,14 +150,11 @@ export default function RequestDetailPage() {
     }
   };
 
-  const showRequestCurlPreview = useCallback(
-    (headers: any, body: any, apiFormat?: string) => {
-      const curl = generateRequestCurl(headers, body, apiFormat as any);
-      setCurlCommand(curl);
-      setShowCurlPreview(true);
-    },
-    []
-  );
+  const showRequestCurlPreview = useCallback((headers: any, body: any, apiFormat?: string) => {
+    const curl = generateRequestCurl(headers, body, apiFormat as any);
+    setCurlCommand(curl);
+    setShowCurlPreview(true);
+  }, []);
 
   const showExecutionCurlPreview = useCallback(
     (headers: any, body: any, channel?: { baseURL?: string; type?: string }, apiFormat?: string) => {
@@ -377,7 +374,7 @@ export default function RequestDetailPage() {
                           <div className='flex items-center justify-between'>
                             <p className='text-sm font-semibold'>{cachedTokens.toLocaleString()}</p>
                             {hasReadCache && (
-                              <Badge variant='outline' className='h-4 px-1 text-[10px] text-green-600 border-green-200 bg-green-50'>
+                              <Badge variant='outline' className='h-4 border-green-200 bg-green-50 px-1 text-[10px] text-green-600'>
                                 {cacheHitRate}%
                               </Badge>
                             )}
@@ -391,7 +388,7 @@ export default function RequestDetailPage() {
                           <div className='flex items-center justify-between'>
                             <p className='text-sm font-semibold'>{writeCachedTokens.toLocaleString()}</p>
                             {hasWriteCache && (
-                              <Badge variant='outline' className='h-4 px-1 text-[10px] text-blue-600 border-blue-200 bg-blue-50'>
+                              <Badge variant='outline' className='h-4 border-blue-200 bg-blue-50 px-1 text-[10px] text-blue-600'>
                                 {writeCacheRate}%
                               </Badge>
                             )}
@@ -533,17 +530,17 @@ export default function RequestDetailPage() {
                         {(request.format === 'openai/video' || request.format === 'seedance/video') &&
                           request.contentSaved &&
                           request.contentStorageKey && (
-                          <Button
-                            variant='outline'
-                            size='sm'
-                            onClick={downloadVideo}
-                            disabled={isDownloadingVideo}
-                            className='hover:bg-primary hover:text-primary-foreground'
-                          >
-                            <Download className='mr-2 h-4 w-4' />
-                            {t('requests.actions.downloadVideo')}
-                          </Button>
-                        )}
+                            <Button
+                              variant='outline'
+                              size='sm'
+                              onClick={downloadVideo}
+                              disabled={isDownloadingVideo}
+                              className='hover:bg-primary hover:text-primary-foreground'
+                            >
+                              <Download className='mr-2 h-4 w-4' />
+                              {t('requests.actions.downloadVideo')}
+                            </Button>
+                          )}
                         <Button
                           variant='outline'
                           size='sm'
@@ -703,7 +700,9 @@ export default function RequestDetailPage() {
                                     )}
                                   </div>
                                   {execution.errorMessage && (
-                                    <p className='text-destructive bg-destructive/10 rounded border p-3 text-sm'>{execution.errorMessage}</p>
+                                    <p className='text-destructive bg-destructive/10 rounded border p-3 text-sm'>
+                                      {execution.errorMessage}
+                                    </p>
                                   )}
                                 </div>
                               )}
@@ -713,7 +712,14 @@ export default function RequestDetailPage() {
                                   <Button
                                     variant='outline'
                                     size='sm'
-                                    onClick={() => showExecutionCurlPreview(execution.requestHeaders, execution.requestBody, execution.channel, execution.format)}
+                                    onClick={() =>
+                                      showExecutionCurlPreview(
+                                        execution.requestHeaders,
+                                        execution.requestBody,
+                                        execution.channel,
+                                        execution.format
+                                      )
+                                    }
                                     className='hover:bg-primary hover:text-primary-foreground'
                                   >
                                     <Terminal className='mr-2 h-4 w-4' />
@@ -742,7 +748,12 @@ export default function RequestDetailPage() {
                                       <Button
                                         variant='outline'
                                         size='sm'
-                                        onClick={() => downloadFile(formatJson(execution.requestHeaders), `execution-${execution.id}-request-headers.json`)}
+                                        onClick={() =>
+                                          downloadFile(
+                                            formatJson(execution.requestHeaders),
+                                            `execution-${execution.id}-request-headers.json`
+                                          )
+                                        }
                                         className='hover:bg-primary hover:text-primary-foreground'
                                       >
                                         <Download className='mr-2 h-4 w-4' />
@@ -782,7 +793,9 @@ export default function RequestDetailPage() {
                                       <Button
                                         variant='outline'
                                         size='sm'
-                                        onClick={() => downloadFile(formatJson(execution.requestBody), `execution-${execution.id}-request-body.json`)}
+                                        onClick={() =>
+                                          downloadFile(formatJson(execution.requestBody), `execution-${execution.id}-request-body.json`)
+                                        }
                                         className='hover:bg-primary hover:text-primary-foreground'
                                       >
                                         <Download className='mr-2 h-4 w-4' />
@@ -833,7 +846,9 @@ export default function RequestDetailPage() {
                                       <Button
                                         variant='outline'
                                         size='sm'
-                                        onClick={() => downloadFile(formatJson(execution.responseBody), `execution-${execution.id}-response-body.json`)}
+                                        onClick={() =>
+                                          downloadFile(formatJson(execution.responseBody), `execution-${execution.id}-response-body.json`)
+                                        }
                                         className='hover:bg-primary hover:text-primary-foreground'
                                       >
                                         <Download className='mr-2 h-4 w-4' />
@@ -889,11 +904,7 @@ export default function RequestDetailPage() {
       />
 
       {/* cURL Preview Modal */}
-      <CurlPreviewDialog
-        open={showCurlPreview}
-        onOpenChange={setShowCurlPreview}
-        curlCommand={curlCommand}
-      />
+      <CurlPreviewDialog open={showCurlPreview} onOpenChange={setShowCurlPreview} curlCommand={curlCommand} />
     </div>
   );
 }

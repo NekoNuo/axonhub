@@ -1,14 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { Prompt } from '../data/schema';
 
-type DialogType =
-  | 'create'
-  | 'edit'
-  | 'delete'
-  | 'bulkEnable'
-  | 'bulkDisable'
-  | 'bulkDelete'
-  | null;
+type DialogType = 'create' | 'edit' | 'delete' | 'bulkEnable' | 'bulkDisable' | 'bulkDelete' | null;
 
 interface PromptsContextType {
   open: DialogType;

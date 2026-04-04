@@ -16,7 +16,7 @@ export const ChannelExpandedRow = memo(({ channel, columnsLength, getApiFormatLa
   const config = CHANNEL_CONFIGS[channel.type];
 
   return (
-    <div className='bg-muted/30 p-6 hover:bg-muted/50'>
+    <div className='bg-muted/30 hover:bg-muted/50 p-6'>
       <div className='space-y-6'>
         <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
           <div className='space-y-3'>
@@ -77,7 +77,6 @@ export const ChannelExpandedRow = memo(({ channel, columnsLength, getApiFormatLa
                 </div>
               </div>
             </div>
-
           </div>
         </div>
 

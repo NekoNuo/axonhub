@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { useTranslation } from 'react-i18next';
 import { graphqlRequest } from '@/gql/graphql';
+import { useTranslation } from 'react-i18next';
 import { useSelectedProjectId } from '@/stores/projectStore';
 import { useErrorHandler } from '@/hooks/use-error-handler';
 import { Trace, TraceConnection, TraceDetail, traceConnectionSchema, traceDetailSchema } from './schema';

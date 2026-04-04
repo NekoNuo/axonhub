@@ -53,7 +53,9 @@ export function ChannelsErrorResolvedDialog({ open, onOpenChange }: ChannelsErro
         <div className='py-4'>
           <div className='bg-muted rounded-md p-3'>
             <p className='text-sm font-medium'>{t('channels.dialogs.errorResolved.currentError')}</p>
-            <p className='text-muted-foreground mt-1 text-sm'>{t(`channels.messages.${currentRow.errorMessage}`, { defaultValue: currentRow.errorMessage })}</p>
+            <p className='text-muted-foreground mt-1 text-sm'>
+              {t(`channels.messages.${currentRow.errorMessage}`, { defaultValue: currentRow.errorMessage })}
+            </p>
           </div>
         </div>
 

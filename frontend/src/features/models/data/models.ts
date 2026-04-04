@@ -577,14 +577,7 @@ export interface UnassociatedChannel {
 }
 
 export interface ModelAssociationInput {
-  type:
-    | 'channel_model'
-    | 'channel_regex'
-    | 'regex'
-    | 'model'
-    | 'channel_tags_model'
-    | 'channel_tags_regex'
-    | 'provider';
+  type: 'channel_model' | 'channel_regex' | 'regex' | 'model' | 'channel_tags_model' | 'channel_tags_regex' | 'provider';
   priority?: number;
   disabled?: boolean;
   channelModel?: {

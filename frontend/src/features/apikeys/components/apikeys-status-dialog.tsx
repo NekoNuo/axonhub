@@ -23,8 +23,7 @@ export function ApiKeysStatusDialog() {
       });
       closeDialog('status');
       resetRowSelection(); // 清空选中的行
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
   const isDisabling = selectedApiKey.status === 'enabled';

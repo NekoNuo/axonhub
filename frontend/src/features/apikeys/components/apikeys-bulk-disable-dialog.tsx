@@ -21,8 +21,7 @@ export function ApiKeysBulkDisableDialog() {
       resetRowSelection();
       setSelectedApiKeys([]);
       closeDialog();
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
   return (

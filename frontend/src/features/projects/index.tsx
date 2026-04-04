@@ -101,7 +101,7 @@ export default function ProjectsPage() {
         <div className='flex flex-1 items-center justify-between'>
           <div>
             <h2 className='text-xl font-bold tracking-tight'>{t('projects.title')}</h2>
-            <p className='text-sm text-muted-foreground'>{t('projects.description')}</p>
+            <p className='text-muted-foreground text-sm'>{t('projects.description')}</p>
           </div>
           <ProjectsPrimaryButtons />
         </div>

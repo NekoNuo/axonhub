@@ -1,6 +1,6 @@
+import { useNavigate } from '@tanstack/react-router';
 import { IconPlus, IconUpload, IconArrowsSort, IconSettings, IconScale } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { PermissionGuard } from '@/components/permission-guard';
 import { useChannels } from '../context/channels-context';
@@ -14,11 +14,7 @@ export function ChannelsPrimaryButtons() {
     <div className='flex gap-2 overflow-x-auto md:overflow-x-visible'>
       <PermissionGuard requiredScope='read_system'>
         {/* Load Balancing Strategy - navigate to system retry configuration */}
-        <Button
-          variant='outline'
-          className='shrink-0 space-x-1'
-          onClick={() => navigate({ to: '/system', search: { tab: 'retry' } })}
-        >
+        <Button variant='outline' className='shrink-0 space-x-1' onClick={() => navigate({ to: '/system', search: { tab: 'retry' } })}>
           <span>{t('channels.loadBalancingStrategy')}</span> <IconScale size={18} />
         </Button>
       </PermissionGuard>

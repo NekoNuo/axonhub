@@ -20,8 +20,7 @@ export function ApiKeysBulkEnableDialog() {
       resetRowSelection();
       setSelectedApiKeys([]);
       closeDialog();
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
   return (

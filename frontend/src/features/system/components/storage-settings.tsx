@@ -104,7 +104,6 @@ export function StorageSettings() {
       <StoragePolicySettings />
 
       <VideoStorageSettings />
-
     </div>
   );
 }

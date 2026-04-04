@@ -157,7 +157,7 @@ export default function PromptsManagement() {
         <div className='flex flex-1 items-center justify-between'>
           <div>
             <h2 className='text-xl font-bold tracking-tight'>{t('prompts.title')}</h2>
-            <p className='text-sm text-muted-foreground'>{t('prompts.description')}</p>
+            <p className='text-muted-foreground text-sm'>{t('prompts.description')}</p>
           </div>
           <ActionButtons />
         </div>

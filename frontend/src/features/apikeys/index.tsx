@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { type DateTimeRangeValue } from '@/utils/date-range';
 import { useDebounce } from '@/hooks/use-debounce';
 import { usePaginationSearch } from '@/hooks/use-pagination-search';
 import { usePermissions } from '@/hooks/usePermissions';
-import { type DateTimeRangeValue } from '@/utils/date-range';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Header } from '@/components/layout/header';
 import { Main } from '@/components/layout/main';
@@ -81,10 +81,7 @@ function ApiKeysContent() {
     orderBy: { field: 'CREATED_AT', direction: 'DESC' },
   });
 
-  const tableData = React.useMemo(
-    () => (data?.edges?.map((edge) => edge.node) ?? []),
-    [data?.edges]
-  );
+  const tableData = React.useMemo(() => data?.edges?.map((edge) => edge.node) ?? [], [data?.edges]);
 
   // Reset cursor when filters change
   React.useEffect(() => {
@@ -169,7 +166,7 @@ export default function ApiKeysManagement() {
         <div className='flex flex-1 items-center justify-between'>
           <div>
             <h2 className='text-xl font-bold tracking-tight'>{t('apikeys.title')}</h2>
-            <p className='text-sm text-muted-foreground'>{t('apikeys.description')}</p>
+            <p className='text-muted-foreground text-sm'>{t('apikeys.description')}</p>
           </div>
           <ApiKeysPrimaryButtons />
         </div>

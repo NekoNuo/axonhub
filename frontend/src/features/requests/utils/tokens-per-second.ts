@@ -28,9 +28,7 @@ export function calculateTokensPerSecond(request: Request): string {
 
   // Sum all completion token types (matching fastest performers logic)
   const completionTokens =
-    (usageLog.completionTokens || 0) +
-    (usageLog.completionReasoningTokens || 0) +
-    (usageLog.completionAudioTokens || 0);
+    (usageLog.completionTokens || 0) + (usageLog.completionReasoningTokens || 0) + (usageLog.completionAudioTokens || 0);
 
   if (completionTokens === 0) {
     return '-';

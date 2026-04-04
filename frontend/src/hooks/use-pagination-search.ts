@@ -134,7 +134,6 @@ export function usePaginationSearch(options: UsePaginationSearchOptions = {}): U
       cursorDirection: parsedDirection,
       cursorHistory: parsedCursorHistory,
     };
-     
   }, [rawStartCursor, rawEndCursor, rawPageSize, rawDirection, rawCursorHistory, defaultPageSize, defaultDirection, pageSizeStorageKey]);
 
   const updateSearch = useCallback(

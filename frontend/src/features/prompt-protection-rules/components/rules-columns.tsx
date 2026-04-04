@@ -8,8 +8,8 @@ import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
 import { PromptProtectionRule } from '../data/schema';
-import { RulesStatusDialog } from './rules-status-dialog';
 import { DataTableRowActions } from './data-table-row-actions';
+import { RulesStatusDialog } from './rules-status-dialog';
 
 function StatusSwitchCell({ row }: { row: Row<PromptProtectionRule> }) {
   const rule = row.original;
@@ -91,7 +91,7 @@ export const createColumns = (t: ReturnType<typeof useTranslation>['t'], canWrit
         <TooltipTrigger asChild>
           <div className='max-w-80 truncate font-mono text-xs'>{row.original.pattern}</div>
         </TooltipTrigger>
-        <TooltipContent className='max-w-xl break-all font-mono text-xs'>{row.original.pattern}</TooltipContent>
+        <TooltipContent className='max-w-xl font-mono text-xs break-all'>{row.original.pattern}</TooltipContent>
       </Tooltip>
     ),
     meta: {

@@ -30,13 +30,15 @@ export function PromptsBulkDeleteDialog() {
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{t('prompts.dialogs.bulkDelete.title')}</AlertDialogTitle>
-          <AlertDialogDescription>
-            {t('prompts.dialogs.bulkDelete.description', { count: selectedPrompts.length })}
-          </AlertDialogDescription>
+          <AlertDialogDescription>{t('prompts.dialogs.bulkDelete.description', { count: selectedPrompts.length })}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>{t('common.buttons.cancel')}</AlertDialogCancel>
-          <AlertDialogAction onClick={handleConfirm} disabled={bulkDeleteMutation.isPending} className='bg-destructive text-destructive-foreground hover:bg-destructive/90'>
+          <AlertDialogAction
+            onClick={handleConfirm}
+            disabled={bulkDeleteMutation.isPending}
+            className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+          >
             {t('common.buttons.delete')}
           </AlertDialogAction>
         </AlertDialogFooter>

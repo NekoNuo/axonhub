@@ -5,10 +5,7 @@ type PointerEventHandler = React.PointerEventHandler<HTMLElement>;
 type FocusEventHandler = React.FocusEventHandler<HTMLElement>;
 type MouseEventHandler = React.MouseEventHandler<HTMLElement>;
 
-function composeEventHandlers<E>(
-  originalHandler: ((event: E) => void) | undefined,
-  nextHandler: (event: E) => void
-) {
+function composeEventHandlers<E>(originalHandler: ((event: E) => void) | undefined, nextHandler: (event: E) => void) {
   return (event: E) => {
     originalHandler?.(event);
     nextHandler(event);

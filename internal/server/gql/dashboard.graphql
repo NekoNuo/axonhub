@@ -7,6 +7,30 @@ type DashboardOverview {
   averageResponseTime: Float
 }
 
+type LoadBalancerPreviewSummary {
+  primaryChannelName: String
+  firstRetryChannelName: String
+  fallbackChannelName: String
+}
+
+type LoadBalancerPreviewCandidate {
+  channelName: String!
+}
+
+type LoadBalancerPreviewStep {
+  attempt: Int!
+  channelName: String!
+  waitMsAfterFailure: Int!
+}
+
+type LoadBalancerPreview {
+  modelId: String!
+  strategy: String!
+  summary: LoadBalancerPreviewSummary!
+  candidates: [LoadBalancerPreviewCandidate!]!
+  steps: [LoadBalancerPreviewStep!]!
+}
+
 type RequestStats {
   requestsToday: Int!
   requestsThisWeek: Int!
@@ -211,6 +235,7 @@ type CostStatsByAPIKey {
 
 extend type Query {
   dashboardOverview: DashboardOverview!
+  loadBalancerPreview: LoadBalancerPreview
   requestStats: RequestStats!
   requestStatsByChannel(timeWindow: String): [RequestStatsByChannel!]!
   requestStatsByModel(timeWindow: String): [RequestStatsByModel!]!

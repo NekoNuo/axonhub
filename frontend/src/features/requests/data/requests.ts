@@ -307,9 +307,7 @@ export async function fetchAdjacentRequestPage(params: {
 }): Promise<{ requests: Request[]; pageInfo: RequestConnection['pageInfo'] }> {
   const query = buildRequestsQuery(params.permissions);
   const variables =
-    params.direction === 'older'
-      ? { first: params.pageSize, after: params.cursor }
-      : { last: params.pageSize, before: params.cursor };
+    params.direction === 'older' ? { first: params.pageSize, after: params.cursor } : { last: params.pageSize, before: params.cursor };
 
   const where: Record<string, any> = { ...params.where };
   if (params.projectId) where.projectID = params.projectId;

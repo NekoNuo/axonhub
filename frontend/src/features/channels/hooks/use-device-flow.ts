@@ -1,14 +1,14 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
-import {
-  copilotOAuthStart,
-  copilotOAuthPoll,
-  DeviceFlowStartResult,
-  DeviceFlowPollResult,
-} from '../data/copilot';
+import { toast } from 'sonner';
+import { copilotOAuthStart, copilotOAuthPoll, DeviceFlowStartResult, DeviceFlowPollResult } from '../data/copilot';
 
 export interface UseDeviceFlowOptions {
+  /**
+   * Optional project ID to include in headers.
+   */
+  projectId?: string | null;
+
   /**
    * Callback when access token is successfully obtained
    */
@@ -59,10 +59,8 @@ export interface UseDeviceFlowActions {
  * </Button>
  * ```
  */
-export function useDeviceFlow(
-  options: UseDeviceFlowOptions = {}
-): UseDeviceFlowState & UseDeviceFlowActions {
-  const { onSuccess } = options;
+export function useDeviceFlow(options: UseDeviceFlowOptions = {}): UseDeviceFlowState & UseDeviceFlowActions {
+  const { projectId, onSuccess } = options;
   const { t } = useTranslation();
 
   const [userCode, setUserCode] = useState<string | null>(null);
@@ -100,7 +98,7 @@ export function useDeviceFlow(
     setError(null);
 
     try {
-      const result: DeviceFlowStartResult = await copilotOAuthStart();
+      const result: DeviceFlowStartResult = await copilotOAuthStart(projectId ? { 'X-Project-ID': projectId } : undefined);
 
       setUserCode(result.user_code);
       setVerificationUri(result.verification_uri);
@@ -127,7 +125,8 @@ export function useDeviceFlow(
 
       try {
         const result: DeviceFlowPollResult = await copilotOAuthPoll(
-          { session_id: sessionId }
+          { session_id: sessionId },
+          projectId ? { 'X-Project-ID': projectId } : undefined
         );
 
         if (result.access_token) {
@@ -163,7 +162,7 @@ export function useDeviceFlow(
         setError(errorMessage);
       }
     },
-    [t, onSuccessRef]
+    [t, onSuccessRef, projectId]
   );
 
   const reset = useCallback(() => {

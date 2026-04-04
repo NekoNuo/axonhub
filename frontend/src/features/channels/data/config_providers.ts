@@ -26,7 +26,7 @@ import {
   Cerebras,
   Claude,
   XiaomiMiMo,
-  Fireworks
+  Fireworks,
 } from '@lobehub/icons';
 import { NanoGPTIcon } from '../components/nanogpt-icon';
 import { CHANNEL_CONFIGS } from './config_channels';

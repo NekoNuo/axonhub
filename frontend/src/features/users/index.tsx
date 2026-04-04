@@ -108,7 +108,7 @@ export default function UsersManagement() {
         <div className='flex flex-1 items-center justify-between'>
           <div>
             <h2 className='text-xl font-bold tracking-tight'>{t('users.title')}</h2>
-            <p className='text-sm text-muted-foreground'>{t('users.description')}</p>
+            <p className='text-muted-foreground text-sm'>{t('users.description')}</p>
           </div>
           <UsersPrimaryButtons />
         </div>

@@ -29,8 +29,7 @@ export function ModelsBulkDisableDialog() {
       resetRowSelection?.();
       setSelectedModels([]);
       setOpen(null);
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
   return (

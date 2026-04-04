@@ -5,19 +5,18 @@ import { RefreshCw, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/authStore';
 import { useSelectedProjectId } from '@/stores/projectStore';
+import type { DateTimeRangeValue } from '@/utils/date-range';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { DataTableFacetedFilter } from '@/components/data-table-faceted-filter';
 import { DateRangePicker } from '@/components/date-range-picker';
-import { DataTableViewOptions } from './data-table-view-options';
 import { useApiKeys } from '@/features/apikeys/data';
 import { useMe } from '@/features/auth/data/auth';
 import { useAllChannelSummarys } from '@/features/channels/data/channels';
 import { RequestStatus } from '../data/schema';
-import type { DateTimeRangeValue } from '@/utils/date-range';
-
+import { DataTableViewOptions } from './data-table-view-options';
 
 interface DataTableToolbarProps<TData> {
   table: Table<TData>;
@@ -62,14 +61,10 @@ export function DataTableToolbar<TData>({
       if (currentFilter && currentFilter.length > 0) {
         // Compute visible IDs from raw data (filtering for non-archived status)
         const visibleIds = new Set(
-          apiKeysData?.edges
-            ?.filter((edge) => edge.node.status !== 'archived')
-            ?.map((edge) => edge.node.id) ?? []
+          apiKeysData?.edges?.filter((edge) => edge.node.status !== 'archived')?.map((edge) => edge.node.id) ?? []
         );
         const prunedFilter = currentFilter.filter((id) => visibleIds.has(id));
-        table
-          .getColumn('apiKey')
-          ?.setFilterValue(prunedFilter.length > 0 ? prunedFilter : undefined);
+        table.getColumn('apiKey')?.setFilterValue(prunedFilter.length > 0 ? prunedFilter : undefined);
       }
     }
   };
@@ -84,14 +79,10 @@ export function DataTableToolbar<TData>({
       if (currentFilter && currentFilter.length > 0) {
         // Compute visible IDs from raw data (filtering for non-archived status)
         const visibleIds = new Set(
-          channelsData?.edges
-            ?.filter((edge) => edge.node.status !== 'archived')
-            ?.map((edge) => edge.node.id) ?? []
+          channelsData?.edges?.filter((edge) => edge.node.status !== 'archived')?.map((edge) => edge.node.id) ?? []
         );
         const prunedFilter = currentFilter.filter((id) => visibleIds.has(id));
-        table
-          .getColumn('channel')
-          ?.setFilterValue(prunedFilter.length > 0 ? prunedFilter : undefined);
+        table.getColumn('channel')?.setFilterValue(prunedFilter.length > 0 ? prunedFilter : undefined);
       }
     }
   };
@@ -199,7 +190,7 @@ export function DataTableToolbar<TData>({
             options={requestSources}
           />
         )}
-         {canViewChannels && table.getColumn('channel') && (channelOptions.length > 0 || isFetchingChannels) && (
+        {canViewChannels && table.getColumn('channel') && (channelOptions.length > 0 || isFetchingChannels) && (
           <DataTableFacetedFilter
             column={table.getColumn('channel')}
             title={t('requests.filters.channel')}
@@ -224,7 +215,7 @@ export function DataTableToolbar<TData>({
             }
           />
         )}
-         {canViewApiKeys && table.getColumn('apiKey') && (apiKeyOptions.length > 0 || isFetchingApiKeys) && (
+        {canViewApiKeys && table.getColumn('apiKey') && (apiKeyOptions.length > 0 || isFetchingApiKeys) && (
           <DataTableFacetedFilter
             column={table.getColumn('apiKey')}
             title={t('requests.filters.apiKey')}

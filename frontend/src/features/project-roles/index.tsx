@@ -101,7 +101,7 @@ export default function RolesPage() {
         <div className='flex flex-1 items-center justify-between'>
           <div>
             <h2 className='text-xl font-bold tracking-tight'>{t('projectRoles.title')}</h2>
-            <p className='text-sm text-muted-foreground'>{t('projectRoles.description')}</p>
+            <p className='text-muted-foreground text-sm'>{t('projectRoles.description')}</p>
           </div>
           <RolesPrimaryButtons />
         </div>

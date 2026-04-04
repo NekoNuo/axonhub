@@ -13,7 +13,7 @@ interface TimePeriodSelectorProps<T extends string = TimePeriod> {
 }
 
 export function TimePeriodSelector<T extends string>({ value, onChange, periods }: TimePeriodSelectorProps<T>) {
-  const effectivePeriods = periods ?? DEFAULT_PERIODS as readonly T[];
+  const effectivePeriods = periods ?? (DEFAULT_PERIODS as readonly T[]);
   const { t } = useTranslation();
 
   return (

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { PerformanceChart, PerformanceDataPoint } from './performance-chart';
 import { useModelPerformanceStats, ModelPerformanceStat } from '../data/dashboard';
+import { PerformanceChart, PerformanceDataPoint } from './performance-chart';
 
 interface ModelPerformanceStatsProps {
   onTotalRequestsChange?: (total: number) => void;
@@ -11,15 +11,16 @@ export function ModelPerformanceStats({ onTotalRequestsChange }: ModelPerformanc
   const { t } = useTranslation();
   const { data: performanceStats, isLoading, error } = useModelPerformanceStats();
 
-  const mappedData: PerformanceDataPoint[] | undefined = useMemo(() =>
-    performanceStats?.map((stat: ModelPerformanceStat) => ({
-      id: stat.modelId,
-      name: stat.modelId,
-      throughput: stat.throughput,
-      ttftMs: stat.ttftMs,
-      requestCount: stat.requestCount,
-      date: stat.date,
-    })),
+  const mappedData: PerformanceDataPoint[] | undefined = useMemo(
+    () =>
+      performanceStats?.map((stat: ModelPerformanceStat) => ({
+        id: stat.modelId,
+        name: stat.modelId,
+        throughput: stat.throughput,
+        ttftMs: stat.ttftMs,
+        requestCount: stat.requestCount,
+        date: stat.date,
+      })),
     [performanceStats]
   );
 
@@ -31,7 +32,7 @@ export function ModelPerformanceStats({ onTotalRequestsChange }: ModelPerformanc
       onTotalRequestsChange={onTotalRequestsChange}
       emptyMessage={t('dashboard.charts.noModelData')}
       errorMessage={t('dashboard.charts.errorLoadingModelData')}
-      idField="modelId"
+      idField='modelId'
     />
   );
 }

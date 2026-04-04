@@ -29,8 +29,7 @@ export function ChannelsBulkDisableDialog() {
       resetRowSelection();
       setSelectedChannels([]);
       setOpen(null);
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
   return (

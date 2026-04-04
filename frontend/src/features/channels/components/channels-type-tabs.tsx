@@ -73,7 +73,9 @@ export const ChannelsTypeTabs = memo(function ChannelsTypeTabs({ typeCounts, sel
     <div className='mb-6 w-full overflow-hidden'>
       <div
         className='hide-scroll flex flex-nowrap items-center gap-2 overflow-x-auto scroll-smooth'
-        onWheel={(e) => { e.currentTarget.scrollLeft += e.deltaY; }}
+        onWheel={(e) => {
+          e.currentTarget.scrollLeft += e.deltaY;
+        }}
       >
         {/* All tab */}
         <button

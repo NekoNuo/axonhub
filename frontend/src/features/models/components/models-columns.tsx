@@ -306,37 +306,37 @@ export const createColumns = (t: ReturnType<typeof useTranslation>['t'], canWrit
     },
 
     {
-          accessorKey: 'createdAt',
-          header: ({ column }) => <DataTableColumnHeader column={column} title={t('common.columns.createdAt')} />,
-          cell: ({ row }) => {
-            const raw = row.getValue('createdAt') as unknown;
-            const date = raw instanceof Date ? raw : new Date(raw as string);
+      accessorKey: 'createdAt',
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('common.columns.createdAt')} />,
+      cell: ({ row }) => {
+        const raw = row.getValue('createdAt') as unknown;
+        const date = raw instanceof Date ? raw : new Date(raw as string);
 
-            if (Number.isNaN(date.getTime())) {
-              return <span className='text-muted-foreground text-xs'>-</span>;
-            }
+        if (Number.isNaN(date.getTime())) {
+          return <span className='text-muted-foreground text-xs'>-</span>;
+        }
 
-            return (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className='text-muted-foreground cursor-help text-sm'>{format(date, 'yyyy-MM-dd')}</div>
-                </TooltipTrigger>
-                <TooltipContent>{format(date, 'yyyy-MM-dd HH:mm:ss')}</TooltipContent>
-              </Tooltip>
-            );
-          },
-          enableSorting: true,
-          enableHiding: false,
-        },
-        {
-          id: 'actions',
-          header: t('common.columns.actions'),
-          cell: DataTableRowActions,
-          meta: {
-            className: 'w-[88px] min-w-[88px] pr-3 pl-0',
-          },
-          enableSorting: false,
-          enableHiding: false,
-        },
+        return (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className='text-muted-foreground cursor-help text-sm'>{format(date, 'yyyy-MM-dd')}</div>
+            </TooltipTrigger>
+            <TooltipContent>{format(date, 'yyyy-MM-dd HH:mm:ss')}</TooltipContent>
+          </Tooltip>
+        );
+      },
+      enableSorting: true,
+      enableHiding: false,
+    },
+    {
+      id: 'actions',
+      header: t('common.columns.actions'),
+      cell: DataTableRowActions,
+      meta: {
+        className: 'w-[88px] min-w-[88px] pr-3 pl-0',
+      },
+      enableSorting: false,
+      enableHiding: false,
+    },
   ];
 };

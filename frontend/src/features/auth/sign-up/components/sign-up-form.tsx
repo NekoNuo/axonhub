@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { IconBrandFacebook, IconBrandGithub } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -28,8 +29,6 @@ const formSchema = z
     message: "Passwords don't match.",
     path: ['confirmPassword'],
   });
-
-import { useTranslation } from 'react-i18next';
 
 export function SignUpForm({ className, ...props }: SignUpFormProps) {
   const { t } = useTranslation();

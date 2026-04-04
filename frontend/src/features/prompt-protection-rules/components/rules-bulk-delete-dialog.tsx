@@ -35,7 +35,11 @@ export function RulesBulkDeleteDialog() {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>{t('common.buttons.cancel')}</AlertDialogCancel>
-          <AlertDialogAction onClick={handleConfirm} disabled={mutation.isPending} className='bg-destructive text-destructive-foreground hover:bg-destructive/90'>
+          <AlertDialogAction
+            onClick={handleConfirm}
+            disabled={mutation.isPending}
+            className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+          >
             {t('common.buttons.delete')}
           </AlertDialogAction>
         </AlertDialogFooter>

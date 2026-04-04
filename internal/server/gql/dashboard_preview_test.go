@@ -1,0 +1,151 @@
+package gql
+
+import (
+	"context"
+	"testing"
+	"time"
+
+	"github.com/samber/lo"
+	"github.com/stretchr/testify/require"
+	"github.com/zhenzou/executors"
+
+	"github.com/looplj/axonhub/internal/authz"
+	"github.com/looplj/axonhub/internal/ent"
+	"github.com/looplj/axonhub/internal/ent/channel"
+	"github.com/looplj/axonhub/internal/ent/enttest"
+	"github.com/looplj/axonhub/internal/ent/model"
+	"github.com/looplj/axonhub/internal/objects"
+	"github.com/looplj/axonhub/internal/pkg/xcache"
+	"github.com/looplj/axonhub/internal/server/biz"
+)
+
+func TestBuildLoadBalancerPreviewSelectsHottestModelAndBuildsRetrySteps(t *testing.T) {
+	ctx := authz.WithTestBypass(context.Background())
+	client := enttest.NewEntClient(t, "sqlite3", "file:ent?mode=memory&_fk=0")
+	t.Cleanup(func() { client.Close() })
+	ctx = ent.NewContext(ctx, client)
+
+	systemService := biz.NewSystemService(biz.SystemServiceParams{
+		CacheConfig: xcache.Config{Mode: xcache.ModeMemory},
+		Ent:         client,
+	})
+	err := systemService.SetRetryPolicy(ctx, &biz.RetryPolicy{
+		Enabled:                 true,
+		MaxChannelRetries:       2,
+		MaxSingleChannelRetries: 1,
+		RetryDelayMs:            1000,
+		LoadBalancerStrategy:    biz.LoadBalancerStrategyFailover,
+	})
+	require.NoError(t, err)
+
+	channelService := biz.NewChannelService(biz.ChannelServiceParams{
+		CacheConfig:   xcache.Config{Mode: xcache.ModeMemory},
+		Executor:      executors.NewPoolScheduleExecutor(),
+		Ent:           client,
+		SystemService: systemService,
+	})
+	t.Cleanup(channelService.Stop)
+
+	modelService := biz.NewModelService(biz.ModelServiceParams{Ent: client})
+
+	ch1, err := client.Channel.Create().
+		SetType(channel.TypeOpenai).
+		SetName("Primary").
+		SetBaseURL("https://example.com/1").
+		SetCredentials(objects.ChannelCredentials{APIKey: "k1"}).
+		SetSupportedModels([]string{"gpt-5.4"}).
+		SetDefaultTestModel("gpt-5.4").
+		SetOrderingWeight(100).
+		SetStatus(channel.StatusEnabled).
+		Save(ctx)
+	require.NoError(t, err)
+
+	ch2, err := client.Channel.Create().
+		SetType(channel.TypeOpenai).
+		SetName("Retry A").
+		SetBaseURL("https://example.com/2").
+		SetCredentials(objects.ChannelCredentials{APIKey: "k2"}).
+		SetSupportedModels([]string{"gpt-5.4"}).
+		SetDefaultTestModel("gpt-5.4").
+		SetOrderingWeight(80).
+		SetStatus(channel.StatusEnabled).
+		Save(ctx)
+	require.NoError(t, err)
+
+	ch3, err := client.Channel.Create().
+		SetType(channel.TypeOpenai).
+		SetName("Retry B").
+		SetBaseURL("https://example.com/3").
+		SetCredentials(objects.ChannelCredentials{APIKey: "k3"}).
+		SetSupportedModels([]string{"gpt-5.4"}).
+		SetDefaultTestModel("gpt-5.4").
+		SetOrderingWeight(60).
+		SetStatus(channel.StatusEnabled).
+		Save(ctx)
+	require.NoError(t, err)
+
+	channelService.SetEnabledChannelsForTest([]*biz.Channel{
+		{Channel: ch1},
+		{Channel: ch2},
+		{Channel: ch3},
+	})
+
+	_, err = client.Model.Create().
+		SetDeveloper("openai").
+		SetModelID("gpt-5.4").
+		SetType(model.TypeChat).
+		SetName("GPT-5.4").
+		SetIcon("openai").
+		SetGroup("openai").
+		SetModelCard(&objects.ModelCard{}).
+		SetSettings(&objects.ModelSettings{}).
+		SetStatus(model.StatusEnabled).
+		Save(ctx)
+	require.NoError(t, err)
+
+	now := time.Now()
+	for range 8 {
+		_, err = client.UsageLog.Create().
+			SetRequestID(1).
+			SetProjectID(1).
+			SetChannelID(ch1.ID).
+			SetModelID("gpt-5.4").
+			SetCreatedAt(now).
+			Save(ctx)
+		require.NoError(t, err)
+	}
+	for range 3 {
+		_, err = client.UsageLog.Create().
+			SetRequestID(1).
+			SetProjectID(1).
+			SetChannelID(ch1.ID).
+			SetModelID("claude-4.6").
+			SetCreatedAt(now).
+			Save(ctx)
+		require.NoError(t, err)
+	}
+
+	preview, err := buildLoadBalancerPreview(ctx, &Resolver{
+		client:         client,
+		systemService:  systemService,
+		channelService: channelService,
+		modelService:   modelService,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, preview)
+	require.Equal(t, "gpt-5.4", preview.ModelID)
+	require.Equal(t, biz.LoadBalancerStrategyFailover, preview.Strategy)
+	require.Len(t, preview.Candidates, 3)
+	require.Equal(t, "Primary", preview.Summary.PrimaryChannelName)
+	require.Equal(t, "Retry A", preview.Summary.FirstRetryChannelName)
+	require.Equal(t, "Retry B", preview.Summary.FallbackChannelName)
+	require.Len(t, preview.Steps, 3)
+	require.Equal(t, 1, preview.Steps[0].Attempt)
+	require.Equal(t, "Primary", preview.Steps[0].ChannelName)
+	require.Equal(t, 2, preview.Steps[1].Attempt)
+	require.Equal(t, "Retry A", preview.Steps[1].ChannelName)
+	require.Equal(t, 1000, preview.Steps[0].WaitMSAfterFailure)
+	require.Equal(t, []string{"Primary", "Retry A", "Retry B"}, lo.Map(preview.Candidates, func(item *loadBalancerPreviewCandidate, _ int) string {
+		return item.ChannelName
+	}))
+}

@@ -349,15 +349,12 @@ function SidebarContent({ className, ...props }: React.ComponentProps<'div'>) {
         ref={contentRef}
         data-slot='sidebar-content'
         data-sidebar='content'
-        className={cn(
-          'flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden',
-          className
-        )}
+        className={cn('flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden', className)}
         {...props}
       />
       <div
         className={cn(
-          'absolute bottom-0 left-0 right-0 h-8 pointer-events-none transition-opacity duration-300 bg-gradient-to-t from-sidebar to-transparent',
+          'from-sidebar pointer-events-none absolute right-0 bottom-0 left-0 h-8 bg-gradient-to-t to-transparent transition-opacity duration-300',
           showGradient ? 'opacity-100' : 'opacity-0'
         )}
       />
@@ -501,15 +498,15 @@ function SidebarMenuAction({
     <Comp
       data-slot='sidebar-menu-action'
       data-sidebar='menu-action'
-        className={cn(
-          'text-sidebar-foreground ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-md p-0 outline-hidden transition-transform focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
-          // Increases the hit area of the button on mobile.
-          'after:absolute after:-inset-2 md:after:hidden',
-          'group-data-[collapsible=icon]:hidden',
-          showOnHover &&
-            'group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 md:opacity-0',
-          className
-        )}
+      className={cn(
+        'text-sidebar-foreground ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-md p-0 outline-hidden transition-transform focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
+        // Increases the hit area of the button on mobile.
+        'after:absolute after:-inset-2 md:after:hidden',
+        'group-data-[collapsible=icon]:hidden',
+        showOnHover &&
+          'group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 md:opacity-0',
+        className
+      )}
       {...props}
     />
   );

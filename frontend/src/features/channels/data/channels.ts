@@ -1532,7 +1532,7 @@ export function useDeleteDisabledChannelAPIKeys() {
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['channelDisabledAPIKeys', variables.channelID] });
       queryClient.invalidateQueries({ queryKey: ['channels'] });
-      
+
       // Show appropriate message based on the result
       if (data.message === 'ONE_KEY_PRESERVED') {
         toast.success(t('channels.messages.deleteDisabledAPIKeysPreserved'));

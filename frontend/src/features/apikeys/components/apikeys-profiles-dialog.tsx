@@ -1,10 +1,10 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { format, type Locale } from 'date-fns';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { IconPlus, IconTrash, IconSettings, IconChevronDown, IconChevronUp } from '@tabler/icons-react';
-import { format, type Locale } from 'date-fns';
-import { zhCN, enUS } from 'date-fns/locale';
 import { useQueryModels } from '@/gql/models';
+import { zhCN, enUS } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
 import { extractNumberID } from '@/lib/utils';
 import { useDebounce } from '@/hooks/use-debounce';
@@ -21,7 +21,12 @@ import { useAllChannelSummarys } from '@/features/channels/data/channels';
 import { useSelectedProjectId } from '@/stores/projectStore';
 import { useApiKeysContext } from '../context/apikeys-context';
 import { useApiKeyQuotaUsages } from '../data/apikeys';
-import { updateApiKeyProfilesInputSchemaFactory, type ApiKeyProfile, type ApiKeyProfileQuotaUsage, type UpdateApiKeyProfilesInput } from '../data/schema';
+import {
+  updateApiKeyProfilesInputSchemaFactory,
+  type ApiKeyProfile,
+  type ApiKeyProfileQuotaUsage,
+  type UpdateApiKeyProfilesInput,
+} from '../data/schema';
 
 type ApiKeyQuotaPeriod = NonNullable<NonNullable<ApiKeyProfile['quota']>['period']>;
 
@@ -784,7 +789,8 @@ function ProfileCard({
                       <div>
                         <div className='text-muted-foreground text-xs'>{t('apikeys.profiles.quotaCost')}</div>
                         <div className='text-sm'>
-                          {(quotaUsage.usage.totalCost ?? 0).toLocaleString(undefined, { maximumFractionDigits: 6 })}/{currentQuota?.cost ?? '∞'}
+                          {(quotaUsage.usage.totalCost ?? 0).toLocaleString(undefined, { maximumFractionDigits: 6 })}/
+                          {currentQuota?.cost ?? '∞'}
                         </div>
                       </div>
                     </div>
@@ -794,8 +800,7 @@ function ProfileCard({
                         {quotaUsage.window.start ? format(quotaUsage.window.start, 'PPpp', { locale }) : '-'}
                       </div>
                       <div>
-                        {t('common.filters.endTime')}{' '}
-                        {quotaUsageEnd ? format(quotaUsageEnd, 'PPpp', { locale }) : '-'}
+                        {t('common.filters.endTime')} {quotaUsageEnd ? format(quotaUsageEnd, 'PPpp', { locale }) : '-'}
                       </div>
                     </div>
                   </div>
@@ -818,14 +823,14 @@ function ProfileCard({
                         {field.value === 'adaptive'
                           ? t('system.retry.loadBalancerStrategy.documentation.adaptive')
                           : field.value === 'failover'
-                          ? t('system.retry.loadBalancerStrategy.documentation.failover')
-                          : field.value === 'circuit-breaker'
-                          ? t('system.retry.loadBalancerStrategy.documentation.circuit-breaker')
-                          : field.value === 'high-availability'
-                          ? t('system.retry.loadBalancerStrategy.documentation.high-availability')
-                          : field.value === 'low-latency'
-                          ? t('system.retry.loadBalancerStrategy.documentation.low-latency')
-                          : t('apikeys.profiles.loadBalancerStrategyDescription')}
+                            ? t('system.retry.loadBalancerStrategy.documentation.failover')
+                            : field.value === 'circuit-breaker'
+                              ? t('system.retry.loadBalancerStrategy.documentation.circuit-breaker')
+                              : field.value === 'high-availability'
+                                ? t('system.retry.loadBalancerStrategy.documentation.high-availability')
+                                : field.value === 'low-latency'
+                                  ? t('system.retry.loadBalancerStrategy.documentation.low-latency')
+                                  : t('apikeys.profiles.loadBalancerStrategyDescription')}
                       </FormDescription>
                     </div>
                     <FormControl>
@@ -841,7 +846,9 @@ function ProfileCard({
                           <SelectItem value='adaptive'>{t('system.retry.loadBalancerStrategy.options.adaptive')}</SelectItem>
                           <SelectItem value='failover'>{t('system.retry.loadBalancerStrategy.options.failover')}</SelectItem>
                           <SelectItem value='circuit-breaker'>{t('system.retry.loadBalancerStrategy.options.circuitBreaker')}</SelectItem>
-                          <SelectItem value='high-availability'>{t('system.retry.loadBalancerStrategy.options.highAvailability')}</SelectItem>
+                          <SelectItem value='high-availability'>
+                            {t('system.retry.loadBalancerStrategy.options.highAvailability')}
+                          </SelectItem>
                           <SelectItem value='low-latency'>{t('system.retry.loadBalancerStrategy.options.lowLatency')}</SelectItem>
                         </SelectContent>
                       </Select>

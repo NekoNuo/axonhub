@@ -11,7 +11,12 @@ interface ChannelsErrorBannerProps {
   onExitErrorOnlyMode?: () => void;
 }
 
-export const ChannelsErrorBanner = memo(function ChannelsErrorBanner({ errorCount, onFilterErrorChannels, showErrorOnly, onExitErrorOnlyMode }: ChannelsErrorBannerProps) {
+export const ChannelsErrorBanner = memo(function ChannelsErrorBanner({
+  errorCount,
+  onFilterErrorChannels,
+  showErrorOnly,
+  onExitErrorOnlyMode,
+}: ChannelsErrorBannerProps) {
   const { t } = useTranslation();
 
   if (errorCount === 0) {

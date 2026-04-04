@@ -1,9 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { graphqlRequest } from '@/gql/graphql';
-import { useSelectedProjectId } from '@/stores/projectStore';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useErrorHandler } from '@/hooks/use-error-handler';
+import { useSelectedProjectId } from '@/stores/projectStore';
 import { Prompt, PromptConnection, CreatePromptInput, UpdatePromptInput, promptConnectionSchema, promptSchema } from './schema';
 
 const PROMPTS_QUERY = `

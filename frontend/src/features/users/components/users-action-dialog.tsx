@@ -378,11 +378,7 @@ export function UsersActionDialog({ currentRow, open, onOpenChange }: Props) {
 
         <DialogFooter>
           {isEdit && !canEdit && <p className='text-destructive mr-auto text-sm'>{t('users.errors.insufficientPermissions')}</p>}
-          <Button
-            type='button'
-            variant='outline'
-            onClick={() => onOpenChange(false)}
-          >
+          <Button type='button' variant='outline' onClick={() => onOpenChange(false)}>
             {t('common.buttons.cancel')}
           </Button>
           <Button type='submit' form='user-form' disabled={createUser.isPending || updateUser.isPending || (isEdit && !canEdit)}>

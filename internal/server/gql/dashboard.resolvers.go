@@ -84,6 +84,38 @@ func (r *queryResolver) DashboardOverview(ctx context.Context) (*DashboardOvervi
 	return stats, nil
 }
 
+// LoadBalancerPreview is the resolver for the loadBalancerPreview field.
+func (r *queryResolver) LoadBalancerPreview(ctx context.Context) (*LoadBalancerPreview, error) {
+	ctx = authz.WithScopeDecision(ctx, scopes.ScopeReadDashboard)
+
+	preview, err := buildLoadBalancerPreview(ctx, r.Resolver)
+	if err != nil || preview == nil {
+		return nil, err
+	}
+
+	return &LoadBalancerPreview{
+		ModelID:  preview.ModelID,
+		Strategy: preview.Strategy,
+		Summary: &LoadBalancerPreviewSummary{
+			PrimaryChannelName:    lo.EmptyableToPtr(preview.Summary.PrimaryChannelName),
+			FirstRetryChannelName: lo.EmptyableToPtr(preview.Summary.FirstRetryChannelName),
+			FallbackChannelName:   lo.EmptyableToPtr(preview.Summary.FallbackChannelName),
+		},
+		Candidates: lo.Map(preview.Candidates, func(item *loadBalancerPreviewCandidate, _ int) *LoadBalancerPreviewCandidate {
+			return &LoadBalancerPreviewCandidate{
+				ChannelName: item.ChannelName,
+			}
+		}),
+		Steps: lo.Map(preview.Steps, func(item *loadBalancerPreviewStep, _ int) *LoadBalancerPreviewStep {
+			return &LoadBalancerPreviewStep{
+				Attempt:            item.Attempt,
+				ChannelName:        item.ChannelName,
+				WaitMsAfterFailure: item.WaitMSAfterFailure,
+			}
+		}),
+	}, nil
+}
+
 // RequestStats is the resolver for the requestStats field.
 // Note: For result-only statistics (e.g., successful request counts), use the usage_logs table.
 // For process tracking (e.g., failed requests), use request/request_execution tables.

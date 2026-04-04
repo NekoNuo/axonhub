@@ -49,8 +49,8 @@ export function useProviderQuotaStatuses() {
     queryFn: async () => {
       const input = {
         where: {
-          statusIn: ['enabled']
-        }
+          statusIn: ['enabled'],
+        },
       };
       return graphqlRequest<any>(PROVIDER_QUOTA_STATUSES_QUERY, { input });
     },
