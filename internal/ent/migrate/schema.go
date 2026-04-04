@@ -286,6 +286,72 @@ var (
 			},
 		},
 	}
+	// ModelHealthHistoriesColumns holds the columns for the "model_health_histories" table.
+	ModelHealthHistoriesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: schema.Expr("CURRENT_TIMESTAMP")},
+		{Name: "updated_at", Type: field.TypeTime, Default: schema.Expr("CURRENT_TIMESTAMP")},
+		{Name: "display_model", Type: field.TypeString},
+		{Name: "actual_model_id", Type: field.TypeString},
+		{Name: "is_healthy", Type: field.TypeBool, Default: false},
+		{Name: "manual_override", Type: field.TypeBool, Default: false},
+		{Name: "probed_at", Type: field.TypeInt64},
+		{Name: "channel_id", Type: field.TypeInt},
+	}
+	// ModelHealthHistoriesTable holds the schema information for the "model_health_histories" table.
+	ModelHealthHistoriesTable = &schema.Table{
+		Name:       "model_health_histories",
+		Columns:    ModelHealthHistoriesColumns,
+		PrimaryKey: []*schema.Column{ModelHealthHistoriesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "model_health_histories_channels_model_health_histories",
+				Columns:    []*schema.Column{ModelHealthHistoriesColumns[8]},
+				RefColumns: []*schema.Column{ChannelsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "modelhealthhistory_display_model_channel_id_actual_model_id_probed_at",
+				Unique:  false,
+				Columns: []*schema.Column{ModelHealthHistoriesColumns[3], ModelHealthHistoriesColumns[8], ModelHealthHistoriesColumns[4], ModelHealthHistoriesColumns[7]},
+			},
+		},
+	}
+	// ModelHealthSnapshotsColumns holds the columns for the "model_health_snapshots" table.
+	ModelHealthSnapshotsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: schema.Expr("CURRENT_TIMESTAMP")},
+		{Name: "updated_at", Type: field.TypeTime, Default: schema.Expr("CURRENT_TIMESTAMP")},
+		{Name: "display_model", Type: field.TypeString},
+		{Name: "actual_model_id", Type: field.TypeString},
+		{Name: "is_healthy", Type: field.TypeBool, Default: false},
+		{Name: "manual_override", Type: field.TypeBool, Default: false},
+		{Name: "probed_at", Type: field.TypeInt64},
+		{Name: "channel_id", Type: field.TypeInt},
+	}
+	// ModelHealthSnapshotsTable holds the schema information for the "model_health_snapshots" table.
+	ModelHealthSnapshotsTable = &schema.Table{
+		Name:       "model_health_snapshots",
+		Columns:    ModelHealthSnapshotsColumns,
+		PrimaryKey: []*schema.Column{ModelHealthSnapshotsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "model_health_snapshots_channels_model_health_snapshots",
+				Columns:    []*schema.Column{ModelHealthSnapshotsColumns[8]},
+				RefColumns: []*schema.Column{ChannelsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "modelhealthsnapshot_display_model_channel_id_actual_model_id",
+				Unique:  true,
+				Columns: []*schema.Column{ModelHealthSnapshotsColumns[3], ModelHealthSnapshotsColumns[8], ModelHealthSnapshotsColumns[4]},
+			},
+		},
+	}
 	// ProjectsColumns holds the columns for the "projects" table.
 	ProjectsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -926,6 +992,8 @@ var (
 		ChannelProbesTable,
 		DataStoragesTable,
 		ModelsTable,
+		ModelHealthHistoriesTable,
+		ModelHealthSnapshotsTable,
 		ProjectsTable,
 		PromptsTable,
 		PromptProtectionRulesTable,
@@ -951,6 +1019,8 @@ func init() {
 	ChannelModelPriceVersionsTable.ForeignKeys[0].RefTable = ChannelModelPricesTable
 	ChannelOverrideTemplatesTable.ForeignKeys[0].RefTable = UsersTable
 	ChannelProbesTable.ForeignKeys[0].RefTable = ChannelsTable
+	ModelHealthHistoriesTable.ForeignKeys[0].RefTable = ChannelsTable
+	ModelHealthSnapshotsTable.ForeignKeys[0].RefTable = ChannelsTable
 	ProviderQuotaStatusTable.ForeignKeys[0].RefTable = ChannelsTable
 	RequestsTable.ForeignKeys[0].RefTable = APIKeysTable
 	RequestsTable.ForeignKeys[1].RefTable = ChannelsTable

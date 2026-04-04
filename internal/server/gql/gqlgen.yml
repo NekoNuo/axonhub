@@ -9,6 +9,7 @@ schema:
   - me.graphql
   - system.graphql
   - model.graphql
+  - model_health.graphql
   - backup.graphql
   - channel_probe.graphql
   - prompt.graphql

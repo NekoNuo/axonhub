@@ -14,6 +14,8 @@ import (
 	"github.com/looplj/axonhub/internal/ent/channel"
 	"github.com/looplj/axonhub/internal/ent/channelmodelprice"
 	"github.com/looplj/axonhub/internal/ent/channelprobe"
+	"github.com/looplj/axonhub/internal/ent/modelhealthhistory"
+	"github.com/looplj/axonhub/internal/ent/modelhealthsnapshot"
 	"github.com/looplj/axonhub/internal/ent/providerquotastatus"
 	"github.com/looplj/axonhub/internal/ent/request"
 	"github.com/looplj/axonhub/internal/ent/requestexecution"
@@ -295,6 +297,36 @@ func (_c *ChannelCreate) AddChannelProbes(v ...*ChannelProbe) *ChannelCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddChannelProbeIDs(ids...)
+}
+
+// AddModelHealthSnapshotIDs adds the "model_health_snapshots" edge to the ModelHealthSnapshot entity by IDs.
+func (_c *ChannelCreate) AddModelHealthSnapshotIDs(ids ...int) *ChannelCreate {
+	_c.mutation.AddModelHealthSnapshotIDs(ids...)
+	return _c
+}
+
+// AddModelHealthSnapshots adds the "model_health_snapshots" edges to the ModelHealthSnapshot entity.
+func (_c *ChannelCreate) AddModelHealthSnapshots(v ...*ModelHealthSnapshot) *ChannelCreate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddModelHealthSnapshotIDs(ids...)
+}
+
+// AddModelHealthHistoryIDs adds the "model_health_histories" edge to the ModelHealthHistory entity by IDs.
+func (_c *ChannelCreate) AddModelHealthHistoryIDs(ids ...int) *ChannelCreate {
+	_c.mutation.AddModelHealthHistoryIDs(ids...)
+	return _c
+}
+
+// AddModelHealthHistories adds the "model_health_histories" edges to the ModelHealthHistory entity.
+func (_c *ChannelCreate) AddModelHealthHistories(v ...*ModelHealthHistory) *ChannelCreate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddModelHealthHistoryIDs(ids...)
 }
 
 // AddChannelModelPriceIDs adds the "channel_model_prices" edge to the ChannelModelPrice entity by IDs.
@@ -628,6 +660,38 @@ func (_c *ChannelCreate) createSpec() (*Channel, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(channelprobe.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ModelHealthSnapshotsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   channel.ModelHealthSnapshotsTable,
+			Columns: []string{channel.ModelHealthSnapshotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(modelhealthsnapshot.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ModelHealthHistoriesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   channel.ModelHealthHistoriesTable,
+			Columns: []string{channel.ModelHealthHistoriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(modelhealthhistory.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

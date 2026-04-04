@@ -120,6 +120,30 @@ func (_m *Channel) ChannelProbes(ctx context.Context) (result []*ChannelProbe, e
 	return result, err
 }
 
+func (_m *Channel) ModelHealthSnapshots(ctx context.Context) (result []*ModelHealthSnapshot, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = _m.NamedModelHealthSnapshots(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = _m.Edges.ModelHealthSnapshotsOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = _m.QueryModelHealthSnapshots().All(ctx)
+	}
+	return result, err
+}
+
+func (_m *Channel) ModelHealthHistories(ctx context.Context) (result []*ModelHealthHistory, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = _m.NamedModelHealthHistories(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = _m.Edges.ModelHealthHistoriesOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = _m.QueryModelHealthHistories().All(ctx)
+	}
+	return result, err
+}
+
 func (_m *Channel) ChannelModelPrices(ctx context.Context) (result []*ChannelModelPrice, err error) {
 	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
 		result, err = _m.NamedChannelModelPrices(graphql.GetFieldContext(ctx).Field.Alias)
@@ -224,6 +248,22 @@ func (_m *DataStorage) Executions(
 		return conn, nil
 	}
 	return _m.QueryExecutions().Paginate(ctx, after, first, before, last, opts...)
+}
+
+func (_m *ModelHealthHistory) Channel(ctx context.Context) (*Channel, error) {
+	result, err := _m.Edges.ChannelOrErr()
+	if IsNotLoaded(err) {
+		result, err = _m.QueryChannel().Only(ctx)
+	}
+	return result, err
+}
+
+func (_m *ModelHealthSnapshot) Channel(ctx context.Context) (*Channel, error) {
+	result, err := _m.Edges.ChannelOrErr()
+	if IsNotLoaded(err) {
+		result, err = _m.QueryChannel().Only(ctx)
+	}
+	return result, err
 }
 
 func (_m *Project) Users(

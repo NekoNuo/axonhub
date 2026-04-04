@@ -18,6 +18,8 @@ import (
 	"github.com/looplj/axonhub/internal/ent/channelprobe"
 	"github.com/looplj/axonhub/internal/ent/datastorage"
 	"github.com/looplj/axonhub/internal/ent/model"
+	"github.com/looplj/axonhub/internal/ent/modelhealthhistory"
+	"github.com/looplj/axonhub/internal/ent/modelhealthsnapshot"
 	"github.com/looplj/axonhub/internal/ent/project"
 	"github.com/looplj/axonhub/internal/ent/prompt"
 	"github.com/looplj/axonhub/internal/ent/promptprotectionrule"
@@ -586,6 +588,32 @@ func (_q *ChannelQuery) collectField(ctx context.Context, oneNode bool, opCtx *g
 				return err
 			}
 			_q.WithNamedChannelProbes(alias, func(wq *ChannelProbeQuery) {
+				*wq = *query
+			})
+
+		case "modelHealthSnapshots":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ModelHealthSnapshotClient{config: _q.config}).Query()
+			)
+			if err := query.collectField(ctx, false, opCtx, field, path, mayAddCondition(satisfies, modelhealthsnapshotImplementors)...); err != nil {
+				return err
+			}
+			_q.WithNamedModelHealthSnapshots(alias, func(wq *ModelHealthSnapshotQuery) {
+				*wq = *query
+			})
+
+		case "modelHealthHistories":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ModelHealthHistoryClient{config: _q.config}).Query()
+			)
+			if err := query.collectField(ctx, false, opCtx, field, path, mayAddCondition(satisfies, modelhealthhistoryImplementors)...); err != nil {
+				return err
+			}
+			_q.WithNamedModelHealthHistories(alias, func(wq *ModelHealthHistoryQuery) {
 				*wq = *query
 			})
 
@@ -1754,6 +1782,284 @@ func newModelPaginateArgs(rv map[string]any) *modelPaginateArgs {
 	}
 	if v, ok := rv[whereField].(*ModelWhereInput); ok {
 		args.opts = append(args.opts, WithModelFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (_q *ModelHealthHistoryQuery) CollectFields(ctx context.Context, satisfies ...string) (*ModelHealthHistoryQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return _q, nil
+	}
+	if err := _q.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return _q, nil
+}
+
+func (_q *ModelHealthHistoryQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(modelhealthhistory.Columns))
+		selectedFields = []string{modelhealthhistory.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+
+		case "channel":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ChannelClient{config: _q.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, channelImplementors)...); err != nil {
+				return err
+			}
+			_q.withChannel = query
+			if _, ok := fieldSeen[modelhealthhistory.FieldChannelID]; !ok {
+				selectedFields = append(selectedFields, modelhealthhistory.FieldChannelID)
+				fieldSeen[modelhealthhistory.FieldChannelID] = struct{}{}
+			}
+		case "createdAt":
+			if _, ok := fieldSeen[modelhealthhistory.FieldCreatedAt]; !ok {
+				selectedFields = append(selectedFields, modelhealthhistory.FieldCreatedAt)
+				fieldSeen[modelhealthhistory.FieldCreatedAt] = struct{}{}
+			}
+		case "updatedAt":
+			if _, ok := fieldSeen[modelhealthhistory.FieldUpdatedAt]; !ok {
+				selectedFields = append(selectedFields, modelhealthhistory.FieldUpdatedAt)
+				fieldSeen[modelhealthhistory.FieldUpdatedAt] = struct{}{}
+			}
+		case "displayModel":
+			if _, ok := fieldSeen[modelhealthhistory.FieldDisplayModel]; !ok {
+				selectedFields = append(selectedFields, modelhealthhistory.FieldDisplayModel)
+				fieldSeen[modelhealthhistory.FieldDisplayModel] = struct{}{}
+			}
+		case "channelID":
+			if _, ok := fieldSeen[modelhealthhistory.FieldChannelID]; !ok {
+				selectedFields = append(selectedFields, modelhealthhistory.FieldChannelID)
+				fieldSeen[modelhealthhistory.FieldChannelID] = struct{}{}
+			}
+		case "actualModelID":
+			if _, ok := fieldSeen[modelhealthhistory.FieldActualModelID]; !ok {
+				selectedFields = append(selectedFields, modelhealthhistory.FieldActualModelID)
+				fieldSeen[modelhealthhistory.FieldActualModelID] = struct{}{}
+			}
+		case "isHealthy":
+			if _, ok := fieldSeen[modelhealthhistory.FieldIsHealthy]; !ok {
+				selectedFields = append(selectedFields, modelhealthhistory.FieldIsHealthy)
+				fieldSeen[modelhealthhistory.FieldIsHealthy] = struct{}{}
+			}
+		case "manualOverride":
+			if _, ok := fieldSeen[modelhealthhistory.FieldManualOverride]; !ok {
+				selectedFields = append(selectedFields, modelhealthhistory.FieldManualOverride)
+				fieldSeen[modelhealthhistory.FieldManualOverride] = struct{}{}
+			}
+		case "probedAt":
+			if _, ok := fieldSeen[modelhealthhistory.FieldProbedAt]; !ok {
+				selectedFields = append(selectedFields, modelhealthhistory.FieldProbedAt)
+				fieldSeen[modelhealthhistory.FieldProbedAt] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		_q.Select(selectedFields...)
+	}
+	return nil
+}
+
+type modelhealthhistoryPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []ModelHealthHistoryPaginateOption
+}
+
+func newModelHealthHistoryPaginateArgs(rv map[string]any) *modelhealthhistoryPaginateArgs {
+	args := &modelhealthhistoryPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case map[string]any:
+			var (
+				err1, err2 error
+				order      = &ModelHealthHistoryOrder{Field: &ModelHealthHistoryOrderField{}, Direction: entgql.OrderDirectionAsc}
+			)
+			if d, ok := v[directionField]; ok {
+				err1 = order.Direction.UnmarshalGQL(d)
+			}
+			if f, ok := v[fieldField]; ok {
+				err2 = order.Field.UnmarshalGQL(f)
+			}
+			if err1 == nil && err2 == nil {
+				args.opts = append(args.opts, WithModelHealthHistoryOrder(order))
+			}
+		case *ModelHealthHistoryOrder:
+			if v != nil {
+				args.opts = append(args.opts, WithModelHealthHistoryOrder(v))
+			}
+		}
+	}
+	if v, ok := rv[whereField].(*ModelHealthHistoryWhereInput); ok {
+		args.opts = append(args.opts, WithModelHealthHistoryFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (_q *ModelHealthSnapshotQuery) CollectFields(ctx context.Context, satisfies ...string) (*ModelHealthSnapshotQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return _q, nil
+	}
+	if err := _q.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return _q, nil
+}
+
+func (_q *ModelHealthSnapshotQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(modelhealthsnapshot.Columns))
+		selectedFields = []string{modelhealthsnapshot.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+
+		case "channel":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ChannelClient{config: _q.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, channelImplementors)...); err != nil {
+				return err
+			}
+			_q.withChannel = query
+			if _, ok := fieldSeen[modelhealthsnapshot.FieldChannelID]; !ok {
+				selectedFields = append(selectedFields, modelhealthsnapshot.FieldChannelID)
+				fieldSeen[modelhealthsnapshot.FieldChannelID] = struct{}{}
+			}
+		case "createdAt":
+			if _, ok := fieldSeen[modelhealthsnapshot.FieldCreatedAt]; !ok {
+				selectedFields = append(selectedFields, modelhealthsnapshot.FieldCreatedAt)
+				fieldSeen[modelhealthsnapshot.FieldCreatedAt] = struct{}{}
+			}
+		case "updatedAt":
+			if _, ok := fieldSeen[modelhealthsnapshot.FieldUpdatedAt]; !ok {
+				selectedFields = append(selectedFields, modelhealthsnapshot.FieldUpdatedAt)
+				fieldSeen[modelhealthsnapshot.FieldUpdatedAt] = struct{}{}
+			}
+		case "displayModel":
+			if _, ok := fieldSeen[modelhealthsnapshot.FieldDisplayModel]; !ok {
+				selectedFields = append(selectedFields, modelhealthsnapshot.FieldDisplayModel)
+				fieldSeen[modelhealthsnapshot.FieldDisplayModel] = struct{}{}
+			}
+		case "channelID":
+			if _, ok := fieldSeen[modelhealthsnapshot.FieldChannelID]; !ok {
+				selectedFields = append(selectedFields, modelhealthsnapshot.FieldChannelID)
+				fieldSeen[modelhealthsnapshot.FieldChannelID] = struct{}{}
+			}
+		case "actualModelID":
+			if _, ok := fieldSeen[modelhealthsnapshot.FieldActualModelID]; !ok {
+				selectedFields = append(selectedFields, modelhealthsnapshot.FieldActualModelID)
+				fieldSeen[modelhealthsnapshot.FieldActualModelID] = struct{}{}
+			}
+		case "isHealthy":
+			if _, ok := fieldSeen[modelhealthsnapshot.FieldIsHealthy]; !ok {
+				selectedFields = append(selectedFields, modelhealthsnapshot.FieldIsHealthy)
+				fieldSeen[modelhealthsnapshot.FieldIsHealthy] = struct{}{}
+			}
+		case "manualOverride":
+			if _, ok := fieldSeen[modelhealthsnapshot.FieldManualOverride]; !ok {
+				selectedFields = append(selectedFields, modelhealthsnapshot.FieldManualOverride)
+				fieldSeen[modelhealthsnapshot.FieldManualOverride] = struct{}{}
+			}
+		case "probedAt":
+			if _, ok := fieldSeen[modelhealthsnapshot.FieldProbedAt]; !ok {
+				selectedFields = append(selectedFields, modelhealthsnapshot.FieldProbedAt)
+				fieldSeen[modelhealthsnapshot.FieldProbedAt] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		_q.Select(selectedFields...)
+	}
+	return nil
+}
+
+type modelhealthsnapshotPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []ModelHealthSnapshotPaginateOption
+}
+
+func newModelHealthSnapshotPaginateArgs(rv map[string]any) *modelhealthsnapshotPaginateArgs {
+	args := &modelhealthsnapshotPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case map[string]any:
+			var (
+				err1, err2 error
+				order      = &ModelHealthSnapshotOrder{Field: &ModelHealthSnapshotOrderField{}, Direction: entgql.OrderDirectionAsc}
+			)
+			if d, ok := v[directionField]; ok {
+				err1 = order.Direction.UnmarshalGQL(d)
+			}
+			if f, ok := v[fieldField]; ok {
+				err2 = order.Field.UnmarshalGQL(f)
+			}
+			if err1 == nil && err2 == nil {
+				args.opts = append(args.opts, WithModelHealthSnapshotOrder(order))
+			}
+		case *ModelHealthSnapshotOrder:
+			if v != nil {
+				args.opts = append(args.opts, WithModelHealthSnapshotOrder(v))
+			}
+		}
+	}
+	if v, ok := rv[whereField].(*ModelHealthSnapshotWhereInput); ok {
+		args.opts = append(args.opts, WithModelHealthSnapshotFilter(v.Filter))
 	}
 	return args
 }

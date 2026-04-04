@@ -28,6 +28,10 @@ type Tx struct {
 	DataStorage *DataStorageClient
 	// Model is the client for interacting with the Model builders.
 	Model *ModelClient
+	// ModelHealthHistory is the client for interacting with the ModelHealthHistory builders.
+	ModelHealthHistory *ModelHealthHistoryClient
+	// ModelHealthSnapshot is the client for interacting with the ModelHealthSnapshot builders.
+	ModelHealthSnapshot *ModelHealthSnapshotClient
 	// Project is the client for interacting with the Project builders.
 	Project *ProjectClient
 	// Prompt is the client for interacting with the Prompt builders.
@@ -195,6 +199,8 @@ func (tx *Tx) init() {
 	tx.ChannelProbe = NewChannelProbeClient(tx.config)
 	tx.DataStorage = NewDataStorageClient(tx.config)
 	tx.Model = NewModelClient(tx.config)
+	tx.ModelHealthHistory = NewModelHealthHistoryClient(tx.config)
+	tx.ModelHealthSnapshot = NewModelHealthSnapshotClient(tx.config)
 	tx.Project = NewProjectClient(tx.config)
 	tx.Prompt = NewPromptClient(tx.config)
 	tx.PromptProtectionRule = NewPromptProtectionRuleClient(tx.config)

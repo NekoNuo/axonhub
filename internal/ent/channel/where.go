@@ -892,6 +892,52 @@ func HasChannelProbesWith(preds ...predicate.ChannelProbe) predicate.Channel {
 	})
 }
 
+// HasModelHealthSnapshots applies the HasEdge predicate on the "model_health_snapshots" edge.
+func HasModelHealthSnapshots() predicate.Channel {
+	return predicate.Channel(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ModelHealthSnapshotsTable, ModelHealthSnapshotsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasModelHealthSnapshotsWith applies the HasEdge predicate on the "model_health_snapshots" edge with a given conditions (other predicates).
+func HasModelHealthSnapshotsWith(preds ...predicate.ModelHealthSnapshot) predicate.Channel {
+	return predicate.Channel(func(s *sql.Selector) {
+		step := newModelHealthSnapshotsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasModelHealthHistories applies the HasEdge predicate on the "model_health_histories" edge.
+func HasModelHealthHistories() predicate.Channel {
+	return predicate.Channel(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ModelHealthHistoriesTable, ModelHealthHistoriesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasModelHealthHistoriesWith applies the HasEdge predicate on the "model_health_histories" edge with a given conditions (other predicates).
+func HasModelHealthHistoriesWith(preds ...predicate.ModelHealthHistory) predicate.Channel {
+	return predicate.Channel(func(s *sql.Selector) {
+		step := newModelHealthHistoriesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasChannelModelPrices applies the HasEdge predicate on the "channel_model_prices" edge.
 func HasChannelModelPrices() predicate.Channel {
 	return predicate.Channel(func(s *sql.Selector) {

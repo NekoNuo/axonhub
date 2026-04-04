@@ -216,6 +216,16 @@ type FetchModelsPayload struct {
 	Error  *string              `json:"error,omitempty"`
 }
 
+type GetModelHealthHistoryInput struct {
+	DisplayModel  *string         `json:"displayModel,omitempty"`
+	ActualModelID *string         `json:"actualModelID,omitempty"`
+	ChannelIDs    []*objects.GUID `json:"channelIDs,omitempty"`
+}
+
+type GetModelHealthSnapshotsInput struct {
+	DisplayModels []string `json:"displayModels,omitempty"`
+}
+
 type HourlyRequestStats struct {
 	Hour  int `json:"hour"`
 	Count int `json:"count"`
@@ -276,6 +286,12 @@ type LoadBalancerPreviewSummary struct {
 	PrimaryChannelName    *string `json:"primaryChannelName,omitempty"`
 	FirstRetryChannelName *string `json:"firstRetryChannelName,omitempty"`
 	FallbackChannelName   *string `json:"fallbackChannelName,omitempty"`
+}
+
+type ManualModelProbeInput struct {
+	DisplayModel  string       `json:"displayModel"`
+	ActualModelID string       `json:"actualModelID"`
+	ChannelID     objects.GUID `json:"channelID"`
 }
 
 // Performance statistics for a specific model on a given date

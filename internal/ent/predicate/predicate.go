@@ -30,6 +30,12 @@ type DataStorage func(*sql.Selector)
 // Model is the predicate function for model builders.
 type Model func(*sql.Selector)
 
+// ModelHealthHistory is the predicate function for modelhealthhistory builders.
+type ModelHealthHistory func(*sql.Selector)
+
+// ModelHealthSnapshot is the predicate function for modelhealthsnapshot builders.
+type ModelHealthSnapshot func(*sql.Selector)
+
 // Project is the predicate function for project builders.
 type Project func(*sql.Selector)
 

@@ -76,21 +76,27 @@ type ChannelEdges struct {
 	UsageLogs []*UsageLog `json:"usage_logs,omitempty"`
 	// ChannelProbes holds the value of the channel_probes edge.
 	ChannelProbes []*ChannelProbe `json:"channel_probes,omitempty"`
+	// ModelHealthSnapshots holds the value of the model_health_snapshots edge.
+	ModelHealthSnapshots []*ModelHealthSnapshot `json:"model_health_snapshots,omitempty"`
+	// ModelHealthHistories holds the value of the model_health_histories edge.
+	ModelHealthHistories []*ModelHealthHistory `json:"model_health_histories,omitempty"`
 	// ChannelModelPrices holds the value of the channel_model_prices edge.
 	ChannelModelPrices []*ChannelModelPrice `json:"channel_model_prices,omitempty"`
 	// ProviderQuotaStatus holds the value of the provider_quota_status edge.
 	ProviderQuotaStatus *ProviderQuotaStatus `json:"provider_quota_status,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [6]bool
+	loadedTypes [8]bool
 	// totalCount holds the count of the edges above.
-	totalCount [6]map[string]int
+	totalCount [8]map[string]int
 
-	namedRequests           map[string][]*Request
-	namedExecutions         map[string][]*RequestExecution
-	namedUsageLogs          map[string][]*UsageLog
-	namedChannelProbes      map[string][]*ChannelProbe
-	namedChannelModelPrices map[string][]*ChannelModelPrice
+	namedRequests             map[string][]*Request
+	namedExecutions           map[string][]*RequestExecution
+	namedUsageLogs            map[string][]*UsageLog
+	namedChannelProbes        map[string][]*ChannelProbe
+	namedModelHealthSnapshots map[string][]*ModelHealthSnapshot
+	namedModelHealthHistories map[string][]*ModelHealthHistory
+	namedChannelModelPrices   map[string][]*ChannelModelPrice
 }
 
 // RequestsOrErr returns the Requests value or an error if the edge
@@ -129,10 +135,28 @@ func (e ChannelEdges) ChannelProbesOrErr() ([]*ChannelProbe, error) {
 	return nil, &NotLoadedError{edge: "channel_probes"}
 }
 
+// ModelHealthSnapshotsOrErr returns the ModelHealthSnapshots value or an error if the edge
+// was not loaded in eager-loading.
+func (e ChannelEdges) ModelHealthSnapshotsOrErr() ([]*ModelHealthSnapshot, error) {
+	if e.loadedTypes[4] {
+		return e.ModelHealthSnapshots, nil
+	}
+	return nil, &NotLoadedError{edge: "model_health_snapshots"}
+}
+
+// ModelHealthHistoriesOrErr returns the ModelHealthHistories value or an error if the edge
+// was not loaded in eager-loading.
+func (e ChannelEdges) ModelHealthHistoriesOrErr() ([]*ModelHealthHistory, error) {
+	if e.loadedTypes[5] {
+		return e.ModelHealthHistories, nil
+	}
+	return nil, &NotLoadedError{edge: "model_health_histories"}
+}
+
 // ChannelModelPricesOrErr returns the ChannelModelPrices value or an error if the edge
 // was not loaded in eager-loading.
 func (e ChannelEdges) ChannelModelPricesOrErr() ([]*ChannelModelPrice, error) {
-	if e.loadedTypes[4] {
+	if e.loadedTypes[6] {
 		return e.ChannelModelPrices, nil
 	}
 	return nil, &NotLoadedError{edge: "channel_model_prices"}
@@ -143,7 +167,7 @@ func (e ChannelEdges) ChannelModelPricesOrErr() ([]*ChannelModelPrice, error) {
 func (e ChannelEdges) ProviderQuotaStatusOrErr() (*ProviderQuotaStatus, error) {
 	if e.ProviderQuotaStatus != nil {
 		return e.ProviderQuotaStatus, nil
-	} else if e.loadedTypes[5] {
+	} else if e.loadedTypes[7] {
 		return nil, &NotFoundError{label: providerquotastatus.Label}
 	}
 	return nil, &NotLoadedError{edge: "provider_quota_status"}
@@ -354,6 +378,16 @@ func (_m *Channel) QueryChannelProbes() *ChannelProbeQuery {
 	return NewChannelClient(_m.config).QueryChannelProbes(_m)
 }
 
+// QueryModelHealthSnapshots queries the "model_health_snapshots" edge of the Channel entity.
+func (_m *Channel) QueryModelHealthSnapshots() *ModelHealthSnapshotQuery {
+	return NewChannelClient(_m.config).QueryModelHealthSnapshots(_m)
+}
+
+// QueryModelHealthHistories queries the "model_health_histories" edge of the Channel entity.
+func (_m *Channel) QueryModelHealthHistories() *ModelHealthHistoryQuery {
+	return NewChannelClient(_m.config).QueryModelHealthHistories(_m)
+}
+
 // QueryChannelModelPrices queries the "channel_model_prices" edge of the Channel entity.
 func (_m *Channel) QueryChannelModelPrices() *ChannelModelPriceQuery {
 	return NewChannelClient(_m.config).QueryChannelModelPrices(_m)
@@ -545,6 +579,54 @@ func (_m *Channel) appendNamedChannelProbes(name string, edges ...*ChannelProbe)
 		_m.Edges.namedChannelProbes[name] = []*ChannelProbe{}
 	} else {
 		_m.Edges.namedChannelProbes[name] = append(_m.Edges.namedChannelProbes[name], edges...)
+	}
+}
+
+// NamedModelHealthSnapshots returns the ModelHealthSnapshots named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (_m *Channel) NamedModelHealthSnapshots(name string) ([]*ModelHealthSnapshot, error) {
+	if _m.Edges.namedModelHealthSnapshots == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := _m.Edges.namedModelHealthSnapshots[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (_m *Channel) appendNamedModelHealthSnapshots(name string, edges ...*ModelHealthSnapshot) {
+	if _m.Edges.namedModelHealthSnapshots == nil {
+		_m.Edges.namedModelHealthSnapshots = make(map[string][]*ModelHealthSnapshot)
+	}
+	if len(edges) == 0 {
+		_m.Edges.namedModelHealthSnapshots[name] = []*ModelHealthSnapshot{}
+	} else {
+		_m.Edges.namedModelHealthSnapshots[name] = append(_m.Edges.namedModelHealthSnapshots[name], edges...)
+	}
+}
+
+// NamedModelHealthHistories returns the ModelHealthHistories named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (_m *Channel) NamedModelHealthHistories(name string) ([]*ModelHealthHistory, error) {
+	if _m.Edges.namedModelHealthHistories == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := _m.Edges.namedModelHealthHistories[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (_m *Channel) appendNamedModelHealthHistories(name string, edges ...*ModelHealthHistory) {
+	if _m.Edges.namedModelHealthHistories == nil {
+		_m.Edges.namedModelHealthHistories = make(map[string][]*ModelHealthHistory)
+	}
+	if len(edges) == 0 {
+		_m.Edges.namedModelHealthHistories[name] = []*ModelHealthHistory{}
+	} else {
+		_m.Edges.namedModelHealthHistories[name] = append(_m.Edges.namedModelHealthHistories[name], edges...)
 	}
 }
 

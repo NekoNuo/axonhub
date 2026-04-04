@@ -13,6 +13,8 @@ import (
 	"github.com/looplj/axonhub/internal/ent/channeloverridetemplate"
 	"github.com/looplj/axonhub/internal/ent/datastorage"
 	"github.com/looplj/axonhub/internal/ent/model"
+	"github.com/looplj/axonhub/internal/ent/modelhealthhistory"
+	"github.com/looplj/axonhub/internal/ent/modelhealthsnapshot"
 	"github.com/looplj/axonhub/internal/ent/project"
 	"github.com/looplj/axonhub/internal/ent/prompt"
 	"github.com/looplj/axonhub/internal/ent/promptprotectionrule"
@@ -340,6 +342,52 @@ func init() {
 	modelDescDeletedAt := modelMixinFields1[0].Descriptor()
 	// model.DefaultDeletedAt holds the default value on creation for the deleted_at field.
 	model.DefaultDeletedAt = modelDescDeletedAt.Default.(int)
+	modelhealthhistoryMixin := schema.ModelHealthHistory{}.Mixin()
+	modelhealthhistoryMixinFields0 := modelhealthhistoryMixin[0].Fields()
+	_ = modelhealthhistoryMixinFields0
+	modelhealthhistoryFields := schema.ModelHealthHistory{}.Fields()
+	_ = modelhealthhistoryFields
+	// modelhealthhistoryDescCreatedAt is the schema descriptor for created_at field.
+	modelhealthhistoryDescCreatedAt := modelhealthhistoryMixinFields0[0].Descriptor()
+	// modelhealthhistory.DefaultCreatedAt holds the default value on creation for the created_at field.
+	modelhealthhistory.DefaultCreatedAt = modelhealthhistoryDescCreatedAt.Default.(func() time.Time)
+	// modelhealthhistoryDescUpdatedAt is the schema descriptor for updated_at field.
+	modelhealthhistoryDescUpdatedAt := modelhealthhistoryMixinFields0[1].Descriptor()
+	// modelhealthhistory.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	modelhealthhistory.DefaultUpdatedAt = modelhealthhistoryDescUpdatedAt.Default.(func() time.Time)
+	// modelhealthhistory.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	modelhealthhistory.UpdateDefaultUpdatedAt = modelhealthhistoryDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// modelhealthhistoryDescIsHealthy is the schema descriptor for is_healthy field.
+	modelhealthhistoryDescIsHealthy := modelhealthhistoryFields[3].Descriptor()
+	// modelhealthhistory.DefaultIsHealthy holds the default value on creation for the is_healthy field.
+	modelhealthhistory.DefaultIsHealthy = modelhealthhistoryDescIsHealthy.Default.(bool)
+	// modelhealthhistoryDescManualOverride is the schema descriptor for manual_override field.
+	modelhealthhistoryDescManualOverride := modelhealthhistoryFields[4].Descriptor()
+	// modelhealthhistory.DefaultManualOverride holds the default value on creation for the manual_override field.
+	modelhealthhistory.DefaultManualOverride = modelhealthhistoryDescManualOverride.Default.(bool)
+	modelhealthsnapshotMixin := schema.ModelHealthSnapshot{}.Mixin()
+	modelhealthsnapshotMixinFields0 := modelhealthsnapshotMixin[0].Fields()
+	_ = modelhealthsnapshotMixinFields0
+	modelhealthsnapshotFields := schema.ModelHealthSnapshot{}.Fields()
+	_ = modelhealthsnapshotFields
+	// modelhealthsnapshotDescCreatedAt is the schema descriptor for created_at field.
+	modelhealthsnapshotDescCreatedAt := modelhealthsnapshotMixinFields0[0].Descriptor()
+	// modelhealthsnapshot.DefaultCreatedAt holds the default value on creation for the created_at field.
+	modelhealthsnapshot.DefaultCreatedAt = modelhealthsnapshotDescCreatedAt.Default.(func() time.Time)
+	// modelhealthsnapshotDescUpdatedAt is the schema descriptor for updated_at field.
+	modelhealthsnapshotDescUpdatedAt := modelhealthsnapshotMixinFields0[1].Descriptor()
+	// modelhealthsnapshot.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	modelhealthsnapshot.DefaultUpdatedAt = modelhealthsnapshotDescUpdatedAt.Default.(func() time.Time)
+	// modelhealthsnapshot.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	modelhealthsnapshot.UpdateDefaultUpdatedAt = modelhealthsnapshotDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// modelhealthsnapshotDescIsHealthy is the schema descriptor for is_healthy field.
+	modelhealthsnapshotDescIsHealthy := modelhealthsnapshotFields[3].Descriptor()
+	// modelhealthsnapshot.DefaultIsHealthy holds the default value on creation for the is_healthy field.
+	modelhealthsnapshot.DefaultIsHealthy = modelhealthsnapshotDescIsHealthy.Default.(bool)
+	// modelhealthsnapshotDescManualOverride is the schema descriptor for manual_override field.
+	modelhealthsnapshotDescManualOverride := modelhealthsnapshotFields[4].Descriptor()
+	// modelhealthsnapshot.DefaultManualOverride holds the default value on creation for the manual_override field.
+	modelhealthsnapshot.DefaultManualOverride = modelhealthsnapshotDescManualOverride.Default.(bool)
 	projectMixin := schema.Project{}.Mixin()
 	project.Policy = privacy.NewPolicies(schema.Project{})
 	project.Hooks[0] = func(next ent.Mutator) ent.Mutator {

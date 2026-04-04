@@ -15,6 +15,8 @@ import (
 	"github.com/looplj/axonhub/internal/ent/channel"
 	"github.com/looplj/axonhub/internal/ent/channelmodelprice"
 	"github.com/looplj/axonhub/internal/ent/channelprobe"
+	"github.com/looplj/axonhub/internal/ent/modelhealthhistory"
+	"github.com/looplj/axonhub/internal/ent/modelhealthsnapshot"
 	"github.com/looplj/axonhub/internal/ent/predicate"
 	"github.com/looplj/axonhub/internal/ent/providerquotastatus"
 	"github.com/looplj/axonhub/internal/ent/request"
@@ -407,6 +409,36 @@ func (_u *ChannelUpdate) AddChannelProbes(v ...*ChannelProbe) *ChannelUpdate {
 	return _u.AddChannelProbeIDs(ids...)
 }
 
+// AddModelHealthSnapshotIDs adds the "model_health_snapshots" edge to the ModelHealthSnapshot entity by IDs.
+func (_u *ChannelUpdate) AddModelHealthSnapshotIDs(ids ...int) *ChannelUpdate {
+	_u.mutation.AddModelHealthSnapshotIDs(ids...)
+	return _u
+}
+
+// AddModelHealthSnapshots adds the "model_health_snapshots" edges to the ModelHealthSnapshot entity.
+func (_u *ChannelUpdate) AddModelHealthSnapshots(v ...*ModelHealthSnapshot) *ChannelUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddModelHealthSnapshotIDs(ids...)
+}
+
+// AddModelHealthHistoryIDs adds the "model_health_histories" edge to the ModelHealthHistory entity by IDs.
+func (_u *ChannelUpdate) AddModelHealthHistoryIDs(ids ...int) *ChannelUpdate {
+	_u.mutation.AddModelHealthHistoryIDs(ids...)
+	return _u
+}
+
+// AddModelHealthHistories adds the "model_health_histories" edges to the ModelHealthHistory entity.
+func (_u *ChannelUpdate) AddModelHealthHistories(v ...*ModelHealthHistory) *ChannelUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddModelHealthHistoryIDs(ids...)
+}
+
 // AddChannelModelPriceIDs adds the "channel_model_prices" edge to the ChannelModelPrice entity by IDs.
 func (_u *ChannelUpdate) AddChannelModelPriceIDs(ids ...int) *ChannelUpdate {
 	_u.mutation.AddChannelModelPriceIDs(ids...)
@@ -528,6 +560,48 @@ func (_u *ChannelUpdate) RemoveChannelProbes(v ...*ChannelProbe) *ChannelUpdate 
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveChannelProbeIDs(ids...)
+}
+
+// ClearModelHealthSnapshots clears all "model_health_snapshots" edges to the ModelHealthSnapshot entity.
+func (_u *ChannelUpdate) ClearModelHealthSnapshots() *ChannelUpdate {
+	_u.mutation.ClearModelHealthSnapshots()
+	return _u
+}
+
+// RemoveModelHealthSnapshotIDs removes the "model_health_snapshots" edge to ModelHealthSnapshot entities by IDs.
+func (_u *ChannelUpdate) RemoveModelHealthSnapshotIDs(ids ...int) *ChannelUpdate {
+	_u.mutation.RemoveModelHealthSnapshotIDs(ids...)
+	return _u
+}
+
+// RemoveModelHealthSnapshots removes "model_health_snapshots" edges to ModelHealthSnapshot entities.
+func (_u *ChannelUpdate) RemoveModelHealthSnapshots(v ...*ModelHealthSnapshot) *ChannelUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveModelHealthSnapshotIDs(ids...)
+}
+
+// ClearModelHealthHistories clears all "model_health_histories" edges to the ModelHealthHistory entity.
+func (_u *ChannelUpdate) ClearModelHealthHistories() *ChannelUpdate {
+	_u.mutation.ClearModelHealthHistories()
+	return _u
+}
+
+// RemoveModelHealthHistoryIDs removes the "model_health_histories" edge to ModelHealthHistory entities by IDs.
+func (_u *ChannelUpdate) RemoveModelHealthHistoryIDs(ids ...int) *ChannelUpdate {
+	_u.mutation.RemoveModelHealthHistoryIDs(ids...)
+	return _u
+}
+
+// RemoveModelHealthHistories removes "model_health_histories" edges to ModelHealthHistory entities.
+func (_u *ChannelUpdate) RemoveModelHealthHistories(v ...*ModelHealthHistory) *ChannelUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveModelHealthHistoryIDs(ids...)
 }
 
 // ClearChannelModelPrices clears all "channel_model_prices" edges to the ChannelModelPrice entity.
@@ -915,6 +989,96 @@ func (_u *ChannelUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(channelprobe.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ModelHealthSnapshotsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   channel.ModelHealthSnapshotsTable,
+			Columns: []string{channel.ModelHealthSnapshotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(modelhealthsnapshot.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedModelHealthSnapshotsIDs(); len(nodes) > 0 && !_u.mutation.ModelHealthSnapshotsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   channel.ModelHealthSnapshotsTable,
+			Columns: []string{channel.ModelHealthSnapshotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(modelhealthsnapshot.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ModelHealthSnapshotsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   channel.ModelHealthSnapshotsTable,
+			Columns: []string{channel.ModelHealthSnapshotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(modelhealthsnapshot.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ModelHealthHistoriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   channel.ModelHealthHistoriesTable,
+			Columns: []string{channel.ModelHealthHistoriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(modelhealthhistory.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedModelHealthHistoriesIDs(); len(nodes) > 0 && !_u.mutation.ModelHealthHistoriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   channel.ModelHealthHistoriesTable,
+			Columns: []string{channel.ModelHealthHistoriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(modelhealthhistory.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ModelHealthHistoriesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   channel.ModelHealthHistoriesTable,
+			Columns: []string{channel.ModelHealthHistoriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(modelhealthhistory.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1388,6 +1552,36 @@ func (_u *ChannelUpdateOne) AddChannelProbes(v ...*ChannelProbe) *ChannelUpdateO
 	return _u.AddChannelProbeIDs(ids...)
 }
 
+// AddModelHealthSnapshotIDs adds the "model_health_snapshots" edge to the ModelHealthSnapshot entity by IDs.
+func (_u *ChannelUpdateOne) AddModelHealthSnapshotIDs(ids ...int) *ChannelUpdateOne {
+	_u.mutation.AddModelHealthSnapshotIDs(ids...)
+	return _u
+}
+
+// AddModelHealthSnapshots adds the "model_health_snapshots" edges to the ModelHealthSnapshot entity.
+func (_u *ChannelUpdateOne) AddModelHealthSnapshots(v ...*ModelHealthSnapshot) *ChannelUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddModelHealthSnapshotIDs(ids...)
+}
+
+// AddModelHealthHistoryIDs adds the "model_health_histories" edge to the ModelHealthHistory entity by IDs.
+func (_u *ChannelUpdateOne) AddModelHealthHistoryIDs(ids ...int) *ChannelUpdateOne {
+	_u.mutation.AddModelHealthHistoryIDs(ids...)
+	return _u
+}
+
+// AddModelHealthHistories adds the "model_health_histories" edges to the ModelHealthHistory entity.
+func (_u *ChannelUpdateOne) AddModelHealthHistories(v ...*ModelHealthHistory) *ChannelUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddModelHealthHistoryIDs(ids...)
+}
+
 // AddChannelModelPriceIDs adds the "channel_model_prices" edge to the ChannelModelPrice entity by IDs.
 func (_u *ChannelUpdateOne) AddChannelModelPriceIDs(ids ...int) *ChannelUpdateOne {
 	_u.mutation.AddChannelModelPriceIDs(ids...)
@@ -1509,6 +1703,48 @@ func (_u *ChannelUpdateOne) RemoveChannelProbes(v ...*ChannelProbe) *ChannelUpda
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveChannelProbeIDs(ids...)
+}
+
+// ClearModelHealthSnapshots clears all "model_health_snapshots" edges to the ModelHealthSnapshot entity.
+func (_u *ChannelUpdateOne) ClearModelHealthSnapshots() *ChannelUpdateOne {
+	_u.mutation.ClearModelHealthSnapshots()
+	return _u
+}
+
+// RemoveModelHealthSnapshotIDs removes the "model_health_snapshots" edge to ModelHealthSnapshot entities by IDs.
+func (_u *ChannelUpdateOne) RemoveModelHealthSnapshotIDs(ids ...int) *ChannelUpdateOne {
+	_u.mutation.RemoveModelHealthSnapshotIDs(ids...)
+	return _u
+}
+
+// RemoveModelHealthSnapshots removes "model_health_snapshots" edges to ModelHealthSnapshot entities.
+func (_u *ChannelUpdateOne) RemoveModelHealthSnapshots(v ...*ModelHealthSnapshot) *ChannelUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveModelHealthSnapshotIDs(ids...)
+}
+
+// ClearModelHealthHistories clears all "model_health_histories" edges to the ModelHealthHistory entity.
+func (_u *ChannelUpdateOne) ClearModelHealthHistories() *ChannelUpdateOne {
+	_u.mutation.ClearModelHealthHistories()
+	return _u
+}
+
+// RemoveModelHealthHistoryIDs removes the "model_health_histories" edge to ModelHealthHistory entities by IDs.
+func (_u *ChannelUpdateOne) RemoveModelHealthHistoryIDs(ids ...int) *ChannelUpdateOne {
+	_u.mutation.RemoveModelHealthHistoryIDs(ids...)
+	return _u
+}
+
+// RemoveModelHealthHistories removes "model_health_histories" edges to ModelHealthHistory entities.
+func (_u *ChannelUpdateOne) RemoveModelHealthHistories(v ...*ModelHealthHistory) *ChannelUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveModelHealthHistoryIDs(ids...)
 }
 
 // ClearChannelModelPrices clears all "channel_model_prices" edges to the ChannelModelPrice entity.
@@ -1926,6 +2162,96 @@ func (_u *ChannelUpdateOne) sqlSave(ctx context.Context) (_node *Channel, err er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(channelprobe.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ModelHealthSnapshotsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   channel.ModelHealthSnapshotsTable,
+			Columns: []string{channel.ModelHealthSnapshotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(modelhealthsnapshot.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedModelHealthSnapshotsIDs(); len(nodes) > 0 && !_u.mutation.ModelHealthSnapshotsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   channel.ModelHealthSnapshotsTable,
+			Columns: []string{channel.ModelHealthSnapshotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(modelhealthsnapshot.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ModelHealthSnapshotsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   channel.ModelHealthSnapshotsTable,
+			Columns: []string{channel.ModelHealthSnapshotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(modelhealthsnapshot.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ModelHealthHistoriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   channel.ModelHealthHistoriesTable,
+			Columns: []string{channel.ModelHealthHistoriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(modelhealthhistory.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedModelHealthHistoriesIDs(); len(nodes) > 0 && !_u.mutation.ModelHealthHistoriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   channel.ModelHealthHistoriesTable,
+			Columns: []string{channel.ModelHealthHistoriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(modelhealthhistory.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ModelHealthHistoriesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   channel.ModelHealthHistoriesTable,
+			Columns: []string{channel.ModelHealthHistoriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(modelhealthhistory.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

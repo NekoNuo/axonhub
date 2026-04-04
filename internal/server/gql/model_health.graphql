@@ -1,0 +1,24 @@
+input GetModelHealthSnapshotsInput {
+  displayModels: [String!]
+}
+
+input GetModelHealthHistoryInput {
+  displayModel: String
+  actualModelID: String
+  channelIDs: [ID!]
+}
+
+input ManualModelProbeInput {
+  displayModel: String!
+  actualModelID: String!
+  channelID: ID!
+}
+
+extend type Query {
+  modelHealthSnapshots(input: GetModelHealthSnapshotsInput!): [ModelHealthSnapshot!]!
+  modelHealthHistory(input: GetModelHealthHistoryInput!): [ModelHealthHistory!]!
+}
+
+extend type Mutation {
+  manualModelProbe(input: ManualModelProbeInput!): Boolean!
+}

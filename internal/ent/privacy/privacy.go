@@ -303,6 +303,54 @@ func (f ModelMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation)
 	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.ModelMutation", m)
 }
 
+// The ModelHealthHistoryQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type ModelHealthHistoryQueryRuleFunc func(context.Context, *ent.ModelHealthHistoryQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f ModelHealthHistoryQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.ModelHealthHistoryQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.ModelHealthHistoryQuery", q)
+}
+
+// The ModelHealthHistoryMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type ModelHealthHistoryMutationRuleFunc func(context.Context, *ent.ModelHealthHistoryMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f ModelHealthHistoryMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.ModelHealthHistoryMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.ModelHealthHistoryMutation", m)
+}
+
+// The ModelHealthSnapshotQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type ModelHealthSnapshotQueryRuleFunc func(context.Context, *ent.ModelHealthSnapshotQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f ModelHealthSnapshotQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.ModelHealthSnapshotQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.ModelHealthSnapshotQuery", q)
+}
+
+// The ModelHealthSnapshotMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type ModelHealthSnapshotMutationRuleFunc func(context.Context, *ent.ModelHealthSnapshotMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f ModelHealthSnapshotMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.ModelHealthSnapshotMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.ModelHealthSnapshotMutation", m)
+}
+
 // The ProjectQueryRuleFunc type is an adapter to allow the use of ordinary
 // functions as a query rule.
 type ProjectQueryRuleFunc func(context.Context, *ent.ProjectQuery) error
@@ -690,6 +738,10 @@ func queryFilter(q ent.Query) (Filter, error) {
 		return q.Filter(), nil
 	case *ent.ModelQuery:
 		return q.Filter(), nil
+	case *ent.ModelHealthHistoryQuery:
+		return q.Filter(), nil
+	case *ent.ModelHealthSnapshotQuery:
+		return q.Filter(), nil
 	case *ent.ProjectQuery:
 		return q.Filter(), nil
 	case *ent.PromptQuery:
@@ -740,6 +792,10 @@ func mutationFilter(m ent.Mutation) (Filter, error) {
 	case *ent.DataStorageMutation:
 		return m.Filter(), nil
 	case *ent.ModelMutation:
+		return m.Filter(), nil
+	case *ent.ModelHealthHistoryMutation:
+		return m.Filter(), nil
+	case *ent.ModelHealthSnapshotMutation:
 		return m.Filter(), nil
 	case *ent.ProjectMutation:
 		return m.Filter(), nil

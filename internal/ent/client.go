@@ -23,6 +23,8 @@ import (
 	"github.com/looplj/axonhub/internal/ent/channelprobe"
 	"github.com/looplj/axonhub/internal/ent/datastorage"
 	"github.com/looplj/axonhub/internal/ent/model"
+	"github.com/looplj/axonhub/internal/ent/modelhealthhistory"
+	"github.com/looplj/axonhub/internal/ent/modelhealthsnapshot"
 	"github.com/looplj/axonhub/internal/ent/project"
 	"github.com/looplj/axonhub/internal/ent/prompt"
 	"github.com/looplj/axonhub/internal/ent/promptprotectionrule"
@@ -60,6 +62,10 @@ type Client struct {
 	DataStorage *DataStorageClient
 	// Model is the client for interacting with the Model builders.
 	Model *ModelClient
+	// ModelHealthHistory is the client for interacting with the ModelHealthHistory builders.
+	ModelHealthHistory *ModelHealthHistoryClient
+	// ModelHealthSnapshot is the client for interacting with the ModelHealthSnapshot builders.
+	ModelHealthSnapshot *ModelHealthSnapshotClient
 	// Project is the client for interacting with the Project builders.
 	Project *ProjectClient
 	// Prompt is the client for interacting with the Prompt builders.
@@ -109,6 +115,8 @@ func (c *Client) init() {
 	c.ChannelProbe = NewChannelProbeClient(c.config)
 	c.DataStorage = NewDataStorageClient(c.config)
 	c.Model = NewModelClient(c.config)
+	c.ModelHealthHistory = NewModelHealthHistoryClient(c.config)
+	c.ModelHealthSnapshot = NewModelHealthSnapshotClient(c.config)
 	c.Project = NewProjectClient(c.config)
 	c.Prompt = NewPromptClient(c.config)
 	c.PromptProtectionRule = NewPromptProtectionRuleClient(c.config)
@@ -223,6 +231,8 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ChannelProbe:             NewChannelProbeClient(cfg),
 		DataStorage:              NewDataStorageClient(cfg),
 		Model:                    NewModelClient(cfg),
+		ModelHealthHistory:       NewModelHealthHistoryClient(cfg),
+		ModelHealthSnapshot:      NewModelHealthSnapshotClient(cfg),
 		Project:                  NewProjectClient(cfg),
 		Prompt:                   NewPromptClient(cfg),
 		PromptProtectionRule:     NewPromptProtectionRuleClient(cfg),
@@ -264,6 +274,8 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ChannelProbe:             NewChannelProbeClient(cfg),
 		DataStorage:              NewDataStorageClient(cfg),
 		Model:                    NewModelClient(cfg),
+		ModelHealthHistory:       NewModelHealthHistoryClient(cfg),
+		ModelHealthSnapshot:      NewModelHealthSnapshotClient(cfg),
 		Project:                  NewProjectClient(cfg),
 		Prompt:                   NewPromptClient(cfg),
 		PromptProtectionRule:     NewPromptProtectionRuleClient(cfg),
@@ -308,10 +320,11 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.APIKey, c.Channel, c.ChannelModelPrice, c.ChannelModelPriceVersion,
-		c.ChannelOverrideTemplate, c.ChannelProbe, c.DataStorage, c.Model, c.Project,
-		c.Prompt, c.PromptProtectionRule, c.ProviderQuotaStatus, c.Request,
-		c.RequestExecution, c.Role, c.System, c.Thread, c.Trace, c.UsageLog, c.User,
-		c.UserProject, c.UserRole,
+		c.ChannelOverrideTemplate, c.ChannelProbe, c.DataStorage, c.Model,
+		c.ModelHealthHistory, c.ModelHealthSnapshot, c.Project, c.Prompt,
+		c.PromptProtectionRule, c.ProviderQuotaStatus, c.Request, c.RequestExecution,
+		c.Role, c.System, c.Thread, c.Trace, c.UsageLog, c.User, c.UserProject,
+		c.UserRole,
 	} {
 		n.Use(hooks...)
 	}
@@ -322,10 +335,11 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.APIKey, c.Channel, c.ChannelModelPrice, c.ChannelModelPriceVersion,
-		c.ChannelOverrideTemplate, c.ChannelProbe, c.DataStorage, c.Model, c.Project,
-		c.Prompt, c.PromptProtectionRule, c.ProviderQuotaStatus, c.Request,
-		c.RequestExecution, c.Role, c.System, c.Thread, c.Trace, c.UsageLog, c.User,
-		c.UserProject, c.UserRole,
+		c.ChannelOverrideTemplate, c.ChannelProbe, c.DataStorage, c.Model,
+		c.ModelHealthHistory, c.ModelHealthSnapshot, c.Project, c.Prompt,
+		c.PromptProtectionRule, c.ProviderQuotaStatus, c.Request, c.RequestExecution,
+		c.Role, c.System, c.Thread, c.Trace, c.UsageLog, c.User, c.UserProject,
+		c.UserRole,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -350,6 +364,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.DataStorage.mutate(ctx, m)
 	case *ModelMutation:
 		return c.Model.mutate(ctx, m)
+	case *ModelHealthHistoryMutation:
+		return c.ModelHealthHistory.mutate(ctx, m)
+	case *ModelHealthSnapshotMutation:
+		return c.ModelHealthSnapshot.mutate(ctx, m)
 	case *ProjectMutation:
 		return c.Project.mutate(ctx, m)
 	case *PromptMutation:
@@ -731,6 +749,38 @@ func (c *ChannelClient) QueryChannelProbes(_m *Channel) *ChannelProbeQuery {
 			sqlgraph.From(channel.Table, channel.FieldID, id),
 			sqlgraph.To(channelprobe.Table, channelprobe.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, channel.ChannelProbesTable, channel.ChannelProbesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryModelHealthSnapshots queries the model_health_snapshots edge of a Channel.
+func (c *ChannelClient) QueryModelHealthSnapshots(_m *Channel) *ModelHealthSnapshotQuery {
+	query := (&ModelHealthSnapshotClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(channel.Table, channel.FieldID, id),
+			sqlgraph.To(modelhealthsnapshot.Table, modelhealthsnapshot.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, channel.ModelHealthSnapshotsTable, channel.ModelHealthSnapshotsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryModelHealthHistories queries the model_health_histories edge of a Channel.
+func (c *ChannelClient) QueryModelHealthHistories(_m *Channel) *ModelHealthHistoryQuery {
+	query := (&ModelHealthHistoryClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(channel.Table, channel.FieldID, id),
+			sqlgraph.To(modelhealthhistory.Table, modelhealthhistory.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, channel.ModelHealthHistoriesTable, channel.ModelHealthHistoriesColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -1713,6 +1763,304 @@ func (c *ModelClient) mutate(ctx context.Context, m *ModelMutation) (Value, erro
 		return (&ModelDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Model mutation op: %q", m.Op())
+	}
+}
+
+// ModelHealthHistoryClient is a client for the ModelHealthHistory schema.
+type ModelHealthHistoryClient struct {
+	config
+}
+
+// NewModelHealthHistoryClient returns a client for the ModelHealthHistory from the given config.
+func NewModelHealthHistoryClient(c config) *ModelHealthHistoryClient {
+	return &ModelHealthHistoryClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `modelhealthhistory.Hooks(f(g(h())))`.
+func (c *ModelHealthHistoryClient) Use(hooks ...Hook) {
+	c.hooks.ModelHealthHistory = append(c.hooks.ModelHealthHistory, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `modelhealthhistory.Intercept(f(g(h())))`.
+func (c *ModelHealthHistoryClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ModelHealthHistory = append(c.inters.ModelHealthHistory, interceptors...)
+}
+
+// Create returns a builder for creating a ModelHealthHistory entity.
+func (c *ModelHealthHistoryClient) Create() *ModelHealthHistoryCreate {
+	mutation := newModelHealthHistoryMutation(c.config, OpCreate)
+	return &ModelHealthHistoryCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ModelHealthHistory entities.
+func (c *ModelHealthHistoryClient) CreateBulk(builders ...*ModelHealthHistoryCreate) *ModelHealthHistoryCreateBulk {
+	return &ModelHealthHistoryCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ModelHealthHistoryClient) MapCreateBulk(slice any, setFunc func(*ModelHealthHistoryCreate, int)) *ModelHealthHistoryCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ModelHealthHistoryCreateBulk{err: fmt.Errorf("calling to ModelHealthHistoryClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ModelHealthHistoryCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ModelHealthHistoryCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ModelHealthHistory.
+func (c *ModelHealthHistoryClient) Update() *ModelHealthHistoryUpdate {
+	mutation := newModelHealthHistoryMutation(c.config, OpUpdate)
+	return &ModelHealthHistoryUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ModelHealthHistoryClient) UpdateOne(_m *ModelHealthHistory) *ModelHealthHistoryUpdateOne {
+	mutation := newModelHealthHistoryMutation(c.config, OpUpdateOne, withModelHealthHistory(_m))
+	return &ModelHealthHistoryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ModelHealthHistoryClient) UpdateOneID(id int) *ModelHealthHistoryUpdateOne {
+	mutation := newModelHealthHistoryMutation(c.config, OpUpdateOne, withModelHealthHistoryID(id))
+	return &ModelHealthHistoryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ModelHealthHistory.
+func (c *ModelHealthHistoryClient) Delete() *ModelHealthHistoryDelete {
+	mutation := newModelHealthHistoryMutation(c.config, OpDelete)
+	return &ModelHealthHistoryDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ModelHealthHistoryClient) DeleteOne(_m *ModelHealthHistory) *ModelHealthHistoryDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ModelHealthHistoryClient) DeleteOneID(id int) *ModelHealthHistoryDeleteOne {
+	builder := c.Delete().Where(modelhealthhistory.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ModelHealthHistoryDeleteOne{builder}
+}
+
+// Query returns a query builder for ModelHealthHistory.
+func (c *ModelHealthHistoryClient) Query() *ModelHealthHistoryQuery {
+	return &ModelHealthHistoryQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeModelHealthHistory},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ModelHealthHistory entity by its id.
+func (c *ModelHealthHistoryClient) Get(ctx context.Context, id int) (*ModelHealthHistory, error) {
+	return c.Query().Where(modelhealthhistory.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ModelHealthHistoryClient) GetX(ctx context.Context, id int) *ModelHealthHistory {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryChannel queries the channel edge of a ModelHealthHistory.
+func (c *ModelHealthHistoryClient) QueryChannel(_m *ModelHealthHistory) *ChannelQuery {
+	query := (&ChannelClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(modelhealthhistory.Table, modelhealthhistory.FieldID, id),
+			sqlgraph.To(channel.Table, channel.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, modelhealthhistory.ChannelTable, modelhealthhistory.ChannelColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ModelHealthHistoryClient) Hooks() []Hook {
+	return c.hooks.ModelHealthHistory
+}
+
+// Interceptors returns the client interceptors.
+func (c *ModelHealthHistoryClient) Interceptors() []Interceptor {
+	return c.inters.ModelHealthHistory
+}
+
+func (c *ModelHealthHistoryClient) mutate(ctx context.Context, m *ModelHealthHistoryMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ModelHealthHistoryCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ModelHealthHistoryUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ModelHealthHistoryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ModelHealthHistoryDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ModelHealthHistory mutation op: %q", m.Op())
+	}
+}
+
+// ModelHealthSnapshotClient is a client for the ModelHealthSnapshot schema.
+type ModelHealthSnapshotClient struct {
+	config
+}
+
+// NewModelHealthSnapshotClient returns a client for the ModelHealthSnapshot from the given config.
+func NewModelHealthSnapshotClient(c config) *ModelHealthSnapshotClient {
+	return &ModelHealthSnapshotClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `modelhealthsnapshot.Hooks(f(g(h())))`.
+func (c *ModelHealthSnapshotClient) Use(hooks ...Hook) {
+	c.hooks.ModelHealthSnapshot = append(c.hooks.ModelHealthSnapshot, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `modelhealthsnapshot.Intercept(f(g(h())))`.
+func (c *ModelHealthSnapshotClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ModelHealthSnapshot = append(c.inters.ModelHealthSnapshot, interceptors...)
+}
+
+// Create returns a builder for creating a ModelHealthSnapshot entity.
+func (c *ModelHealthSnapshotClient) Create() *ModelHealthSnapshotCreate {
+	mutation := newModelHealthSnapshotMutation(c.config, OpCreate)
+	return &ModelHealthSnapshotCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ModelHealthSnapshot entities.
+func (c *ModelHealthSnapshotClient) CreateBulk(builders ...*ModelHealthSnapshotCreate) *ModelHealthSnapshotCreateBulk {
+	return &ModelHealthSnapshotCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ModelHealthSnapshotClient) MapCreateBulk(slice any, setFunc func(*ModelHealthSnapshotCreate, int)) *ModelHealthSnapshotCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ModelHealthSnapshotCreateBulk{err: fmt.Errorf("calling to ModelHealthSnapshotClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ModelHealthSnapshotCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ModelHealthSnapshotCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ModelHealthSnapshot.
+func (c *ModelHealthSnapshotClient) Update() *ModelHealthSnapshotUpdate {
+	mutation := newModelHealthSnapshotMutation(c.config, OpUpdate)
+	return &ModelHealthSnapshotUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ModelHealthSnapshotClient) UpdateOne(_m *ModelHealthSnapshot) *ModelHealthSnapshotUpdateOne {
+	mutation := newModelHealthSnapshotMutation(c.config, OpUpdateOne, withModelHealthSnapshot(_m))
+	return &ModelHealthSnapshotUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ModelHealthSnapshotClient) UpdateOneID(id int) *ModelHealthSnapshotUpdateOne {
+	mutation := newModelHealthSnapshotMutation(c.config, OpUpdateOne, withModelHealthSnapshotID(id))
+	return &ModelHealthSnapshotUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ModelHealthSnapshot.
+func (c *ModelHealthSnapshotClient) Delete() *ModelHealthSnapshotDelete {
+	mutation := newModelHealthSnapshotMutation(c.config, OpDelete)
+	return &ModelHealthSnapshotDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ModelHealthSnapshotClient) DeleteOne(_m *ModelHealthSnapshot) *ModelHealthSnapshotDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ModelHealthSnapshotClient) DeleteOneID(id int) *ModelHealthSnapshotDeleteOne {
+	builder := c.Delete().Where(modelhealthsnapshot.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ModelHealthSnapshotDeleteOne{builder}
+}
+
+// Query returns a query builder for ModelHealthSnapshot.
+func (c *ModelHealthSnapshotClient) Query() *ModelHealthSnapshotQuery {
+	return &ModelHealthSnapshotQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeModelHealthSnapshot},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ModelHealthSnapshot entity by its id.
+func (c *ModelHealthSnapshotClient) Get(ctx context.Context, id int) (*ModelHealthSnapshot, error) {
+	return c.Query().Where(modelhealthsnapshot.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ModelHealthSnapshotClient) GetX(ctx context.Context, id int) *ModelHealthSnapshot {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryChannel queries the channel edge of a ModelHealthSnapshot.
+func (c *ModelHealthSnapshotClient) QueryChannel(_m *ModelHealthSnapshot) *ChannelQuery {
+	query := (&ChannelClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(modelhealthsnapshot.Table, modelhealthsnapshot.FieldID, id),
+			sqlgraph.To(channel.Table, channel.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, modelhealthsnapshot.ChannelTable, modelhealthsnapshot.ChannelColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ModelHealthSnapshotClient) Hooks() []Hook {
+	return c.hooks.ModelHealthSnapshot
+}
+
+// Interceptors returns the client interceptors.
+func (c *ModelHealthSnapshotClient) Interceptors() []Interceptor {
+	return c.inters.ModelHealthSnapshot
+}
+
+func (c *ModelHealthSnapshotClient) mutate(ctx context.Context, m *ModelHealthSnapshotMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ModelHealthSnapshotCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ModelHealthSnapshotUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ModelHealthSnapshotUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ModelHealthSnapshotDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ModelHealthSnapshot mutation op: %q", m.Op())
 	}
 }
 
@@ -4273,14 +4621,16 @@ func (c *UserRoleClient) mutate(ctx context.Context, m *UserRoleMutation) (Value
 type (
 	hooks struct {
 		APIKey, Channel, ChannelModelPrice, ChannelModelPriceVersion,
-		ChannelOverrideTemplate, ChannelProbe, DataStorage, Model, Project, Prompt,
-		PromptProtectionRule, ProviderQuotaStatus, Request, RequestExecution, Role,
-		System, Thread, Trace, UsageLog, User, UserProject, UserRole []ent.Hook
+		ChannelOverrideTemplate, ChannelProbe, DataStorage, Model, ModelHealthHistory,
+		ModelHealthSnapshot, Project, Prompt, PromptProtectionRule,
+		ProviderQuotaStatus, Request, RequestExecution, Role, System, Thread, Trace,
+		UsageLog, User, UserProject, UserRole []ent.Hook
 	}
 	inters struct {
 		APIKey, Channel, ChannelModelPrice, ChannelModelPriceVersion,
-		ChannelOverrideTemplate, ChannelProbe, DataStorage, Model, Project, Prompt,
-		PromptProtectionRule, ProviderQuotaStatus, Request, RequestExecution, Role,
-		System, Thread, Trace, UsageLog, User, UserProject, UserRole []ent.Interceptor
+		ChannelOverrideTemplate, ChannelProbe, DataStorage, Model, ModelHealthHistory,
+		ModelHealthSnapshot, Project, Prompt, PromptProtectionRule,
+		ProviderQuotaStatus, Request, RequestExecution, Role, System, Thread, Trace,
+		UsageLog, User, UserProject, UserRole []ent.Interceptor
 	}
 )

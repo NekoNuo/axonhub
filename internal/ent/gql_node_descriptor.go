@@ -13,6 +13,8 @@ import (
 	"github.com/looplj/axonhub/internal/ent/channeloverridetemplate"
 	"github.com/looplj/axonhub/internal/ent/channelprobe"
 	"github.com/looplj/axonhub/internal/ent/datastorage"
+	"github.com/looplj/axonhub/internal/ent/modelhealthhistory"
+	"github.com/looplj/axonhub/internal/ent/modelhealthsnapshot"
 	"github.com/looplj/axonhub/internal/ent/project"
 	"github.com/looplj/axonhub/internal/ent/prompt"
 	"github.com/looplj/axonhub/internal/ent/providerquotastatus"
@@ -177,7 +179,7 @@ func (_m *Channel) Node(ctx context.Context) (node *Node, err error) {
 		ID:     _m.ID,
 		Type:   "Channel",
 		Fields: make([]*Field, 19),
-		Edges:  make([]*Edge, 6),
+		Edges:  make([]*Edge, 8),
 	}
 	var buf []byte
 	if buf, err = json.Marshal(_m.CreatedAt); err != nil {
@@ -373,22 +375,42 @@ func (_m *Channel) Node(ctx context.Context) (node *Node, err error) {
 		return nil, err
 	}
 	node.Edges[4] = &Edge{
-		Type: "ChannelModelPrice",
-		Name: "channel_model_prices",
+		Type: "ModelHealthSnapshot",
+		Name: "model_health_snapshots",
 	}
-	err = _m.QueryChannelModelPrices().
-		Select(channelmodelprice.FieldID).
+	err = _m.QueryModelHealthSnapshots().
+		Select(modelhealthsnapshot.FieldID).
 		Scan(ctx, &node.Edges[4].IDs)
 	if err != nil {
 		return nil, err
 	}
 	node.Edges[5] = &Edge{
+		Type: "ModelHealthHistory",
+		Name: "model_health_histories",
+	}
+	err = _m.QueryModelHealthHistories().
+		Select(modelhealthhistory.FieldID).
+		Scan(ctx, &node.Edges[5].IDs)
+	if err != nil {
+		return nil, err
+	}
+	node.Edges[6] = &Edge{
+		Type: "ChannelModelPrice",
+		Name: "channel_model_prices",
+	}
+	err = _m.QueryChannelModelPrices().
+		Select(channelmodelprice.FieldID).
+		Scan(ctx, &node.Edges[6].IDs)
+	if err != nil {
+		return nil, err
+	}
+	node.Edges[7] = &Edge{
 		Type: "ProviderQuotaStatus",
 		Name: "provider_quota_status",
 	}
 	err = _m.QueryProviderQuotaStatus().
 		Select(providerquotastatus.FieldID).
-		Scan(ctx, &node.Edges[5].IDs)
+		Scan(ctx, &node.Edges[7].IDs)
 	if err != nil {
 		return nil, err
 	}
@@ -957,6 +979,178 @@ func (_m *Model) Node(ctx context.Context) (node *Node, err error) {
 		Type:  "string",
 		Name:  "remark",
 		Value: string(buf),
+	}
+	return node, nil
+}
+
+// Node implements Noder interface
+func (_m *ModelHealthHistory) Node(ctx context.Context) (node *Node, err error) {
+	node = &Node{
+		ID:     _m.ID,
+		Type:   "ModelHealthHistory",
+		Fields: make([]*Field, 8),
+		Edges:  make([]*Edge, 1),
+	}
+	var buf []byte
+	if buf, err = json.Marshal(_m.CreatedAt); err != nil {
+		return nil, err
+	}
+	node.Fields[0] = &Field{
+		Type:  "time.Time",
+		Name:  "created_at",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(_m.UpdatedAt); err != nil {
+		return nil, err
+	}
+	node.Fields[1] = &Field{
+		Type:  "time.Time",
+		Name:  "updated_at",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(_m.DisplayModel); err != nil {
+		return nil, err
+	}
+	node.Fields[2] = &Field{
+		Type:  "string",
+		Name:  "display_model",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(_m.ChannelID); err != nil {
+		return nil, err
+	}
+	node.Fields[3] = &Field{
+		Type:  "int",
+		Name:  "channel_id",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(_m.ActualModelID); err != nil {
+		return nil, err
+	}
+	node.Fields[4] = &Field{
+		Type:  "string",
+		Name:  "actual_model_id",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(_m.IsHealthy); err != nil {
+		return nil, err
+	}
+	node.Fields[5] = &Field{
+		Type:  "bool",
+		Name:  "is_healthy",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(_m.ManualOverride); err != nil {
+		return nil, err
+	}
+	node.Fields[6] = &Field{
+		Type:  "bool",
+		Name:  "manual_override",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(_m.ProbedAt); err != nil {
+		return nil, err
+	}
+	node.Fields[7] = &Field{
+		Type:  "int64",
+		Name:  "probed_at",
+		Value: string(buf),
+	}
+	node.Edges[0] = &Edge{
+		Type: "Channel",
+		Name: "channel",
+	}
+	err = _m.QueryChannel().
+		Select(channel.FieldID).
+		Scan(ctx, &node.Edges[0].IDs)
+	if err != nil {
+		return nil, err
+	}
+	return node, nil
+}
+
+// Node implements Noder interface
+func (_m *ModelHealthSnapshot) Node(ctx context.Context) (node *Node, err error) {
+	node = &Node{
+		ID:     _m.ID,
+		Type:   "ModelHealthSnapshot",
+		Fields: make([]*Field, 8),
+		Edges:  make([]*Edge, 1),
+	}
+	var buf []byte
+	if buf, err = json.Marshal(_m.CreatedAt); err != nil {
+		return nil, err
+	}
+	node.Fields[0] = &Field{
+		Type:  "time.Time",
+		Name:  "created_at",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(_m.UpdatedAt); err != nil {
+		return nil, err
+	}
+	node.Fields[1] = &Field{
+		Type:  "time.Time",
+		Name:  "updated_at",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(_m.DisplayModel); err != nil {
+		return nil, err
+	}
+	node.Fields[2] = &Field{
+		Type:  "string",
+		Name:  "display_model",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(_m.ChannelID); err != nil {
+		return nil, err
+	}
+	node.Fields[3] = &Field{
+		Type:  "int",
+		Name:  "channel_id",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(_m.ActualModelID); err != nil {
+		return nil, err
+	}
+	node.Fields[4] = &Field{
+		Type:  "string",
+		Name:  "actual_model_id",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(_m.IsHealthy); err != nil {
+		return nil, err
+	}
+	node.Fields[5] = &Field{
+		Type:  "bool",
+		Name:  "is_healthy",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(_m.ManualOverride); err != nil {
+		return nil, err
+	}
+	node.Fields[6] = &Field{
+		Type:  "bool",
+		Name:  "manual_override",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(_m.ProbedAt); err != nil {
+		return nil, err
+	}
+	node.Fields[7] = &Field{
+		Type:  "int64",
+		Name:  "probed_at",
+		Value: string(buf),
+	}
+	node.Edges[0] = &Edge{
+		Type: "Channel",
+		Name: "channel",
+	}
+	err = _m.QueryChannel().
+		Select(channel.FieldID).
+		Scan(ctx, &node.Edges[0].IDs)
+	if err != nil {
+		return nil, err
 	}
 	return node, nil
 }

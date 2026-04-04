@@ -19,6 +19,8 @@ import (
 	"github.com/looplj/axonhub/internal/ent/channelprobe"
 	"github.com/looplj/axonhub/internal/ent/datastorage"
 	"github.com/looplj/axonhub/internal/ent/model"
+	"github.com/looplj/axonhub/internal/ent/modelhealthhistory"
+	"github.com/looplj/axonhub/internal/ent/modelhealthsnapshot"
 	"github.com/looplj/axonhub/internal/ent/predicate"
 	"github.com/looplj/axonhub/internal/ent/project"
 	"github.com/looplj/axonhub/internal/ent/prompt"
@@ -54,6 +56,8 @@ const (
 	TypeChannelProbe             = "ChannelProbe"
 	TypeDataStorage              = "DataStorage"
 	TypeModel                    = "Model"
+	TypeModelHealthHistory       = "ModelHealthHistory"
+	TypeModelHealthSnapshot      = "ModelHealthSnapshot"
 	TypeProject                  = "Project"
 	TypePrompt                   = "Prompt"
 	TypePromptProtectionRule     = "PromptProtectionRule"
@@ -1237,56 +1241,62 @@ func (m *APIKeyMutation) ResetEdge(name string) error {
 // ChannelMutation represents an operation that mutates the Channel nodes in the graph.
 type ChannelMutation struct {
 	config
-	op                           Op
-	typ                          string
-	id                           *int
-	created_at                   *time.Time
-	updated_at                   *time.Time
-	deleted_at                   *int
-	adddeleted_at                *int
-	_type                        *channel.Type
-	base_url                     *string
-	name                         *string
-	status                       *channel.Status
-	credentials                  *objects.ChannelCredentials
-	disabled_api_keys            *[]objects.DisabledAPIKey
-	appenddisabled_api_keys      []objects.DisabledAPIKey
-	supported_models             *[]string
-	appendsupported_models       []string
-	manual_models                *[]string
-	appendmanual_models          []string
-	auto_sync_supported_models   *bool
-	auto_sync_model_pattern      *string
-	tags                         *[]string
-	appendtags                   []string
-	default_test_model           *string
-	policies                     *objects.ChannelPolicies
-	settings                     **objects.ChannelSettings
-	ordering_weight              *int
-	addordering_weight           *int
-	error_message                *string
-	remark                       *string
-	clearedFields                map[string]struct{}
-	requests                     map[int]struct{}
-	removedrequests              map[int]struct{}
-	clearedrequests              bool
-	executions                   map[int]struct{}
-	removedexecutions            map[int]struct{}
-	clearedexecutions            bool
-	usage_logs                   map[int]struct{}
-	removedusage_logs            map[int]struct{}
-	clearedusage_logs            bool
-	channel_probes               map[int]struct{}
-	removedchannel_probes        map[int]struct{}
-	clearedchannel_probes        bool
-	channel_model_prices         map[int]struct{}
-	removedchannel_model_prices  map[int]struct{}
-	clearedchannel_model_prices  bool
-	provider_quota_status        *int
-	clearedprovider_quota_status bool
-	done                         bool
-	oldValue                     func(context.Context) (*Channel, error)
-	predicates                   []predicate.Channel
+	op                            Op
+	typ                           string
+	id                            *int
+	created_at                    *time.Time
+	updated_at                    *time.Time
+	deleted_at                    *int
+	adddeleted_at                 *int
+	_type                         *channel.Type
+	base_url                      *string
+	name                          *string
+	status                        *channel.Status
+	credentials                   *objects.ChannelCredentials
+	disabled_api_keys             *[]objects.DisabledAPIKey
+	appenddisabled_api_keys       []objects.DisabledAPIKey
+	supported_models              *[]string
+	appendsupported_models        []string
+	manual_models                 *[]string
+	appendmanual_models           []string
+	auto_sync_supported_models    *bool
+	auto_sync_model_pattern       *string
+	tags                          *[]string
+	appendtags                    []string
+	default_test_model            *string
+	policies                      *objects.ChannelPolicies
+	settings                      **objects.ChannelSettings
+	ordering_weight               *int
+	addordering_weight            *int
+	error_message                 *string
+	remark                        *string
+	clearedFields                 map[string]struct{}
+	requests                      map[int]struct{}
+	removedrequests               map[int]struct{}
+	clearedrequests               bool
+	executions                    map[int]struct{}
+	removedexecutions             map[int]struct{}
+	clearedexecutions             bool
+	usage_logs                    map[int]struct{}
+	removedusage_logs             map[int]struct{}
+	clearedusage_logs             bool
+	channel_probes                map[int]struct{}
+	removedchannel_probes         map[int]struct{}
+	clearedchannel_probes         bool
+	model_health_snapshots        map[int]struct{}
+	removedmodel_health_snapshots map[int]struct{}
+	clearedmodel_health_snapshots bool
+	model_health_histories        map[int]struct{}
+	removedmodel_health_histories map[int]struct{}
+	clearedmodel_health_histories bool
+	channel_model_prices          map[int]struct{}
+	removedchannel_model_prices   map[int]struct{}
+	clearedchannel_model_prices   bool
+	provider_quota_status         *int
+	clearedprovider_quota_status  bool
+	done                          bool
+	oldValue                      func(context.Context) (*Channel, error)
+	predicates                    []predicate.Channel
 }
 
 var _ ent.Mutation = (*ChannelMutation)(nil)
@@ -2543,6 +2553,114 @@ func (m *ChannelMutation) ResetChannelProbes() {
 	m.removedchannel_probes = nil
 }
 
+// AddModelHealthSnapshotIDs adds the "model_health_snapshots" edge to the ModelHealthSnapshot entity by ids.
+func (m *ChannelMutation) AddModelHealthSnapshotIDs(ids ...int) {
+	if m.model_health_snapshots == nil {
+		m.model_health_snapshots = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.model_health_snapshots[ids[i]] = struct{}{}
+	}
+}
+
+// ClearModelHealthSnapshots clears the "model_health_snapshots" edge to the ModelHealthSnapshot entity.
+func (m *ChannelMutation) ClearModelHealthSnapshots() {
+	m.clearedmodel_health_snapshots = true
+}
+
+// ModelHealthSnapshotsCleared reports if the "model_health_snapshots" edge to the ModelHealthSnapshot entity was cleared.
+func (m *ChannelMutation) ModelHealthSnapshotsCleared() bool {
+	return m.clearedmodel_health_snapshots
+}
+
+// RemoveModelHealthSnapshotIDs removes the "model_health_snapshots" edge to the ModelHealthSnapshot entity by IDs.
+func (m *ChannelMutation) RemoveModelHealthSnapshotIDs(ids ...int) {
+	if m.removedmodel_health_snapshots == nil {
+		m.removedmodel_health_snapshots = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.model_health_snapshots, ids[i])
+		m.removedmodel_health_snapshots[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedModelHealthSnapshots returns the removed IDs of the "model_health_snapshots" edge to the ModelHealthSnapshot entity.
+func (m *ChannelMutation) RemovedModelHealthSnapshotsIDs() (ids []int) {
+	for id := range m.removedmodel_health_snapshots {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ModelHealthSnapshotsIDs returns the "model_health_snapshots" edge IDs in the mutation.
+func (m *ChannelMutation) ModelHealthSnapshotsIDs() (ids []int) {
+	for id := range m.model_health_snapshots {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetModelHealthSnapshots resets all changes to the "model_health_snapshots" edge.
+func (m *ChannelMutation) ResetModelHealthSnapshots() {
+	m.model_health_snapshots = nil
+	m.clearedmodel_health_snapshots = false
+	m.removedmodel_health_snapshots = nil
+}
+
+// AddModelHealthHistoryIDs adds the "model_health_histories" edge to the ModelHealthHistory entity by ids.
+func (m *ChannelMutation) AddModelHealthHistoryIDs(ids ...int) {
+	if m.model_health_histories == nil {
+		m.model_health_histories = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.model_health_histories[ids[i]] = struct{}{}
+	}
+}
+
+// ClearModelHealthHistories clears the "model_health_histories" edge to the ModelHealthHistory entity.
+func (m *ChannelMutation) ClearModelHealthHistories() {
+	m.clearedmodel_health_histories = true
+}
+
+// ModelHealthHistoriesCleared reports if the "model_health_histories" edge to the ModelHealthHistory entity was cleared.
+func (m *ChannelMutation) ModelHealthHistoriesCleared() bool {
+	return m.clearedmodel_health_histories
+}
+
+// RemoveModelHealthHistoryIDs removes the "model_health_histories" edge to the ModelHealthHistory entity by IDs.
+func (m *ChannelMutation) RemoveModelHealthHistoryIDs(ids ...int) {
+	if m.removedmodel_health_histories == nil {
+		m.removedmodel_health_histories = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.model_health_histories, ids[i])
+		m.removedmodel_health_histories[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedModelHealthHistories returns the removed IDs of the "model_health_histories" edge to the ModelHealthHistory entity.
+func (m *ChannelMutation) RemovedModelHealthHistoriesIDs() (ids []int) {
+	for id := range m.removedmodel_health_histories {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ModelHealthHistoriesIDs returns the "model_health_histories" edge IDs in the mutation.
+func (m *ChannelMutation) ModelHealthHistoriesIDs() (ids []int) {
+	for id := range m.model_health_histories {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetModelHealthHistories resets all changes to the "model_health_histories" edge.
+func (m *ChannelMutation) ResetModelHealthHistories() {
+	m.model_health_histories = nil
+	m.clearedmodel_health_histories = false
+	m.removedmodel_health_histories = nil
+}
+
 // AddChannelModelPriceIDs adds the "channel_model_prices" edge to the ChannelModelPrice entity by ids.
 func (m *ChannelMutation) AddChannelModelPriceIDs(ids ...int) {
 	if m.channel_model_prices == nil {
@@ -3176,7 +3294,7 @@ func (m *ChannelMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ChannelMutation) AddedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 8)
 	if m.requests != nil {
 		edges = append(edges, channel.EdgeRequests)
 	}
@@ -3188,6 +3306,12 @@ func (m *ChannelMutation) AddedEdges() []string {
 	}
 	if m.channel_probes != nil {
 		edges = append(edges, channel.EdgeChannelProbes)
+	}
+	if m.model_health_snapshots != nil {
+		edges = append(edges, channel.EdgeModelHealthSnapshots)
+	}
+	if m.model_health_histories != nil {
+		edges = append(edges, channel.EdgeModelHealthHistories)
 	}
 	if m.channel_model_prices != nil {
 		edges = append(edges, channel.EdgeChannelModelPrices)
@@ -3226,6 +3350,18 @@ func (m *ChannelMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case channel.EdgeModelHealthSnapshots:
+		ids := make([]ent.Value, 0, len(m.model_health_snapshots))
+		for id := range m.model_health_snapshots {
+			ids = append(ids, id)
+		}
+		return ids
+	case channel.EdgeModelHealthHistories:
+		ids := make([]ent.Value, 0, len(m.model_health_histories))
+		for id := range m.model_health_histories {
+			ids = append(ids, id)
+		}
+		return ids
 	case channel.EdgeChannelModelPrices:
 		ids := make([]ent.Value, 0, len(m.channel_model_prices))
 		for id := range m.channel_model_prices {
@@ -3242,7 +3378,7 @@ func (m *ChannelMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ChannelMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 8)
 	if m.removedrequests != nil {
 		edges = append(edges, channel.EdgeRequests)
 	}
@@ -3254,6 +3390,12 @@ func (m *ChannelMutation) RemovedEdges() []string {
 	}
 	if m.removedchannel_probes != nil {
 		edges = append(edges, channel.EdgeChannelProbes)
+	}
+	if m.removedmodel_health_snapshots != nil {
+		edges = append(edges, channel.EdgeModelHealthSnapshots)
+	}
+	if m.removedmodel_health_histories != nil {
+		edges = append(edges, channel.EdgeModelHealthHistories)
 	}
 	if m.removedchannel_model_prices != nil {
 		edges = append(edges, channel.EdgeChannelModelPrices)
@@ -3289,6 +3431,18 @@ func (m *ChannelMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case channel.EdgeModelHealthSnapshots:
+		ids := make([]ent.Value, 0, len(m.removedmodel_health_snapshots))
+		for id := range m.removedmodel_health_snapshots {
+			ids = append(ids, id)
+		}
+		return ids
+	case channel.EdgeModelHealthHistories:
+		ids := make([]ent.Value, 0, len(m.removedmodel_health_histories))
+		for id := range m.removedmodel_health_histories {
+			ids = append(ids, id)
+		}
+		return ids
 	case channel.EdgeChannelModelPrices:
 		ids := make([]ent.Value, 0, len(m.removedchannel_model_prices))
 		for id := range m.removedchannel_model_prices {
@@ -3301,7 +3455,7 @@ func (m *ChannelMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ChannelMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 8)
 	if m.clearedrequests {
 		edges = append(edges, channel.EdgeRequests)
 	}
@@ -3313,6 +3467,12 @@ func (m *ChannelMutation) ClearedEdges() []string {
 	}
 	if m.clearedchannel_probes {
 		edges = append(edges, channel.EdgeChannelProbes)
+	}
+	if m.clearedmodel_health_snapshots {
+		edges = append(edges, channel.EdgeModelHealthSnapshots)
+	}
+	if m.clearedmodel_health_histories {
+		edges = append(edges, channel.EdgeModelHealthHistories)
 	}
 	if m.clearedchannel_model_prices {
 		edges = append(edges, channel.EdgeChannelModelPrices)
@@ -3335,6 +3495,10 @@ func (m *ChannelMutation) EdgeCleared(name string) bool {
 		return m.clearedusage_logs
 	case channel.EdgeChannelProbes:
 		return m.clearedchannel_probes
+	case channel.EdgeModelHealthSnapshots:
+		return m.clearedmodel_health_snapshots
+	case channel.EdgeModelHealthHistories:
+		return m.clearedmodel_health_histories
 	case channel.EdgeChannelModelPrices:
 		return m.clearedchannel_model_prices
 	case channel.EdgeProviderQuotaStatus:
@@ -3369,6 +3533,12 @@ func (m *ChannelMutation) ResetEdge(name string) error {
 		return nil
 	case channel.EdgeChannelProbes:
 		m.ResetChannelProbes()
+		return nil
+	case channel.EdgeModelHealthSnapshots:
+		m.ResetModelHealthSnapshots()
+		return nil
+	case channel.EdgeModelHealthHistories:
+		m.ResetModelHealthHistories()
 		return nil
 	case channel.EdgeChannelModelPrices:
 		m.ResetChannelModelPrices()
@@ -9235,6 +9405,1594 @@ func (m *ModelMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *ModelMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Model edge %s", name)
+}
+
+// ModelHealthHistoryMutation represents an operation that mutates the ModelHealthHistory nodes in the graph.
+type ModelHealthHistoryMutation struct {
+	config
+	op              Op
+	typ             string
+	id              *int
+	created_at      *time.Time
+	updated_at      *time.Time
+	display_model   *string
+	actual_model_id *string
+	is_healthy      *bool
+	manual_override *bool
+	probed_at       *int64
+	addprobed_at    *int64
+	clearedFields   map[string]struct{}
+	channel         *int
+	clearedchannel  bool
+	done            bool
+	oldValue        func(context.Context) (*ModelHealthHistory, error)
+	predicates      []predicate.ModelHealthHistory
+}
+
+var _ ent.Mutation = (*ModelHealthHistoryMutation)(nil)
+
+// modelhealthhistoryOption allows management of the mutation configuration using functional options.
+type modelhealthhistoryOption func(*ModelHealthHistoryMutation)
+
+// newModelHealthHistoryMutation creates new mutation for the ModelHealthHistory entity.
+func newModelHealthHistoryMutation(c config, op Op, opts ...modelhealthhistoryOption) *ModelHealthHistoryMutation {
+	m := &ModelHealthHistoryMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeModelHealthHistory,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withModelHealthHistoryID sets the ID field of the mutation.
+func withModelHealthHistoryID(id int) modelhealthhistoryOption {
+	return func(m *ModelHealthHistoryMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ModelHealthHistory
+		)
+		m.oldValue = func(ctx context.Context) (*ModelHealthHistory, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ModelHealthHistory.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withModelHealthHistory sets the old ModelHealthHistory of the mutation.
+func withModelHealthHistory(node *ModelHealthHistory) modelhealthhistoryOption {
+	return func(m *ModelHealthHistoryMutation) {
+		m.oldValue = func(context.Context) (*ModelHealthHistory, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ModelHealthHistoryMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ModelHealthHistoryMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ModelHealthHistoryMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ModelHealthHistoryMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ModelHealthHistory.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ModelHealthHistoryMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ModelHealthHistoryMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the ModelHealthHistory entity.
+// If the ModelHealthHistory object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelHealthHistoryMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ModelHealthHistoryMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *ModelHealthHistoryMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *ModelHealthHistoryMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the ModelHealthHistory entity.
+// If the ModelHealthHistory object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelHealthHistoryMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *ModelHealthHistoryMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetDisplayModel sets the "display_model" field.
+func (m *ModelHealthHistoryMutation) SetDisplayModel(s string) {
+	m.display_model = &s
+}
+
+// DisplayModel returns the value of the "display_model" field in the mutation.
+func (m *ModelHealthHistoryMutation) DisplayModel() (r string, exists bool) {
+	v := m.display_model
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDisplayModel returns the old "display_model" field's value of the ModelHealthHistory entity.
+// If the ModelHealthHistory object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelHealthHistoryMutation) OldDisplayModel(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDisplayModel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDisplayModel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDisplayModel: %w", err)
+	}
+	return oldValue.DisplayModel, nil
+}
+
+// ResetDisplayModel resets all changes to the "display_model" field.
+func (m *ModelHealthHistoryMutation) ResetDisplayModel() {
+	m.display_model = nil
+}
+
+// SetChannelID sets the "channel_id" field.
+func (m *ModelHealthHistoryMutation) SetChannelID(i int) {
+	m.channel = &i
+}
+
+// ChannelID returns the value of the "channel_id" field in the mutation.
+func (m *ModelHealthHistoryMutation) ChannelID() (r int, exists bool) {
+	v := m.channel
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldChannelID returns the old "channel_id" field's value of the ModelHealthHistory entity.
+// If the ModelHealthHistory object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelHealthHistoryMutation) OldChannelID(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldChannelID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldChannelID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldChannelID: %w", err)
+	}
+	return oldValue.ChannelID, nil
+}
+
+// ResetChannelID resets all changes to the "channel_id" field.
+func (m *ModelHealthHistoryMutation) ResetChannelID() {
+	m.channel = nil
+}
+
+// SetActualModelID sets the "actual_model_id" field.
+func (m *ModelHealthHistoryMutation) SetActualModelID(s string) {
+	m.actual_model_id = &s
+}
+
+// ActualModelID returns the value of the "actual_model_id" field in the mutation.
+func (m *ModelHealthHistoryMutation) ActualModelID() (r string, exists bool) {
+	v := m.actual_model_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldActualModelID returns the old "actual_model_id" field's value of the ModelHealthHistory entity.
+// If the ModelHealthHistory object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelHealthHistoryMutation) OldActualModelID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldActualModelID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldActualModelID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldActualModelID: %w", err)
+	}
+	return oldValue.ActualModelID, nil
+}
+
+// ResetActualModelID resets all changes to the "actual_model_id" field.
+func (m *ModelHealthHistoryMutation) ResetActualModelID() {
+	m.actual_model_id = nil
+}
+
+// SetIsHealthy sets the "is_healthy" field.
+func (m *ModelHealthHistoryMutation) SetIsHealthy(b bool) {
+	m.is_healthy = &b
+}
+
+// IsHealthy returns the value of the "is_healthy" field in the mutation.
+func (m *ModelHealthHistoryMutation) IsHealthy() (r bool, exists bool) {
+	v := m.is_healthy
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsHealthy returns the old "is_healthy" field's value of the ModelHealthHistory entity.
+// If the ModelHealthHistory object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelHealthHistoryMutation) OldIsHealthy(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsHealthy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsHealthy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsHealthy: %w", err)
+	}
+	return oldValue.IsHealthy, nil
+}
+
+// ResetIsHealthy resets all changes to the "is_healthy" field.
+func (m *ModelHealthHistoryMutation) ResetIsHealthy() {
+	m.is_healthy = nil
+}
+
+// SetManualOverride sets the "manual_override" field.
+func (m *ModelHealthHistoryMutation) SetManualOverride(b bool) {
+	m.manual_override = &b
+}
+
+// ManualOverride returns the value of the "manual_override" field in the mutation.
+func (m *ModelHealthHistoryMutation) ManualOverride() (r bool, exists bool) {
+	v := m.manual_override
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldManualOverride returns the old "manual_override" field's value of the ModelHealthHistory entity.
+// If the ModelHealthHistory object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelHealthHistoryMutation) OldManualOverride(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldManualOverride is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldManualOverride requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldManualOverride: %w", err)
+	}
+	return oldValue.ManualOverride, nil
+}
+
+// ResetManualOverride resets all changes to the "manual_override" field.
+func (m *ModelHealthHistoryMutation) ResetManualOverride() {
+	m.manual_override = nil
+}
+
+// SetProbedAt sets the "probed_at" field.
+func (m *ModelHealthHistoryMutation) SetProbedAt(i int64) {
+	m.probed_at = &i
+	m.addprobed_at = nil
+}
+
+// ProbedAt returns the value of the "probed_at" field in the mutation.
+func (m *ModelHealthHistoryMutation) ProbedAt() (r int64, exists bool) {
+	v := m.probed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProbedAt returns the old "probed_at" field's value of the ModelHealthHistory entity.
+// If the ModelHealthHistory object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelHealthHistoryMutation) OldProbedAt(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProbedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProbedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProbedAt: %w", err)
+	}
+	return oldValue.ProbedAt, nil
+}
+
+// AddProbedAt adds i to the "probed_at" field.
+func (m *ModelHealthHistoryMutation) AddProbedAt(i int64) {
+	if m.addprobed_at != nil {
+		*m.addprobed_at += i
+	} else {
+		m.addprobed_at = &i
+	}
+}
+
+// AddedProbedAt returns the value that was added to the "probed_at" field in this mutation.
+func (m *ModelHealthHistoryMutation) AddedProbedAt() (r int64, exists bool) {
+	v := m.addprobed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetProbedAt resets all changes to the "probed_at" field.
+func (m *ModelHealthHistoryMutation) ResetProbedAt() {
+	m.probed_at = nil
+	m.addprobed_at = nil
+}
+
+// ClearChannel clears the "channel" edge to the Channel entity.
+func (m *ModelHealthHistoryMutation) ClearChannel() {
+	m.clearedchannel = true
+	m.clearedFields[modelhealthhistory.FieldChannelID] = struct{}{}
+}
+
+// ChannelCleared reports if the "channel" edge to the Channel entity was cleared.
+func (m *ModelHealthHistoryMutation) ChannelCleared() bool {
+	return m.clearedchannel
+}
+
+// ChannelIDs returns the "channel" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ChannelID instead. It exists only for internal usage by the builders.
+func (m *ModelHealthHistoryMutation) ChannelIDs() (ids []int) {
+	if id := m.channel; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetChannel resets all changes to the "channel" edge.
+func (m *ModelHealthHistoryMutation) ResetChannel() {
+	m.channel = nil
+	m.clearedchannel = false
+}
+
+// Where appends a list predicates to the ModelHealthHistoryMutation builder.
+func (m *ModelHealthHistoryMutation) Where(ps ...predicate.ModelHealthHistory) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ModelHealthHistoryMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ModelHealthHistoryMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.ModelHealthHistory, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ModelHealthHistoryMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ModelHealthHistoryMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (ModelHealthHistory).
+func (m *ModelHealthHistoryMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ModelHealthHistoryMutation) Fields() []string {
+	fields := make([]string, 0, 8)
+	if m.created_at != nil {
+		fields = append(fields, modelhealthhistory.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, modelhealthhistory.FieldUpdatedAt)
+	}
+	if m.display_model != nil {
+		fields = append(fields, modelhealthhistory.FieldDisplayModel)
+	}
+	if m.channel != nil {
+		fields = append(fields, modelhealthhistory.FieldChannelID)
+	}
+	if m.actual_model_id != nil {
+		fields = append(fields, modelhealthhistory.FieldActualModelID)
+	}
+	if m.is_healthy != nil {
+		fields = append(fields, modelhealthhistory.FieldIsHealthy)
+	}
+	if m.manual_override != nil {
+		fields = append(fields, modelhealthhistory.FieldManualOverride)
+	}
+	if m.probed_at != nil {
+		fields = append(fields, modelhealthhistory.FieldProbedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ModelHealthHistoryMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case modelhealthhistory.FieldCreatedAt:
+		return m.CreatedAt()
+	case modelhealthhistory.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case modelhealthhistory.FieldDisplayModel:
+		return m.DisplayModel()
+	case modelhealthhistory.FieldChannelID:
+		return m.ChannelID()
+	case modelhealthhistory.FieldActualModelID:
+		return m.ActualModelID()
+	case modelhealthhistory.FieldIsHealthy:
+		return m.IsHealthy()
+	case modelhealthhistory.FieldManualOverride:
+		return m.ManualOverride()
+	case modelhealthhistory.FieldProbedAt:
+		return m.ProbedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ModelHealthHistoryMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case modelhealthhistory.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case modelhealthhistory.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case modelhealthhistory.FieldDisplayModel:
+		return m.OldDisplayModel(ctx)
+	case modelhealthhistory.FieldChannelID:
+		return m.OldChannelID(ctx)
+	case modelhealthhistory.FieldActualModelID:
+		return m.OldActualModelID(ctx)
+	case modelhealthhistory.FieldIsHealthy:
+		return m.OldIsHealthy(ctx)
+	case modelhealthhistory.FieldManualOverride:
+		return m.OldManualOverride(ctx)
+	case modelhealthhistory.FieldProbedAt:
+		return m.OldProbedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown ModelHealthHistory field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ModelHealthHistoryMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case modelhealthhistory.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case modelhealthhistory.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case modelhealthhistory.FieldDisplayModel:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDisplayModel(v)
+		return nil
+	case modelhealthhistory.FieldChannelID:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetChannelID(v)
+		return nil
+	case modelhealthhistory.FieldActualModelID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetActualModelID(v)
+		return nil
+	case modelhealthhistory.FieldIsHealthy:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsHealthy(v)
+		return nil
+	case modelhealthhistory.FieldManualOverride:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetManualOverride(v)
+		return nil
+	case modelhealthhistory.FieldProbedAt:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProbedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ModelHealthHistory field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ModelHealthHistoryMutation) AddedFields() []string {
+	var fields []string
+	if m.addprobed_at != nil {
+		fields = append(fields, modelhealthhistory.FieldProbedAt)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ModelHealthHistoryMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case modelhealthhistory.FieldProbedAt:
+		return m.AddedProbedAt()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ModelHealthHistoryMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case modelhealthhistory.FieldProbedAt:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddProbedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ModelHealthHistory numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ModelHealthHistoryMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ModelHealthHistoryMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ModelHealthHistoryMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown ModelHealthHistory nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ModelHealthHistoryMutation) ResetField(name string) error {
+	switch name {
+	case modelhealthhistory.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case modelhealthhistory.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case modelhealthhistory.FieldDisplayModel:
+		m.ResetDisplayModel()
+		return nil
+	case modelhealthhistory.FieldChannelID:
+		m.ResetChannelID()
+		return nil
+	case modelhealthhistory.FieldActualModelID:
+		m.ResetActualModelID()
+		return nil
+	case modelhealthhistory.FieldIsHealthy:
+		m.ResetIsHealthy()
+		return nil
+	case modelhealthhistory.FieldManualOverride:
+		m.ResetManualOverride()
+		return nil
+	case modelhealthhistory.FieldProbedAt:
+		m.ResetProbedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown ModelHealthHistory field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ModelHealthHistoryMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.channel != nil {
+		edges = append(edges, modelhealthhistory.EdgeChannel)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ModelHealthHistoryMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case modelhealthhistory.EdgeChannel:
+		if id := m.channel; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ModelHealthHistoryMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ModelHealthHistoryMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ModelHealthHistoryMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedchannel {
+		edges = append(edges, modelhealthhistory.EdgeChannel)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ModelHealthHistoryMutation) EdgeCleared(name string) bool {
+	switch name {
+	case modelhealthhistory.EdgeChannel:
+		return m.clearedchannel
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ModelHealthHistoryMutation) ClearEdge(name string) error {
+	switch name {
+	case modelhealthhistory.EdgeChannel:
+		m.ClearChannel()
+		return nil
+	}
+	return fmt.Errorf("unknown ModelHealthHistory unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ModelHealthHistoryMutation) ResetEdge(name string) error {
+	switch name {
+	case modelhealthhistory.EdgeChannel:
+		m.ResetChannel()
+		return nil
+	}
+	return fmt.Errorf("unknown ModelHealthHistory edge %s", name)
+}
+
+// ModelHealthSnapshotMutation represents an operation that mutates the ModelHealthSnapshot nodes in the graph.
+type ModelHealthSnapshotMutation struct {
+	config
+	op              Op
+	typ             string
+	id              *int
+	created_at      *time.Time
+	updated_at      *time.Time
+	display_model   *string
+	actual_model_id *string
+	is_healthy      *bool
+	manual_override *bool
+	probed_at       *int64
+	addprobed_at    *int64
+	clearedFields   map[string]struct{}
+	channel         *int
+	clearedchannel  bool
+	done            bool
+	oldValue        func(context.Context) (*ModelHealthSnapshot, error)
+	predicates      []predicate.ModelHealthSnapshot
+}
+
+var _ ent.Mutation = (*ModelHealthSnapshotMutation)(nil)
+
+// modelhealthsnapshotOption allows management of the mutation configuration using functional options.
+type modelhealthsnapshotOption func(*ModelHealthSnapshotMutation)
+
+// newModelHealthSnapshotMutation creates new mutation for the ModelHealthSnapshot entity.
+func newModelHealthSnapshotMutation(c config, op Op, opts ...modelhealthsnapshotOption) *ModelHealthSnapshotMutation {
+	m := &ModelHealthSnapshotMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeModelHealthSnapshot,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withModelHealthSnapshotID sets the ID field of the mutation.
+func withModelHealthSnapshotID(id int) modelhealthsnapshotOption {
+	return func(m *ModelHealthSnapshotMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ModelHealthSnapshot
+		)
+		m.oldValue = func(ctx context.Context) (*ModelHealthSnapshot, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ModelHealthSnapshot.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withModelHealthSnapshot sets the old ModelHealthSnapshot of the mutation.
+func withModelHealthSnapshot(node *ModelHealthSnapshot) modelhealthsnapshotOption {
+	return func(m *ModelHealthSnapshotMutation) {
+		m.oldValue = func(context.Context) (*ModelHealthSnapshot, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ModelHealthSnapshotMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ModelHealthSnapshotMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ModelHealthSnapshotMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ModelHealthSnapshotMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ModelHealthSnapshot.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ModelHealthSnapshotMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ModelHealthSnapshotMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the ModelHealthSnapshot entity.
+// If the ModelHealthSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelHealthSnapshotMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ModelHealthSnapshotMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *ModelHealthSnapshotMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *ModelHealthSnapshotMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the ModelHealthSnapshot entity.
+// If the ModelHealthSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelHealthSnapshotMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *ModelHealthSnapshotMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetDisplayModel sets the "display_model" field.
+func (m *ModelHealthSnapshotMutation) SetDisplayModel(s string) {
+	m.display_model = &s
+}
+
+// DisplayModel returns the value of the "display_model" field in the mutation.
+func (m *ModelHealthSnapshotMutation) DisplayModel() (r string, exists bool) {
+	v := m.display_model
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDisplayModel returns the old "display_model" field's value of the ModelHealthSnapshot entity.
+// If the ModelHealthSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelHealthSnapshotMutation) OldDisplayModel(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDisplayModel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDisplayModel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDisplayModel: %w", err)
+	}
+	return oldValue.DisplayModel, nil
+}
+
+// ResetDisplayModel resets all changes to the "display_model" field.
+func (m *ModelHealthSnapshotMutation) ResetDisplayModel() {
+	m.display_model = nil
+}
+
+// SetChannelID sets the "channel_id" field.
+func (m *ModelHealthSnapshotMutation) SetChannelID(i int) {
+	m.channel = &i
+}
+
+// ChannelID returns the value of the "channel_id" field in the mutation.
+func (m *ModelHealthSnapshotMutation) ChannelID() (r int, exists bool) {
+	v := m.channel
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldChannelID returns the old "channel_id" field's value of the ModelHealthSnapshot entity.
+// If the ModelHealthSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelHealthSnapshotMutation) OldChannelID(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldChannelID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldChannelID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldChannelID: %w", err)
+	}
+	return oldValue.ChannelID, nil
+}
+
+// ResetChannelID resets all changes to the "channel_id" field.
+func (m *ModelHealthSnapshotMutation) ResetChannelID() {
+	m.channel = nil
+}
+
+// SetActualModelID sets the "actual_model_id" field.
+func (m *ModelHealthSnapshotMutation) SetActualModelID(s string) {
+	m.actual_model_id = &s
+}
+
+// ActualModelID returns the value of the "actual_model_id" field in the mutation.
+func (m *ModelHealthSnapshotMutation) ActualModelID() (r string, exists bool) {
+	v := m.actual_model_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldActualModelID returns the old "actual_model_id" field's value of the ModelHealthSnapshot entity.
+// If the ModelHealthSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelHealthSnapshotMutation) OldActualModelID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldActualModelID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldActualModelID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldActualModelID: %w", err)
+	}
+	return oldValue.ActualModelID, nil
+}
+
+// ResetActualModelID resets all changes to the "actual_model_id" field.
+func (m *ModelHealthSnapshotMutation) ResetActualModelID() {
+	m.actual_model_id = nil
+}
+
+// SetIsHealthy sets the "is_healthy" field.
+func (m *ModelHealthSnapshotMutation) SetIsHealthy(b bool) {
+	m.is_healthy = &b
+}
+
+// IsHealthy returns the value of the "is_healthy" field in the mutation.
+func (m *ModelHealthSnapshotMutation) IsHealthy() (r bool, exists bool) {
+	v := m.is_healthy
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsHealthy returns the old "is_healthy" field's value of the ModelHealthSnapshot entity.
+// If the ModelHealthSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelHealthSnapshotMutation) OldIsHealthy(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsHealthy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsHealthy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsHealthy: %w", err)
+	}
+	return oldValue.IsHealthy, nil
+}
+
+// ResetIsHealthy resets all changes to the "is_healthy" field.
+func (m *ModelHealthSnapshotMutation) ResetIsHealthy() {
+	m.is_healthy = nil
+}
+
+// SetManualOverride sets the "manual_override" field.
+func (m *ModelHealthSnapshotMutation) SetManualOverride(b bool) {
+	m.manual_override = &b
+}
+
+// ManualOverride returns the value of the "manual_override" field in the mutation.
+func (m *ModelHealthSnapshotMutation) ManualOverride() (r bool, exists bool) {
+	v := m.manual_override
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldManualOverride returns the old "manual_override" field's value of the ModelHealthSnapshot entity.
+// If the ModelHealthSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelHealthSnapshotMutation) OldManualOverride(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldManualOverride is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldManualOverride requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldManualOverride: %w", err)
+	}
+	return oldValue.ManualOverride, nil
+}
+
+// ResetManualOverride resets all changes to the "manual_override" field.
+func (m *ModelHealthSnapshotMutation) ResetManualOverride() {
+	m.manual_override = nil
+}
+
+// SetProbedAt sets the "probed_at" field.
+func (m *ModelHealthSnapshotMutation) SetProbedAt(i int64) {
+	m.probed_at = &i
+	m.addprobed_at = nil
+}
+
+// ProbedAt returns the value of the "probed_at" field in the mutation.
+func (m *ModelHealthSnapshotMutation) ProbedAt() (r int64, exists bool) {
+	v := m.probed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProbedAt returns the old "probed_at" field's value of the ModelHealthSnapshot entity.
+// If the ModelHealthSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelHealthSnapshotMutation) OldProbedAt(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProbedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProbedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProbedAt: %w", err)
+	}
+	return oldValue.ProbedAt, nil
+}
+
+// AddProbedAt adds i to the "probed_at" field.
+func (m *ModelHealthSnapshotMutation) AddProbedAt(i int64) {
+	if m.addprobed_at != nil {
+		*m.addprobed_at += i
+	} else {
+		m.addprobed_at = &i
+	}
+}
+
+// AddedProbedAt returns the value that was added to the "probed_at" field in this mutation.
+func (m *ModelHealthSnapshotMutation) AddedProbedAt() (r int64, exists bool) {
+	v := m.addprobed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetProbedAt resets all changes to the "probed_at" field.
+func (m *ModelHealthSnapshotMutation) ResetProbedAt() {
+	m.probed_at = nil
+	m.addprobed_at = nil
+}
+
+// ClearChannel clears the "channel" edge to the Channel entity.
+func (m *ModelHealthSnapshotMutation) ClearChannel() {
+	m.clearedchannel = true
+	m.clearedFields[modelhealthsnapshot.FieldChannelID] = struct{}{}
+}
+
+// ChannelCleared reports if the "channel" edge to the Channel entity was cleared.
+func (m *ModelHealthSnapshotMutation) ChannelCleared() bool {
+	return m.clearedchannel
+}
+
+// ChannelIDs returns the "channel" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ChannelID instead. It exists only for internal usage by the builders.
+func (m *ModelHealthSnapshotMutation) ChannelIDs() (ids []int) {
+	if id := m.channel; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetChannel resets all changes to the "channel" edge.
+func (m *ModelHealthSnapshotMutation) ResetChannel() {
+	m.channel = nil
+	m.clearedchannel = false
+}
+
+// Where appends a list predicates to the ModelHealthSnapshotMutation builder.
+func (m *ModelHealthSnapshotMutation) Where(ps ...predicate.ModelHealthSnapshot) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ModelHealthSnapshotMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ModelHealthSnapshotMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.ModelHealthSnapshot, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ModelHealthSnapshotMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ModelHealthSnapshotMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (ModelHealthSnapshot).
+func (m *ModelHealthSnapshotMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ModelHealthSnapshotMutation) Fields() []string {
+	fields := make([]string, 0, 8)
+	if m.created_at != nil {
+		fields = append(fields, modelhealthsnapshot.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, modelhealthsnapshot.FieldUpdatedAt)
+	}
+	if m.display_model != nil {
+		fields = append(fields, modelhealthsnapshot.FieldDisplayModel)
+	}
+	if m.channel != nil {
+		fields = append(fields, modelhealthsnapshot.FieldChannelID)
+	}
+	if m.actual_model_id != nil {
+		fields = append(fields, modelhealthsnapshot.FieldActualModelID)
+	}
+	if m.is_healthy != nil {
+		fields = append(fields, modelhealthsnapshot.FieldIsHealthy)
+	}
+	if m.manual_override != nil {
+		fields = append(fields, modelhealthsnapshot.FieldManualOverride)
+	}
+	if m.probed_at != nil {
+		fields = append(fields, modelhealthsnapshot.FieldProbedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ModelHealthSnapshotMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case modelhealthsnapshot.FieldCreatedAt:
+		return m.CreatedAt()
+	case modelhealthsnapshot.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case modelhealthsnapshot.FieldDisplayModel:
+		return m.DisplayModel()
+	case modelhealthsnapshot.FieldChannelID:
+		return m.ChannelID()
+	case modelhealthsnapshot.FieldActualModelID:
+		return m.ActualModelID()
+	case modelhealthsnapshot.FieldIsHealthy:
+		return m.IsHealthy()
+	case modelhealthsnapshot.FieldManualOverride:
+		return m.ManualOverride()
+	case modelhealthsnapshot.FieldProbedAt:
+		return m.ProbedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ModelHealthSnapshotMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case modelhealthsnapshot.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case modelhealthsnapshot.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case modelhealthsnapshot.FieldDisplayModel:
+		return m.OldDisplayModel(ctx)
+	case modelhealthsnapshot.FieldChannelID:
+		return m.OldChannelID(ctx)
+	case modelhealthsnapshot.FieldActualModelID:
+		return m.OldActualModelID(ctx)
+	case modelhealthsnapshot.FieldIsHealthy:
+		return m.OldIsHealthy(ctx)
+	case modelhealthsnapshot.FieldManualOverride:
+		return m.OldManualOverride(ctx)
+	case modelhealthsnapshot.FieldProbedAt:
+		return m.OldProbedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown ModelHealthSnapshot field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ModelHealthSnapshotMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case modelhealthsnapshot.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case modelhealthsnapshot.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case modelhealthsnapshot.FieldDisplayModel:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDisplayModel(v)
+		return nil
+	case modelhealthsnapshot.FieldChannelID:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetChannelID(v)
+		return nil
+	case modelhealthsnapshot.FieldActualModelID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetActualModelID(v)
+		return nil
+	case modelhealthsnapshot.FieldIsHealthy:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsHealthy(v)
+		return nil
+	case modelhealthsnapshot.FieldManualOverride:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetManualOverride(v)
+		return nil
+	case modelhealthsnapshot.FieldProbedAt:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProbedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ModelHealthSnapshot field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ModelHealthSnapshotMutation) AddedFields() []string {
+	var fields []string
+	if m.addprobed_at != nil {
+		fields = append(fields, modelhealthsnapshot.FieldProbedAt)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ModelHealthSnapshotMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case modelhealthsnapshot.FieldProbedAt:
+		return m.AddedProbedAt()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ModelHealthSnapshotMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case modelhealthsnapshot.FieldProbedAt:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddProbedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ModelHealthSnapshot numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ModelHealthSnapshotMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ModelHealthSnapshotMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ModelHealthSnapshotMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown ModelHealthSnapshot nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ModelHealthSnapshotMutation) ResetField(name string) error {
+	switch name {
+	case modelhealthsnapshot.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case modelhealthsnapshot.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case modelhealthsnapshot.FieldDisplayModel:
+		m.ResetDisplayModel()
+		return nil
+	case modelhealthsnapshot.FieldChannelID:
+		m.ResetChannelID()
+		return nil
+	case modelhealthsnapshot.FieldActualModelID:
+		m.ResetActualModelID()
+		return nil
+	case modelhealthsnapshot.FieldIsHealthy:
+		m.ResetIsHealthy()
+		return nil
+	case modelhealthsnapshot.FieldManualOverride:
+		m.ResetManualOverride()
+		return nil
+	case modelhealthsnapshot.FieldProbedAt:
+		m.ResetProbedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown ModelHealthSnapshot field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ModelHealthSnapshotMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.channel != nil {
+		edges = append(edges, modelhealthsnapshot.EdgeChannel)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ModelHealthSnapshotMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case modelhealthsnapshot.EdgeChannel:
+		if id := m.channel; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ModelHealthSnapshotMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ModelHealthSnapshotMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ModelHealthSnapshotMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedchannel {
+		edges = append(edges, modelhealthsnapshot.EdgeChannel)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ModelHealthSnapshotMutation) EdgeCleared(name string) bool {
+	switch name {
+	case modelhealthsnapshot.EdgeChannel:
+		return m.clearedchannel
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ModelHealthSnapshotMutation) ClearEdge(name string) error {
+	switch name {
+	case modelhealthsnapshot.EdgeChannel:
+		m.ClearChannel()
+		return nil
+	}
+	return fmt.Errorf("unknown ModelHealthSnapshot unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ModelHealthSnapshotMutation) ResetEdge(name string) error {
+	switch name {
+	case modelhealthsnapshot.EdgeChannel:
+		m.ResetChannel()
+		return nil
+	}
+	return fmt.Errorf("unknown ModelHealthSnapshot edge %s", name)
 }
 
 // ProjectMutation represents an operation that mutates the Project nodes in the graph.

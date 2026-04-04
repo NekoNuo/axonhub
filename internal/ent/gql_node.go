@@ -22,6 +22,8 @@ import (
 	"github.com/looplj/axonhub/internal/ent/channelprobe"
 	"github.com/looplj/axonhub/internal/ent/datastorage"
 	"github.com/looplj/axonhub/internal/ent/model"
+	"github.com/looplj/axonhub/internal/ent/modelhealthhistory"
+	"github.com/looplj/axonhub/internal/ent/modelhealthsnapshot"
 	"github.com/looplj/axonhub/internal/ent/project"
 	"github.com/looplj/axonhub/internal/ent/prompt"
 	"github.com/looplj/axonhub/internal/ent/promptprotectionrule"
@@ -84,6 +86,16 @@ var modelImplementors = []string{"Model", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
 func (*Model) IsNode() {}
+
+var modelhealthhistoryImplementors = []string{"ModelHealthHistory", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*ModelHealthHistory) IsNode() {}
+
+var modelhealthsnapshotImplementors = []string{"ModelHealthSnapshot", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*ModelHealthSnapshot) IsNode() {}
 
 var projectImplementors = []string{"Project", "Node"}
 
@@ -281,6 +293,24 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 			Where(model.ID(id))
 		if fc := graphql.GetFieldContext(ctx); fc != nil {
 			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, modelImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
+	case modelhealthhistory.Table:
+		query := c.ModelHealthHistory.Query().
+			Where(modelhealthhistory.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, modelhealthhistoryImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
+	case modelhealthsnapshot.Table:
+		query := c.ModelHealthSnapshot.Query().
+			Where(modelhealthsnapshot.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, modelhealthsnapshotImplementors...); err != nil {
 				return nil, err
 			}
 		}
@@ -600,6 +630,38 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		query := c.Model.Query().
 			Where(model.IDIn(ids...))
 		query, err := query.CollectFields(ctx, modelImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case modelhealthhistory.Table:
+		query := c.ModelHealthHistory.Query().
+			Where(modelhealthhistory.IDIn(ids...))
+		query, err := query.CollectFields(ctx, modelhealthhistoryImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case modelhealthsnapshot.Table:
+		query := c.ModelHealthSnapshot.Query().
+			Where(modelhealthsnapshot.IDIn(ids...))
+		query, err := query.CollectFields(ctx, modelhealthsnapshotImplementors...)
 		if err != nil {
 			return nil, err
 		}

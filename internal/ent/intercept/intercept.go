@@ -16,6 +16,8 @@ import (
 	"github.com/looplj/axonhub/internal/ent/channelprobe"
 	"github.com/looplj/axonhub/internal/ent/datastorage"
 	"github.com/looplj/axonhub/internal/ent/model"
+	"github.com/looplj/axonhub/internal/ent/modelhealthhistory"
+	"github.com/looplj/axonhub/internal/ent/modelhealthsnapshot"
 	"github.com/looplj/axonhub/internal/ent/predicate"
 	"github.com/looplj/axonhub/internal/ent/project"
 	"github.com/looplj/axonhub/internal/ent/prompt"
@@ -303,6 +305,60 @@ func (f TraverseModel) Traverse(ctx context.Context, q ent.Query) error {
 		return f(ctx, q)
 	}
 	return fmt.Errorf("unexpected query type %T. expect *ent.ModelQuery", q)
+}
+
+// The ModelHealthHistoryFunc type is an adapter to allow the use of ordinary function as a Querier.
+type ModelHealthHistoryFunc func(context.Context, *ent.ModelHealthHistoryQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f ModelHealthHistoryFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.ModelHealthHistoryQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.ModelHealthHistoryQuery", q)
+}
+
+// The TraverseModelHealthHistory type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseModelHealthHistory func(context.Context, *ent.ModelHealthHistoryQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseModelHealthHistory) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseModelHealthHistory) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.ModelHealthHistoryQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.ModelHealthHistoryQuery", q)
+}
+
+// The ModelHealthSnapshotFunc type is an adapter to allow the use of ordinary function as a Querier.
+type ModelHealthSnapshotFunc func(context.Context, *ent.ModelHealthSnapshotQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f ModelHealthSnapshotFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.ModelHealthSnapshotQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.ModelHealthSnapshotQuery", q)
+}
+
+// The TraverseModelHealthSnapshot type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseModelHealthSnapshot func(context.Context, *ent.ModelHealthSnapshotQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseModelHealthSnapshot) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseModelHealthSnapshot) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.ModelHealthSnapshotQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.ModelHealthSnapshotQuery", q)
 }
 
 // The ProjectFunc type is an adapter to allow the use of ordinary function as a Querier.
@@ -702,6 +758,10 @@ func NewQuery(q ent.Query) (Query, error) {
 		return &query[*ent.DataStorageQuery, predicate.DataStorage, datastorage.OrderOption]{typ: ent.TypeDataStorage, tq: q}, nil
 	case *ent.ModelQuery:
 		return &query[*ent.ModelQuery, predicate.Model, model.OrderOption]{typ: ent.TypeModel, tq: q}, nil
+	case *ent.ModelHealthHistoryQuery:
+		return &query[*ent.ModelHealthHistoryQuery, predicate.ModelHealthHistory, modelhealthhistory.OrderOption]{typ: ent.TypeModelHealthHistory, tq: q}, nil
+	case *ent.ModelHealthSnapshotQuery:
+		return &query[*ent.ModelHealthSnapshotQuery, predicate.ModelHealthSnapshot, modelhealthsnapshot.OrderOption]{typ: ent.TypeModelHealthSnapshot, tq: q}, nil
 	case *ent.ProjectQuery:
 		return &query[*ent.ProjectQuery, predicate.Project, project.OrderOption]{typ: ent.TypeProject, tq: q}, nil
 	case *ent.PromptQuery:

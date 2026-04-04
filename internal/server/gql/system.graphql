@@ -103,11 +103,13 @@ input UpdateRetryPolicyInput {
 }
 
 type SystemModelSettings {
+  enableModelProbe: Boolean!
   fallbackToChannelsOnModelNotFound: Boolean!
   queryAllChannelModels: Boolean!
 }
 
 input UpdateSystemModelSettingsInput {
+  enableModelProbe: Boolean
   fallbackToChannelsOnModelNotFound: Boolean
   queryAllChannelModels: Boolean
 }

@@ -67,6 +67,10 @@ const (
 	EdgeUsageLogs = "usage_logs"
 	// EdgeChannelProbes holds the string denoting the channel_probes edge name in mutations.
 	EdgeChannelProbes = "channel_probes"
+	// EdgeModelHealthSnapshots holds the string denoting the model_health_snapshots edge name in mutations.
+	EdgeModelHealthSnapshots = "model_health_snapshots"
+	// EdgeModelHealthHistories holds the string denoting the model_health_histories edge name in mutations.
+	EdgeModelHealthHistories = "model_health_histories"
 	// EdgeChannelModelPrices holds the string denoting the channel_model_prices edge name in mutations.
 	EdgeChannelModelPrices = "channel_model_prices"
 	// EdgeProviderQuotaStatus holds the string denoting the provider_quota_status edge name in mutations.
@@ -101,6 +105,20 @@ const (
 	ChannelProbesInverseTable = "channel_probes"
 	// ChannelProbesColumn is the table column denoting the channel_probes relation/edge.
 	ChannelProbesColumn = "channel_id"
+	// ModelHealthSnapshotsTable is the table that holds the model_health_snapshots relation/edge.
+	ModelHealthSnapshotsTable = "model_health_snapshots"
+	// ModelHealthSnapshotsInverseTable is the table name for the ModelHealthSnapshot entity.
+	// It exists in this package in order to avoid circular dependency with the "modelhealthsnapshot" package.
+	ModelHealthSnapshotsInverseTable = "model_health_snapshots"
+	// ModelHealthSnapshotsColumn is the table column denoting the model_health_snapshots relation/edge.
+	ModelHealthSnapshotsColumn = "channel_id"
+	// ModelHealthHistoriesTable is the table that holds the model_health_histories relation/edge.
+	ModelHealthHistoriesTable = "model_health_histories"
+	// ModelHealthHistoriesInverseTable is the table name for the ModelHealthHistory entity.
+	// It exists in this package in order to avoid circular dependency with the "modelhealthhistory" package.
+	ModelHealthHistoriesInverseTable = "model_health_histories"
+	// ModelHealthHistoriesColumn is the table column denoting the model_health_histories relation/edge.
+	ModelHealthHistoriesColumn = "channel_id"
 	// ChannelModelPricesTable is the table that holds the channel_model_prices relation/edge.
 	ChannelModelPricesTable = "channel_model_prices"
 	// ChannelModelPricesInverseTable is the table name for the ChannelModelPrice entity.
@@ -409,6 +427,34 @@ func ByChannelProbes(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByModelHealthSnapshotsCount orders the results by model_health_snapshots count.
+func ByModelHealthSnapshotsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newModelHealthSnapshotsStep(), opts...)
+	}
+}
+
+// ByModelHealthSnapshots orders the results by model_health_snapshots terms.
+func ByModelHealthSnapshots(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newModelHealthSnapshotsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByModelHealthHistoriesCount orders the results by model_health_histories count.
+func ByModelHealthHistoriesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newModelHealthHistoriesStep(), opts...)
+	}
+}
+
+// ByModelHealthHistories orders the results by model_health_histories terms.
+func ByModelHealthHistories(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newModelHealthHistoriesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByChannelModelPricesCount orders the results by channel_model_prices count.
 func ByChannelModelPricesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -455,6 +501,20 @@ func newChannelProbesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ChannelProbesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, ChannelProbesTable, ChannelProbesColumn),
+	)
+}
+func newModelHealthSnapshotsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ModelHealthSnapshotsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ModelHealthSnapshotsTable, ModelHealthSnapshotsColumn),
+	)
+}
+func newModelHealthHistoriesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ModelHealthHistoriesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ModelHealthHistoriesTable, ModelHealthHistoriesColumn),
 	)
 }
 func newChannelModelPricesStep() *sqlgraph.Step {
