@@ -210,6 +210,9 @@ type AutoDisableChannelStatus struct {
 
 // SystemModelSettings represents model-related configuration settings.
 type SystemModelSettings struct {
+	// EnableModelProbe controls whether model-level probing is enabled globally.
+	EnableModelProbe bool `json:"enable_model_probe"`
+
 	// FallbackToChannelsOnModelNotFound controls whether to fall back to legacy channel
 	// selection when the requested model is not found in AxonHub Model associations.
 	// When true, if a model has no associations or doesn't exist, the system will

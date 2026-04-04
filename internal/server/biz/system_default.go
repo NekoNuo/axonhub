@@ -27,6 +27,7 @@ var defaultRetryPolicy = RetryPolicy{
 }
 
 var defaultModelSettings = SystemModelSettings{
+	EnableModelProbe:                  false,
 	FallbackToChannelsOnModelNotFound: true,
 	QueryAllChannelModels:             true,
 }
