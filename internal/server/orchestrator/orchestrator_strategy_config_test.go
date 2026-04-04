@@ -25,18 +25,22 @@ func TestNewChatCompletionOrchestrator_StrategyConfigForHighAvailabilityAndLowLa
 	require.NotNil(t, processor.highAvailabilityLoadBalancer)
 	require.Len(t, processor.highAvailabilityLoadBalancer.strategies, 2)
 
-	haProbe, ok := processor.highAvailabilityLoadBalancer.strategies[0].(*ProbeHealthStrategy)
+	haModelHealth, ok := processor.highAvailabilityLoadBalancer.strategies[0].(*ModelHealthStrategy)
 	require.True(t, ok)
-	assert.Equal(t, ProbeHealthModeAvailability, haProbe.mode)
-	assert.NotNil(t, haProbe.connectionTracker)
+	assert.Equal(t, ProbeHealthModeAvailability, haModelHealth.mode)
+	assert.NotNil(t, haModelHealth.connectionTracker)
+	assert.NotNil(t, haModelHealth.fallback)
+	assert.Equal(t, ProbeHealthModeAvailability, haModelHealth.fallback.mode)
 	assert.IsType(t, &WeightStrategy{}, processor.highAvailabilityLoadBalancer.strategies[1])
 
 	require.NotNil(t, processor.lowLatencyLoadBalancer)
 	require.Len(t, processor.lowLatencyLoadBalancer.strategies, 2)
 
-	llProbe, ok := processor.lowLatencyLoadBalancer.strategies[0].(*ProbeHealthStrategy)
+	llModelHealth, ok := processor.lowLatencyLoadBalancer.strategies[0].(*ModelHealthStrategy)
 	require.True(t, ok)
-	assert.Equal(t, ProbeHealthModeLowLatency, llProbe.mode)
-	assert.NotNil(t, llProbe.connectionTracker)
+	assert.Equal(t, ProbeHealthModeLowLatency, llModelHealth.mode)
+	assert.NotNil(t, llModelHealth.connectionTracker)
+	assert.NotNil(t, llModelHealth.fallback)
+	assert.Equal(t, ProbeHealthModeLowLatency, llModelHealth.fallback.mode)
 	assert.IsType(t, &WeightStrategy{}, processor.lowLatencyLoadBalancer.strategies[1])
 }
