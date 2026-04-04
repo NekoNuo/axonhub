@@ -482,6 +482,8 @@ func (svc *ChannelProbeService) runProbeWithMode(ctx context.Context, force bool
 		log.Int64("timestamp", timestamp),
 	)
 
+	svc.runModelHealthProbe(ctx, alignedTime)
+
 	// Get all enabled channels
 	channels, err := svc.db.Channel.Query().
 		Where(channel.StatusEQ(channel.StatusEnabled)).
