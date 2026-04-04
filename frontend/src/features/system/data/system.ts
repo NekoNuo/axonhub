@@ -548,6 +548,7 @@ export function useCheckForUpdate() {
 const MODEL_SETTINGS_QUERY = `
   query ModelSettings {
     systemModelSettings {
+      enableModelProbe
       fallbackToChannelsOnModelNotFound
       queryAllChannelModels
     }
@@ -621,11 +622,13 @@ const UPDATE_VIDEO_STORAGE_SETTINGS_MUTATION = `
 `;
 
 export interface ModelSettings {
+  enableModelProbe: boolean;
   fallbackToChannelsOnModelNotFound: boolean;
   queryAllChannelModels: boolean;
 }
 
 export interface UpdateModelSettingsInput {
+  enableModelProbe?: boolean;
   fallbackToChannelsOnModelNotFound?: boolean;
   queryAllChannelModels?: boolean;
 }

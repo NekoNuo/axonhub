@@ -110,6 +110,7 @@ export const modelAssociationSchema = z.object({
 export type ModelAssociation = z.infer<typeof modelAssociationSchema>;
 
 export const modelSettingsSchema = z.object({
+  probeEnabled: z.boolean().optional().default(false),
   associations: z.array(modelAssociationSchema).optional().default([]),
 });
 export type ModelSettings = z.infer<typeof modelSettingsSchema>;
