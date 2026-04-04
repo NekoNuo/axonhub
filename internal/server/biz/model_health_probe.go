@@ -13,6 +13,15 @@ import (
 	"github.com/looplj/axonhub/internal/ent/modelhealthsnapshot"
 )
 
+type ModelHealthSnapshotView struct {
+	DisplayModel   string
+	ChannelID      int
+	ActualModelID  string
+	IsHealthy      bool
+	ManualOverride bool
+	ProbedAt       int64
+}
+
 func (svc *ChannelProbeService) runModelHealthProbe(ctx context.Context, now time.Time) {
 	if svc.SystemService == nil {
 		return
@@ -128,49 +137,8 @@ func (svc *ChannelProbeService) RunManualModelProbe(ctx context.Context, target 
 	return svc.persistModelHealthResult(ctx, target, healthy, now.Unix(), true)
 }
 
-func (svc *ChannelProbeService) GetEffectiveModelHealth(ctx context.Context, target ModelHealthProbeTarget) (*ent.ModelHealthSnapshot, error) {
-	snapshot, err := svc.db.ModelHealthSnapshot.Query().
-		Where(
-			modelhealthsnapshot.DisplayModelEQ(target.DisplayModel),
-			modelhealthsnapshot.ChannelIDEQ(target.ChannelID),
-			modelhealthsnapshot.ActualModelIDEQ(target.ActualModelID),
-		).
-		Only(ctx)
-	if err != nil {
-		if ent.IsNotFound(err) {
-			return nil, nil
-		}
-		return nil, fmt.Errorf("query effective model health snapshot: %w", err)
-	}
-
-	if !snapshot.ManualOverride {
-		return snapshot, nil
-	}
-
-	latestAuto, autoErr := svc.db.ModelHealthHistory.Query().
-		Where(
-			modelhealthhistory.DisplayModelEQ(target.DisplayModel),
-			modelhealthhistory.ChannelIDEQ(target.ChannelID),
-			modelhealthhistory.ActualModelIDEQ(target.ActualModelID),
-			modelhealthhistory.ManualOverrideEQ(false),
-			modelhealthhistory.ProbedAtGT(snapshot.ProbedAt),
-		).
-		Order(ent.Desc(modelhealthhistory.FieldProbedAt)).
-		First(ctx)
-	if autoErr != nil {
-		if ent.IsNotFound(autoErr) {
-			return snapshot, nil
-		}
-		return nil, fmt.Errorf("query latest automatic model health history: %w", autoErr)
-	}
-
-	if latestAuto.ProbedAt > snapshot.ProbedAt {
-		snapshot.IsHealthy = latestAuto.IsHealthy
-		snapshot.ManualOverride = false
-		snapshot.ProbedAt = latestAuto.ProbedAt
-	}
-
-	return snapshot, nil
+func (svc *ChannelProbeService) GetEffectiveModelHealth(ctx context.Context, target ModelHealthProbeTarget) (*ModelHealthSnapshotView, error) {
+	return getEffectiveModelHealthFromDB(ctx, svc.db, target.DisplayModel, target.ChannelID, target.ActualModelID)
 }
 
 func (svc *ChannelProbeService) runAutomaticModelHealthProbe(ctx context.Context) {
@@ -188,4 +156,64 @@ func (svc *ChannelProbeService) listProbeEnabledModels(ctx context.Context) ([]*
 	return lo.Filter(models, func(item *ent.Model, _ int) bool {
 		return item.Settings != nil && item.Settings.ProbeEnabled
 	}), nil
+}
+
+func getEffectiveModelHealthFromDB(
+	ctx context.Context,
+	client *ent.Client,
+	displayModel string,
+	channelID int,
+	actualModelID string,
+) (*ModelHealthSnapshotView, error) {
+	snapshot, err := client.ModelHealthSnapshot.Query().
+		Where(
+			modelhealthsnapshot.DisplayModelEQ(displayModel),
+			modelhealthsnapshot.ChannelIDEQ(channelID),
+			modelhealthsnapshot.ActualModelIDEQ(actualModelID),
+		).
+		Only(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("query effective model health snapshot: %w", err)
+	}
+
+	view := &ModelHealthSnapshotView{
+		DisplayModel:   snapshot.DisplayModel,
+		ChannelID:      snapshot.ChannelID,
+		ActualModelID:  snapshot.ActualModelID,
+		IsHealthy:      snapshot.IsHealthy,
+		ManualOverride: snapshot.ManualOverride,
+		ProbedAt:       snapshot.ProbedAt,
+	}
+
+	if !snapshot.ManualOverride {
+		return view, nil
+	}
+
+	latestAuto, autoErr := client.ModelHealthHistory.Query().
+		Where(
+			modelhealthhistory.DisplayModelEQ(displayModel),
+			modelhealthhistory.ChannelIDEQ(channelID),
+			modelhealthhistory.ActualModelIDEQ(actualModelID),
+			modelhealthhistory.ManualOverrideEQ(false),
+			modelhealthhistory.ProbedAtGT(snapshot.ProbedAt),
+		).
+		Order(ent.Desc(modelhealthhistory.FieldProbedAt)).
+		First(ctx)
+	if autoErr != nil {
+		if ent.IsNotFound(autoErr) {
+			return view, nil
+		}
+		return nil, fmt.Errorf("query latest automatic model health history: %w", autoErr)
+	}
+
+	if latestAuto.ProbedAt > snapshot.ProbedAt {
+		view.IsHealthy = latestAuto.IsHealthy
+		view.ManualOverride = false
+		view.ProbedAt = latestAuto.ProbedAt
+	}
+
+	return view, nil
 }

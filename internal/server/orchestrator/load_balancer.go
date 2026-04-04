@@ -169,9 +169,13 @@ func (lb *LoadBalancer) sortProduction(ctx context.Context, candidates []*Channe
 	scored := make([]candidateScore, len(candidates))
 	for i, c := range candidates {
 		totalScore := 0.0
+		strategyCtx := ctx
+		if c != nil && len(c.Models) > 0 {
+			strategyCtx = contextWithCandidateActualModel(strategyCtx, c.Models[0].ActualModel)
+		}
 		// Apply all strategies
 		for _, strategy := range lb.strategies {
-			totalScore += strategy.Score(ctx, c.Channel)
+			totalScore += strategy.Score(strategyCtx, c.Channel)
 		}
 
 		scored[i] = candidateScore{
@@ -225,11 +229,15 @@ func (lb *LoadBalancer) sortWithDebug(ctx context.Context, candidates []*Channel
 	for i, c := range candidates {
 		totalScore := 0.0
 		strategyScores := make([]StrategyScore, 0, len(lb.strategies))
+		strategyCtx := ctx
+		if c != nil && len(c.Models) > 0 {
+			strategyCtx = contextWithCandidateActualModel(strategyCtx, c.Models[0].ActualModel)
+		}
 
 		// Apply all strategies and collect detailed scores
 		for _, strategy := range lb.strategies {
 			scoreStart := time.Now()
-			score, strategyScore := strategy.ScoreWithDebug(ctx, c.Channel)
+			score, strategyScore := strategy.ScoreWithDebug(strategyCtx, c.Channel)
 			strategyScore.Duration = time.Since(scoreStart)
 			strategyScores = append(strategyScores, strategyScore)
 			totalScore += score

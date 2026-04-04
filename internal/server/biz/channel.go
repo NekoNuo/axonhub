@@ -295,6 +295,23 @@ func (svc *ChannelService) SetEnabledChannelsForTest(channels []*Channel) {
 	})
 }
 
+func (svc *ChannelService) GetEffectiveModelHealth(
+	ctx context.Context,
+	displayModel string,
+	channelID int,
+	actualModelID string,
+) (*ModelHealthSnapshotView, bool, error) {
+	view, err := getEffectiveModelHealthFromDB(ctx, svc.db, displayModel, channelID, actualModelID)
+	if err != nil {
+		return nil, false, err
+	}
+	if view == nil {
+		return nil, false, nil
+	}
+
+	return view, true, nil
+}
+
 // GetChannel retrieves a specific channel by ID for testing purposes,
 // including disabled channels. This bypasses the normal enabled-only filtering.
 func (svc *ChannelService) GetChannel(ctx context.Context, channelID int) (*Channel, error) {
