@@ -1,9 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-
-function ModelHealthRoutePage() {
-  return <div>Model health page</div>;
-}
+import ModelHealthPage from '@/features/health/model-health-page';
 
 export const Route = createFileRoute('/_authenticated/health/models')({
-  component: ModelHealthRoutePage,
+  component: ModelHealthPage,
 });
