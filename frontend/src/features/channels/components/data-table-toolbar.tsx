@@ -17,6 +17,8 @@ interface DataTableToolbarProps<TData> {
   selectedTypeTab?: string;
   showErrorOnly?: boolean;
   onExitErrorOnlyMode?: () => void;
+  pinNameColumn: boolean;
+  onPinNameColumnChange: (value: boolean) => void;
 }
 
 export function DataTableToolbar<TData>({
@@ -26,6 +28,8 @@ export function DataTableToolbar<TData>({
   selectedTypeTab = 'all',
   showErrorOnly,
   onExitErrorOnlyMode,
+  pinNameColumn,
+  onPinNameColumnChange,
 }: DataTableToolbarProps<TData>) {
   const { t } = useTranslation();
   const tableState = table.getState();
@@ -130,7 +134,7 @@ export function DataTableToolbar<TData>({
           {t('channels.errorBanner.exitErrorOnlyButton')}
         </Button>
       )}
-      <DataTableViewOptions table={table} />
+      <DataTableViewOptions table={table} pinNameColumn={pinNameColumn} onPinNameColumnChange={onPinNameColumnChange} />
     </div>
   );
 }

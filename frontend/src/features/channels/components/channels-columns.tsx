@@ -601,7 +601,7 @@ export const createColumns = (t: ReturnType<typeof useTranslation>['t'], canWrit
       id: 'expand',
       header: () => null,
       meta: {
-        className: 'w-8 min-w-8 text-center',
+        className: 'w-10 min-w-10 !px-0 text-center',
       },
       cell: ExpandCell,
       enableSorting: false,
@@ -632,7 +632,7 @@ export const createColumns = (t: ReturnType<typeof useTranslation>['t'], canWrit
               </div>
             ),
             meta: {
-              className: 'text-center',
+              className: 'w-10 min-w-10 !px-0 text-center',
             },
             enableSorting: false,
             enableHiding: false,

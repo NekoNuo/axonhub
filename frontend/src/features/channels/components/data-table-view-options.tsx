@@ -13,9 +13,11 @@ import {
 
 interface DataTableViewOptionsProps<TData> {
   table: Table<TData>;
+  pinNameColumn: boolean;
+  onPinNameColumnChange: (value: boolean) => void;
 }
 
-export function DataTableViewOptions<TData>({ table }: DataTableViewOptionsProps<TData>) {
+export function DataTableViewOptions<TData>({ table, pinNameColumn, onPinNameColumnChange }: DataTableViewOptionsProps<TData>) {
   const { t } = useTranslation();
 
   return (
@@ -26,8 +28,12 @@ export function DataTableViewOptions<TData>({ table }: DataTableViewOptionsProps
           {t('common.view')}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align='end' className='w-[150px]'>
+      <DropdownMenuContent align='end' className='w-[180px]'>
         <DropdownMenuLabel>{t('common.toggleColumns')}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuCheckboxItem checked={pinNameColumn} onCheckedChange={(value) => onPinNameColumnChange(!!value)}>
+          {t('channels.columns.pinName')}
+        </DropdownMenuCheckboxItem>
         <DropdownMenuSeparator />
         {table
           .getAllColumns()

@@ -66,10 +66,23 @@ interface DataTableProps {
   canWrite?: boolean;
 }
 
-const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {
-  tags: false,
-  proxy: false,
-};
+const PIN_NAME_COLUMN_STORAGE_KEY = 'channels-table-pin-name-column';
+
+function getStickyLeftClass(columnId: string, hasSelectColumn: boolean): string {
+  if (columnId === 'expand') {
+    return 'left-0';
+  }
+
+  if (columnId === 'select') {
+    return 'left-10';
+  }
+
+  if (columnId === 'name') {
+    return hasSelectColumn ? 'left-20' : 'left-10';
+  }
+
+  return '';
+}
 
 export function ChannelsTable({
   columns,
@@ -105,6 +118,13 @@ export function ChannelsTable({
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [expanded, setExpanded] = useState<ExpandedState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [pinNameColumn, setPinNameColumn] = useState<boolean>(() => {
+    const stored = localStorage.getItem(PIN_NAME_COLUMN_STORAGE_KEY);
+    if (stored == null) {
+      return true;
+    }
+    return stored === 'true';
+  });
 
   // Load column visibility from localStorage with useMemo to avoid re-parsing
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(() => {
@@ -145,13 +165,17 @@ export function ChannelsTable({
   // Save column visibility to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('channels-table-column-visibility', JSON.stringify(columnVisibility));
-    
+
     // Notify parent about health column visibility changes
     if (onHealthColumnVisibilityChange) {
       const isHealthVisible = columnVisibility.health !== false;
       onHealthColumnVisibilityChange(isHealthVisible);
     }
   }, [columnVisibility, onHealthColumnVisibilityChange]);
+
+  useEffect(() => {
+    localStorage.setItem(PIN_NAME_COLUMN_STORAGE_KEY, String(pinNameColumn));
+  }, [pinNameColumn]);
 
   // Handle column filter changes and sync with server
   const handleColumnFiltersChange = useCallback(
@@ -252,6 +276,36 @@ export function ChannelsTable({
   
   const selectedCount = useMemo(() => filteredSelectedRows.length, [filteredSelectedRows]);
   const isFiltered = useMemo(() => columnFilters.length > 0, [columnFilters.length]);
+  const hasSelectColumn = useMemo(() => table.getColumn('select') != null, [table]);
+
+  const getHeaderStickyClass = useCallback(
+    (columnId: string) => {
+      if (!pinNameColumn || !['expand', 'select', 'name'].includes(columnId)) {
+        return '';
+      }
+
+      const stickyShadowClass = columnId === 'name' ? 'shadow-[inset_-1px_0_0_var(--table-border)]' : '';
+      return `sticky ${getStickyLeftClass(columnId, hasSelectColumn)} z-30 bg-[var(--table-header)] ${stickyShadowClass}`;
+    },
+    [hasSelectColumn, pinNameColumn]
+  );
+
+  const getCellStickyClass = useCallback(
+    (columnId: string) => {
+      if (!pinNameColumn || !['expand', 'select', 'name'].includes(columnId)) {
+        return '';
+      }
+
+      const stickyLeftClass = getStickyLeftClass(columnId, hasSelectColumn);
+      const stickyShadowClass = columnId === 'name' ? 'shadow-[inset_-1px_0_0_var(--table-border)]' : '';
+      return `sticky ${stickyLeftClass} z-10 bg-inherit ${stickyShadowClass}`;
+    },
+    [hasSelectColumn, pinNameColumn]
+  );
+
+  const handlePinNameColumnChange = useCallback((value: boolean) => {
+    setPinNameColumn(value);
+  }, []);
 
   useEffect(() => {
     const resetFn = () => {
@@ -293,6 +347,8 @@ export function ChannelsTable({
         selectedTypeTab={selectedTypeTab}
         showErrorOnly={showErrorOnly}
         onExitErrorOnlyMode={onExitErrorOnlyMode}
+        pinNameColumn={pinNameColumn}
+        onPinNameColumnChange={handlePinNameColumnChange}
       />
       <div className='shadow-soft relative mt-4 flex-1 overflow-auto rounded-2xl border border-[var(--table-border)]'>
         <div className='min-w-max'>
@@ -305,7 +361,7 @@ export function ChannelsTable({
                     <TableHead
                       key={header.id}
                       colSpan={header.colSpan}
-                      className={`${header.column.columnDef.meta?.className ?? ''} text-muted-foreground border-0 text-xs font-semibold tracking-wider uppercase`}
+                      className={`${header.column.columnDef.meta?.className ?? ''} ${getHeaderStickyClass(header.column.id)} text-muted-foreground border-0 text-xs font-semibold tracking-wider uppercase`}
                     >
                       {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                     </TableHead>
@@ -327,11 +383,16 @@ export function ChannelsTable({
                       data-state={row.getIsSelected() && 'selected'}
                       className='group/row table-row-hover rounded-xl border-0 !bg-[var(--table-background)]'
                     >
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id} className={`${cell.column.columnDef.meta?.className ?? ''} border-0 bg-inherit px-4 py-3 transition-colors duration-200`}>
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </TableCell>
-                      ))}
+                      {row.getVisibleCells().map((cell) => {
+                        return (
+                          <TableCell
+                            key={cell.id}
+                            className={`${cell.column.columnDef.meta?.className ?? ''} ${getCellStickyClass(cell.column.id)} border-0 bg-inherit px-4 py-3 transition-colors duration-200`}
+                          >
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </TableCell>
+                        );
+                      })}
                     </MotionTableRow>
                     <AnimatePresence initial={false}>
                       {row.getIsExpanded() && (

@@ -16,6 +16,7 @@
   "channels.tabs.all": "All",
   "channels.columns.type": "Type",
   "channels.columns.provider": "Provider",
+  "channels.columns.pinName": "Pin Name Column",
   "channels.columns.health": "Health",
   "channels.columns.healthTooltip.probeTime": "Probe Time",
   "channels.columns.healthTooltip.successRate": "Success Rate",

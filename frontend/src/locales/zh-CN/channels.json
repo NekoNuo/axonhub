@@ -16,6 +16,7 @@
   "channels.tabs.all": "全部",
   "channels.columns.type": "类型",
   "channels.columns.provider": "服务商",
+  "channels.columns.pinName": "固定名称列",
   "channels.columns.health": "健康状态",
   "channels.columns.healthTooltip.probeTime": "探测时间",
   "channels.columns.healthTooltip.successRate": "成功率",
