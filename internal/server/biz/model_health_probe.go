@@ -9,6 +9,7 @@ import (
 
 	"github.com/looplj/axonhub/internal/ent"
 	"github.com/looplj/axonhub/internal/ent/model"
+	"github.com/looplj/axonhub/internal/ent/modelhealthhistory"
 	"github.com/looplj/axonhub/internal/ent/modelhealthsnapshot"
 )
 
@@ -107,6 +108,69 @@ func (svc *ChannelProbeService) persistModelHealthResult(
 	}
 
 	return nil
+}
+
+func (svc *ChannelProbeService) RunManualModelProbe(ctx context.Context, target ModelHealthProbeTarget, now time.Time) error {
+	if svc.ChannelService == nil || svc.idleChannelModelProber == nil {
+		return nil
+	}
+
+	bizChannel := svc.ChannelService.GetEnabledChannel(target.ChannelID)
+	if bizChannel == nil {
+		return nil
+	}
+
+	_, healthy, probeErr := svc.idleChannelModelProber(ctx, bizChannel.Channel, target.ActualModelID)
+	if probeErr != nil {
+		healthy = false
+	}
+
+	return svc.persistModelHealthResult(ctx, target, healthy, now.Unix(), true)
+}
+
+func (svc *ChannelProbeService) GetEffectiveModelHealth(ctx context.Context, target ModelHealthProbeTarget) (*ent.ModelHealthSnapshot, error) {
+	snapshot, err := svc.db.ModelHealthSnapshot.Query().
+		Where(
+			modelhealthsnapshot.DisplayModelEQ(target.DisplayModel),
+			modelhealthsnapshot.ChannelIDEQ(target.ChannelID),
+			modelhealthsnapshot.ActualModelIDEQ(target.ActualModelID),
+		).
+		Only(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("query effective model health snapshot: %w", err)
+	}
+
+	if !snapshot.ManualOverride {
+		return snapshot, nil
+	}
+
+	latestAuto, autoErr := svc.db.ModelHealthHistory.Query().
+		Where(
+			modelhealthhistory.DisplayModelEQ(target.DisplayModel),
+			modelhealthhistory.ChannelIDEQ(target.ChannelID),
+			modelhealthhistory.ActualModelIDEQ(target.ActualModelID),
+			modelhealthhistory.ManualOverrideEQ(false),
+			modelhealthhistory.ProbedAtGT(snapshot.ProbedAt),
+		).
+		Order(ent.Desc(modelhealthhistory.FieldProbedAt)).
+		First(ctx)
+	if autoErr != nil {
+		if ent.IsNotFound(autoErr) {
+			return snapshot, nil
+		}
+		return nil, fmt.Errorf("query latest automatic model health history: %w", autoErr)
+	}
+
+	if latestAuto.ProbedAt > snapshot.ProbedAt {
+		snapshot.IsHealthy = latestAuto.IsHealthy
+		snapshot.ManualOverride = false
+		snapshot.ProbedAt = latestAuto.ProbedAt
+	}
+
+	return snapshot, nil
 }
 
 func (svc *ChannelProbeService) runAutomaticModelHealthProbe(ctx context.Context) {
