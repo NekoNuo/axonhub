@@ -78,7 +78,7 @@ export function ChannelsSystemSettingsDialog() {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className='sm:max-w-[720px]'>
+      <DialogContent className='flex max-h-[90vh] flex-col overflow-hidden sm:max-w-[720px]'>
         <DialogHeader>
           <DialogTitle className='flex items-center gap-2'>
             <Settings2 className='h-5 w-5' />
@@ -92,135 +92,144 @@ export function ChannelsSystemSettingsDialog() {
             <Loader2 className='h-8 w-8 animate-spin' />
           </div>
         ) : (
-          <div className='space-y-4'>
-            <Card>
-              <CardHeader className='pb-0'>
-                <CardTitle className='flex items-center gap-2 text-sm'>
-                  <Activity className='text-muted-foreground h-4 w-4' />
-                  {t('channels.dialogs.systemSettings.channelProbe.label')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className='space-y-4 pt-4'>
-                <div className='flex items-center justify-between'>
-                  <div className='flex-1 pr-4'>
-                    <p className='text-sm font-medium'>{t('channels.dialogs.systemSettings.channelProbe.enabledLabel')}</p>
-                    <p className='text-muted-foreground text-sm'>{t('channels.dialogs.systemSettings.channelProbe.enabledDescription')}</p>
-                    <p className='text-muted-foreground mt-1 text-xs'>
-                      {t('channels.dialogs.systemSettings.channelProbe.probeDescription')}
-                    </p>
-                  </div>
-                  <Switch id='probe-enabled' checked={probeEnabled} onCheckedChange={setProbeEnabled} disabled={updateSettings.isPending} />
-                </div>
-
-                {probeEnabled && (
-                  <div className='space-y-4'>
-                    <div className='space-y-2'>
-                      <label htmlFor='probe-frequency' className='text-sm font-medium'>
-                        {t('channels.dialogs.systemSettings.channelProbe.frequencyLabel')}
-                      </label>
-                      <Select value={probeFrequency} onValueChange={(value) => setProbeFrequency(value as ProbeFrequency)}>
-                        <SelectTrigger id='probe-frequency' disabled={updateSettings.isPending}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {PROBE_FREQUENCY_OPTIONS.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <p className='text-muted-foreground text-xs'>
-                        {t('channels.dialogs.systemSettings.channelProbe.frequencyDescription')}
+          <div className='min-h-0 flex-1 overflow-y-auto pr-1'>
+            <div className='space-y-4'>
+              <Card>
+                <CardHeader className='pb-0'>
+                  <CardTitle className='flex items-center gap-2 text-sm'>
+                    <Activity className='text-muted-foreground h-4 w-4' />
+                    {t('channels.dialogs.systemSettings.channelProbe.label')}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className='space-y-4 pt-4'>
+                  <div className='flex items-center justify-between'>
+                    <div className='flex-1 pr-4'>
+                      <p className='text-sm font-medium'>{t('channels.dialogs.systemSettings.channelProbe.enabledLabel')}</p>
+                      <p className='text-muted-foreground text-sm'>
+                        {t('channels.dialogs.systemSettings.channelProbe.enabledDescription')}
                       </p>
                       <p className='text-muted-foreground mt-1 text-xs'>
-                        {t('channels.dialogs.systemSettings.channelProbe.frequencyWarning')}
+                        {t('channels.dialogs.systemSettings.channelProbe.probeDescription')}
                       </p>
                     </div>
-
-                    <div className='flex items-center justify-between'>
-                      <div className='flex-1 pr-4'>
-                        <p className='text-sm font-medium'>
-                          {t('channels.dialogs.systemSettings.channelProbe.activeProbeIdleChannelsLabel')}
-                        </p>
-                        <p className='text-muted-foreground text-sm'>
-                          {t('channels.dialogs.systemSettings.channelProbe.activeProbeIdleChannelsDescription')}
-                        </p>
-                      </div>
-                      <Switch
-                        id='active-probe-idle-channels'
-                        checked={activeProbeIdleChannels}
-                        onCheckedChange={setActiveProbeIdleChannels}
-                        disabled={updateSettings.isPending}
-                      />
-                    </div>
-
-                    <div className='flex items-center justify-between'>
-                      <div className='flex-1 pr-4'>
-                        <p className='text-sm font-medium'>
-                          {t('channels.dialogs.systemSettings.channelProbe.probeModelIdleChannelsLabel')}
-                        </p>
-                        <p className='text-muted-foreground text-sm'>
-                          {t('channels.dialogs.systemSettings.channelProbe.probeModelIdleChannelsDescription')}
-                        </p>
-                      </div>
-                      <Switch
-                        id='probe-model-idle-channels'
-                        checked={probeModelIdleChannels}
-                        onCheckedChange={setProbeModelIdleChannels}
-                        disabled={updateSettings.isPending || !activeProbeIdleChannels}
-                      />
-                    </div>
-
-                    <div className='flex justify-end'>
-                      <Button
-                        type='button'
-                        variant='outline'
-                        onClick={() => triggerChannelProbe.mutate()}
-                        disabled={triggerChannelProbe.isPending || updateSettings.isPending}
-                      >
-                        {triggerChannelProbe.isPending ? (
-                          <>
-                            <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                            {t('channels.dialogs.systemSettings.channelProbe.testingButtonRunning')}
-                          </>
-                        ) : (
-                          t('channels.dialogs.systemSettings.channelProbe.testingButton')
-                        )}
-                      </Button>
-                    </div>
+                    <Switch
+                      id='probe-enabled'
+                      checked={probeEnabled}
+                      onCheckedChange={setProbeEnabled}
+                      disabled={updateSettings.isPending}
+                    />
                   </div>
-                )}
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className='pb-0'>
-                <CardTitle className='flex items-center gap-2 text-sm'>
-                  <Activity className='text-muted-foreground h-4 w-4' />
-                  {t('channels.dialogs.systemSettings.autoSync.label')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className='space-y-4 pt-4'>
-                <div className='space-y-2'>
-                  <label htmlFor='auto-sync-frequency' className='text-sm font-medium'>
-                    {t('channels.dialogs.systemSettings.autoSync.frequencyLabel')}
-                  </label>
-                  <Select value={autoSyncFrequency} onValueChange={(value) => setAutoSyncFrequency(value as AutoSyncFrequency)}>
-                    <SelectTrigger id='auto-sync-frequency' disabled={updateSettings.isPending}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {AUTO_SYNC_FREQUENCY_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className='text-muted-foreground text-xs'>{t('channels.dialogs.systemSettings.autoSync.frequencyDescription')}</p>
-                </div>
-              </CardContent>
-            </Card>
+
+                  {probeEnabled && (
+                    <div className='space-y-4'>
+                      <div className='space-y-2'>
+                        <label htmlFor='probe-frequency' className='text-sm font-medium'>
+                          {t('channels.dialogs.systemSettings.channelProbe.frequencyLabel')}
+                        </label>
+                        <Select value={probeFrequency} onValueChange={(value) => setProbeFrequency(value as ProbeFrequency)}>
+                          <SelectTrigger id='probe-frequency' disabled={updateSettings.isPending}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PROBE_FREQUENCY_OPTIONS.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className='text-muted-foreground text-xs'>
+                          {t('channels.dialogs.systemSettings.channelProbe.frequencyDescription')}
+                        </p>
+                        <p className='text-muted-foreground mt-1 text-xs'>
+                          {t('channels.dialogs.systemSettings.channelProbe.frequencyWarning')}
+                        </p>
+                      </div>
+
+                      <div className='flex items-center justify-between'>
+                        <div className='flex-1 pr-4'>
+                          <p className='text-sm font-medium'>
+                            {t('channels.dialogs.systemSettings.channelProbe.activeProbeIdleChannelsLabel')}
+                          </p>
+                          <p className='text-muted-foreground text-sm'>
+                            {t('channels.dialogs.systemSettings.channelProbe.activeProbeIdleChannelsDescription')}
+                          </p>
+                        </div>
+                        <Switch
+                          id='active-probe-idle-channels'
+                          checked={activeProbeIdleChannels}
+                          onCheckedChange={setActiveProbeIdleChannels}
+                          disabled={updateSettings.isPending}
+                        />
+                      </div>
+
+                      <div className='flex items-center justify-between'>
+                        <div className='flex-1 pr-4'>
+                          <p className='text-sm font-medium'>
+                            {t('channels.dialogs.systemSettings.channelProbe.probeModelIdleChannelsLabel')}
+                          </p>
+                          <p className='text-muted-foreground text-sm'>
+                            {t('channels.dialogs.systemSettings.channelProbe.probeModelIdleChannelsDescription')}
+                          </p>
+                        </div>
+                        <Switch
+                          id='probe-model-idle-channels'
+                          checked={probeModelIdleChannels}
+                          onCheckedChange={setProbeModelIdleChannels}
+                          disabled={updateSettings.isPending || !activeProbeIdleChannels}
+                        />
+                      </div>
+
+                      <div className='flex justify-end'>
+                        <Button
+                          type='button'
+                          variant='outline'
+                          onClick={() => triggerChannelProbe.mutate()}
+                          disabled={triggerChannelProbe.isPending || updateSettings.isPending}
+                        >
+                          {triggerChannelProbe.isPending ? (
+                            <>
+                              <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                              {t('channels.dialogs.systemSettings.channelProbe.testingButtonRunning')}
+                            </>
+                          ) : (
+                            t('channels.dialogs.systemSettings.channelProbe.testingButton')
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className='pb-0'>
+                  <CardTitle className='flex items-center gap-2 text-sm'>
+                    <Activity className='text-muted-foreground h-4 w-4' />
+                    {t('channels.dialogs.systemSettings.autoSync.label')}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className='space-y-4 pt-4'>
+                  <div className='space-y-2'>
+                    <label htmlFor='auto-sync-frequency' className='text-sm font-medium'>
+                      {t('channels.dialogs.systemSettings.autoSync.frequencyLabel')}
+                    </label>
+                    <Select value={autoSyncFrequency} onValueChange={(value) => setAutoSyncFrequency(value as AutoSyncFrequency)}>
+                      <SelectTrigger id='auto-sync-frequency' disabled={updateSettings.isPending}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {AUTO_SYNC_FREQUENCY_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className='text-muted-foreground text-xs'>{t('channels.dialogs.systemSettings.autoSync.frequencyDescription')}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         )}
 
