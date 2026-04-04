@@ -11,9 +11,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
+import { useUpdateModel } from '../data/models';
 import { useModels } from '../context/models-context';
 import { Model } from '../data/schema';
 import { DataTableRowActions } from './data-table-row-actions';
+import { getModelProbeBadgeVariant, getModelProbeSwitchState } from './model-probe-settings';
 import { ModelsStatusDialog } from './models-status-dialog';
 import { useDeveloperLabel } from './models-table';
 
@@ -72,6 +74,41 @@ function AssociationRulesCell({ row }: { row: Row<Model> }) {
       <IconLink className='mr-1 h-3 w-3' />
       {`${associationCount}`}
     </Button>
+  );
+}
+
+function ModelProbeCell({ row, canWrite }: { row: Row<Model>; canWrite: boolean }) {
+  const model = row.original;
+  const updateModel = useUpdateModel();
+  const probeEnabled = getModelProbeSwitchState(model.settings);
+
+  const handleCheckedChange = useCallback(
+    async (checked: boolean) => {
+      await updateModel.mutateAsync({
+        id: model.id,
+        input: {
+          settings: {
+            ...model.settings,
+            probeEnabled: checked,
+          },
+        },
+      });
+    },
+    [updateModel, model]
+  );
+
+  if (!canWrite) {
+    return (
+      <div className='flex justify-center'>
+        <Badge variant={getModelProbeBadgeVariant(probeEnabled)}>{t(`models.probe.${probeEnabled ? 'enabled' : 'disabled'}`)}</Badge>
+      </div>
+    );
+  }
+
+  return (
+    <div className='flex justify-center'>
+      <Switch checked={probeEnabled} onCheckedChange={handleCheckedChange} disabled={updateModel.isPending} />
+    </div>
   );
 }
 
@@ -181,6 +218,12 @@ export const createColumns = (t: ReturnType<typeof useTranslation>['t'], canWrit
         const type = row.getValue('type') as string;
         return <Badge variant='secondary'>{t(`models.types.${type}`)}</Badge>;
       },
+      enableSorting: false,
+    },
+    {
+      id: 'probeEnabled',
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('models.columns.probeEnabled')} />,
+      cell: ({ row }) => <ModelProbeCell row={row} canWrite={canWrite} />,
       enableSorting: false,
     },
     // {

@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Switch } from '@/components/ui/switch';
 import { useModelSettings, useUpdateModelSettings, type UpdateModelSettingsInput } from '@/features/system/data/system';
 import { useModels } from '../context/models-context';
+import { buildModelSettingsInput } from './model-probe-settings';
 
 export function ModelSettingsDialog() {
   const { t } = useTranslation();
@@ -20,22 +21,25 @@ export function ModelSettingsDialog() {
 
   const [fallbackEnabled, setFallbackEnabled] = React.useState(false);
   const [queryAllChannelModels, setQueryAllChannelModels] = React.useState(false);
+  const [enableModelProbe, setEnableModelProbe] = React.useState(false);
 
   React.useEffect(() => {
     if (settings) {
+      setEnableModelProbe(settings.enableModelProbe);
       setFallbackEnabled(settings.fallbackToChannelsOnModelNotFound);
       setQueryAllChannelModels(settings.queryAllChannelModels);
     }
   }, [settings]);
 
   const handleSave = useCallback(async () => {
-    const input: UpdateModelSettingsInput = {
+    const input: UpdateModelSettingsInput = buildModelSettingsInput({
+      enableModelProbe,
       fallbackToChannelsOnModelNotFound: fallbackEnabled,
       queryAllChannelModels: queryAllChannelModels,
-    };
+    });
     await updateModelSettings.mutateAsync(input);
     setOpen(null);
-  }, [updateModelSettings, fallbackEnabled, queryAllChannelModels, setOpen]);
+  }, [updateModelSettings, enableModelProbe, fallbackEnabled, queryAllChannelModels, setOpen]);
 
   const handleClose = useCallback(() => {
     setOpen(null);
@@ -58,6 +62,26 @@ export function ModelSettingsDialog() {
           </div>
         ) : (
           <div className='space-y-4'>
+            <Card>
+              <CardHeader className='pb-0'>
+                <CardTitle className='flex items-center gap-2 text-sm'>
+                  <RefreshCcw className='text-muted-foreground h-4 w-4' />
+                  {t('models.dialogs.settings.enableModelProbe.label')}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className='pt-1'>
+                <div className='flex items-center justify-between'>
+                  <p className='text-muted-foreground pr-4 text-sm'>{t('models.dialogs.settings.enableModelProbe.description')}</p>
+                  <Switch
+                    id='enable-model-probe'
+                    checked={enableModelProbe}
+                    onCheckedChange={setEnableModelProbe}
+                    disabled={updateModelSettings.isPending}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader className='pb-0'>
                 <CardTitle className='flex items-center gap-2 text-sm'>

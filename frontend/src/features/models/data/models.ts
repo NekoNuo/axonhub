@@ -53,6 +53,7 @@ const MODELS_QUERY = `
             lastUpdated
           }
           settings {
+            probeEnabled
             associations {
               type
               priority
@@ -150,6 +151,7 @@ const CREATE_MODEL_MUTATION = `
         lastUpdated
       }
       settings {
+        probeEnabled
         associations {
           type
           priority
@@ -237,6 +239,7 @@ const BULK_CREATE_MODELS_MUTATION = `
         lastUpdated
       }
       settings {
+        probeEnabled
         associations {
           type
           priority
@@ -324,6 +327,7 @@ const UPDATE_MODEL_MUTATION = `
         lastUpdated
       }
       settings {
+        probeEnabled
         associations {
           type
           priority
