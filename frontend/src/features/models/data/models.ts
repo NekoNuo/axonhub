@@ -631,8 +631,10 @@ export interface ModelChannelConnection {
     name: string;
     type: string;
     status: string;
+    orderingWeight?: number;
   };
   models: ChannelModelEntry[];
+  priority?: number;
 }
 
 export function useQueryUnassociatedChannels() {
@@ -654,7 +656,9 @@ const MODEL_CHANNEL_CONNECTIONS_QUERY = `
         name
         type
         status
+        orderingWeight
       }
+      priority
       models {
         requestModel
         actualModel

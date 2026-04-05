@@ -9,6 +9,12 @@ describe('Task 11 Channel Health Page', () => {
         {
           id: 'Q2hhbm5lbDox',
           name: 'Primary OpenAI',
+          orderingWeight: 10,
+        },
+        {
+          id: 'Q2hhbm5lbDoy',
+          name: 'Backup OpenAI',
+          orderingWeight: 30,
         },
       ],
       [
@@ -30,8 +36,9 @@ describe('Task 11 Channel Health Page', () => {
       []
     );
 
-    expect(rows).toHaveLength(1);
-    expect(rows[0].points).toHaveLength(1);
+    expect(rows).toHaveLength(2);
+    expect(rows.map((row) => row.name)).toEqual(['Backup OpenAI', 'Primary OpenAI']);
+    expect(rows.find((row) => row.name === 'Primary OpenAI')?.points).toHaveLength(1);
   });
 
   it('page shows latest snapshot details', () => {

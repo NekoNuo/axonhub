@@ -1,6 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Main } from '@/components/layout/main';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChannelHealthCell } from '@/features/channels/components/channel-health-cell';
 import { useChannelHealthSnapshots, useChannelProbeData, useQueryChannels } from '@/features/channels/data/channels';
 import type { ChannelHealthSnapshot, ChannelProbeData } from '@/features/channels/data/schema';
@@ -9,11 +12,13 @@ import { formatHealthTimestamp } from './channel-health-format';
 interface ChannelHealthPageChannel {
   id: string;
   name: string;
+  orderingWeight: number;
 }
 
 interface ChannelHealthRow {
   id: string;
   name: string;
+  orderingWeight: number;
   points: ChannelProbeData['points'];
   snapshot?: ChannelHealthSnapshot;
 }
@@ -34,12 +39,15 @@ export function buildChannelHealthRows(
   const probeMap = new Map(probeData.map((item) => [item.channelID, item.points]));
   const snapshotMap = new Map(snapshots.map((item) => [item.channelID, item]));
 
-  return channels.map((channel) => ({
-    id: channel.id,
-    name: channel.name,
-    points: probeMap.get(channel.id) || [],
-    snapshot: snapshotMap.get(channel.id),
-  }));
+  return channels
+    .map((channel) => ({
+      id: channel.id,
+      name: channel.name,
+      points: probeMap.get(channel.id) || [],
+      snapshot: snapshotMap.get(channel.id),
+      orderingWeight: channel.orderingWeight,
+    }))
+    .sort((a, b) => b.orderingWeight - a.orderingWeight || a.name.localeCompare(b.name));
 }
 
 export function getLatestSnapshotDetails(snapshot?: ChannelHealthSnapshot | null): ChannelSnapshotDetails | null {
@@ -58,6 +66,8 @@ export function getLatestSnapshotDetails(snapshot?: ChannelHealthSnapshot | null
 
 export function ChannelHealthPage() {
   const { t, i18n } = useTranslation();
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'enabled' | 'disabled'>('all');
   const locale = i18n.language.startsWith('zh') ? 'zh-CN' : 'en-US';
   const { data } = useQueryChannels({
     first: 100,
@@ -75,6 +85,7 @@ export function ChannelHealthPage() {
       (data?.edges || []).map((edge) => ({
         id: edge.node.id,
         name: edge.node.name,
+        orderingWeight: edge.node.orderingWeight ?? 0,
       })),
     [data?.edges]
   );
@@ -83,7 +94,16 @@ export function ChannelHealthPage() {
   const { data: probeData = [] } = useChannelProbeData(channelIDs);
   const { data: snapshots = [] } = useChannelHealthSnapshots(channelIDs);
 
-  const rows = useMemo(() => buildChannelHealthRows(channels, probeData, snapshots), [channels, probeData, snapshots]);
+  const rows = useMemo(
+    () =>
+      buildChannelHealthRows(channels, probeData, snapshots).filter((row) => {
+        const channel = data?.edges?.find((edge) => edge.node.id === row.id)?.node;
+        const matchesSearch = search.trim() === '' || row.name.toLowerCase().includes(search.toLowerCase()) || row.id.toLowerCase().includes(search.toLowerCase());
+        const matchesStatus = statusFilter === 'all' || channel?.status === statusFilter;
+        return matchesSearch && matchesStatus;
+      }),
+    [channels, data?.edges, probeData, search, snapshots, statusFilter]
+  );
 
   return (
     <Main>
@@ -91,6 +111,23 @@ export function ChannelHealthPage() {
         <div>
           <h1 className='text-2xl font-semibold'>{t('channels.healthPage.title')}</h1>
           <p className='text-muted-foreground text-sm'>{t('channels.healthPage.description')}</p>
+        </div>
+
+        <div className='flex flex-col gap-3 md:flex-row'>
+          <div className='relative flex-1'>
+            <Search className='text-muted-foreground absolute top-2.5 left-3 h-4 w-4' />
+            <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t('channels.filters.filterByName')} className='pl-9' />
+          </div>
+          <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as 'all' | 'enabled' | 'disabled')}>
+            <SelectTrigger className='w-full md:w-52'>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value='all'>{t('models.healthPage.filters.allStatuses')}</SelectItem>
+              <SelectItem value='enabled'>{t('channels.status.enabled')}</SelectItem>
+              <SelectItem value='disabled'>{t('channels.status.disabled')}</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className='space-y-3'>

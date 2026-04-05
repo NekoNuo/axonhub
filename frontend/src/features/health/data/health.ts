@@ -11,6 +11,7 @@ import {
 export const MODEL_HEALTH_SNAPSHOTS_QUERY = `
   query ModelHealthSnapshots($input: GetModelHealthSnapshotsInput!) {
     modelHealthSnapshots(input: $input) {
+      id
       displayModel
       channelID
       actualModelID
@@ -24,6 +25,7 @@ export const MODEL_HEALTH_SNAPSHOTS_QUERY = `
 export const MODEL_HEALTH_HISTORY_QUERY = `
   query ModelHealthHistory($input: GetModelHealthHistoryInput!) {
     modelHealthHistory(input: $input) {
+      id
       displayModel
       channelID
       actualModelID

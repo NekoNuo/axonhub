@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 export const modelHealthSnapshotSchema = z.object({
+  id: z.string().optional(),
   displayModel: z.string(),
   channelID: z.string(),
   actualModelID: z.string(),
@@ -11,6 +12,7 @@ export const modelHealthSnapshotSchema = z.object({
 export type ModelHealthSnapshot = z.infer<typeof modelHealthSnapshotSchema>;
 
 export const modelHealthHistorySchema = z.object({
+  id: z.string().optional(),
   displayModel: z.string(),
   channelID: z.string(),
   actualModelID: z.string(),
