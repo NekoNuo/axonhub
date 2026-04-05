@@ -567,3 +567,91 @@ func TestModelHealthTargetResolver_ExpandsUnassociatedRecentModelToAllSupporting
 	require.Len(t, targets, 2)
 	require.Equal(t, []int{channelA.ID, channelB.ID}, []int{targets[0].ChannelID, targets[1].ChannelID})
 }
+
+func TestModelHealthTargetResolver_UsesRecentActualModelsWhenProbeDisabled(t *testing.T) {
+	client := enttest.Open(t, dialect.SQLite, "file:ent?mode=memory&_fk=0")
+	defer client.Close()
+
+	ctx := authz.WithTestBypass(ent.NewContext(context.Background(), client))
+
+	channelA, err := client.Channel.Create().
+		SetType("openai").
+		SetBaseURL("https://api.openai.com/v1").
+		SetName("OpenAI Channel A").
+		SetStatus("enabled").
+		SetCredentials(objects.ChannelCredentials{APIKeys: []string{"test-key"}}).
+		SetSupportedModels([]string{"gpt-5-2", "gpt-5-2-2026-04-01"}).
+		SetDefaultTestModel("gpt-5-2").
+		Save(ctx)
+	require.NoError(t, err)
+
+	_, err = client.Model.Create().
+		SetDeveloper("openai").
+		SetModelID("gpt-5-2").
+		SetType(model.TypeChat).
+		SetName("GPT-5.2").
+		SetIcon("openai").
+		SetGroup("openai").
+		SetStatus(model.StatusEnabled).
+		SetModelCard(&objects.ModelCard{}).
+		SetSettings(&objects.ModelSettings{
+			ProbeEnabled: false,
+			Associations: []*objects.ModelAssociation{
+				{
+					Type: "channel_model",
+					ChannelModel: &objects.ChannelModelAssociation{
+						ChannelID: channelA.ID,
+						ModelID:   "gpt-5-2",
+					},
+				},
+			},
+		}).
+		Save(ctx)
+	require.NoError(t, err)
+
+	targets, err := NewModelHealthTargetResolver(client, nil).Resolve(ctx, []ModelHealthRecentUsage{
+		{
+			DisplayModel: "gpt-5-2",
+			ActualModels: []ModelHealthRecentActualModel{
+				{
+					ActualModelID: "gpt-5-2-2026-04-01",
+					ChannelIDs:    []int{channelA.ID},
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+	require.Len(t, targets, 2)
+	require.Contains(t, targets, ModelHealthProbeTarget{
+		DisplayModel:  "gpt-5-2",
+		ActualModelID: "gpt-5-2-2026-04-01",
+		ChannelID:     channelA.ID,
+		Sources:       []string{ModelHealthTargetSourceRecent},
+		Source:        ModelHealthSourceDiscoveredRecentUsage,
+	})
+}
+
+func TestGetEffectiveModelHealthFromDB_FallsBackToDiscoveredSnapshot(t *testing.T) {
+	client := enttest.Open(t, dialect.SQLite, "file:ent?mode=memory&_fk=0")
+	defer client.Close()
+
+	ctx := authz.WithTestBypass(ent.NewContext(context.Background(), client))
+
+	_, err := client.ModelHealthSnapshot.Create().
+		SetDisplayModel("gpt-5-2").
+		SetChannelID(1).
+		SetActualModelID("gpt-5-2-2026-04-01").
+		SetSource(ModelHealthSourceDiscoveredRecentUsage).
+		SetIsHealthy(true).
+		SetManualOverride(false).
+		SetProbedAt(time.Date(2026, 4, 5, 12, 0, 0, 0, time.UTC).Unix()).
+		Save(ctx)
+	require.NoError(t, err)
+
+	view, err := getEffectiveModelHealthFromDB(ctx, client, "gpt-5-2", 1, "gpt-5-2-2026-04-01")
+	require.NoError(t, err)
+	require.NotNil(t, view)
+	require.True(t, view.IsHealthy)
+	require.False(t, view.ManualOverride)
+	require.Equal(t, ModelHealthSourceDiscoveredRecentUsage, view.Source)
+}

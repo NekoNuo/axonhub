@@ -24,6 +24,10 @@ type UsageLogService struct {
 	// OnUsageLogCreated is called after a usage log is successfully created.
 	// Used to invalidate caches that depend on usage log data.
 	OnUsageLogCreated func()
+
+	// OnUsageLogFromRequestCreated is called after a usage log is created from a completed request.
+	// It can be used to trigger side effects that need request / execution context.
+	OnUsageLogFromRequestCreated func(ctx context.Context, request *ent.Request, requestExec *ent.RequestExecution, usageLog *ent.UsageLog)
 }
 
 func (s *UsageLogService) computeUsageCost(ctx context.Context, channelID int, modelID string, usage *llm.Usage) ([]objects.CostItem, *float64, string) {
@@ -181,11 +185,11 @@ func (s *UsageLogService) CreateUsageLogFromRequest(
 	requestExec *ent.RequestExecution,
 	usage *llm.Usage,
 ) (*ent.UsageLog, error) {
-	if request == nil || usage == nil {
+	if request == nil || requestExec == nil || usage == nil {
 		return nil, nil
 	}
 
-	return s.CreateUsageLog(ctx, CreateUsageLogParams{
+	usageLog, err := s.CreateUsageLog(ctx, CreateUsageLogParams{
 		RequestID:     request.ID,
 		ProjectID:     request.ProjectID,
 		ChannelID:     requestExec.ChannelID,
@@ -195,4 +199,13 @@ func (s *UsageLogService) CreateUsageLogFromRequest(
 		Format:        request.Format,
 		APIKeyID:      lo.ToPtr(request.APIKeyID),
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	if usageLog != nil && s.OnUsageLogFromRequestCreated != nil && requestExec != nil {
+		s.OnUsageLogFromRequestCreated(ctx, request, requestExec, usageLog)
+	}
+
+	return usageLog, nil
 }

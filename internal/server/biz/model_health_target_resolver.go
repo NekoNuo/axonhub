@@ -76,30 +76,14 @@ func (r *ModelHealthTargetResolver) Resolve(ctx context.Context, recent []ModelH
 			continue
 		}
 
-		for _, actual := range usage.ActualModels {
-			_ = actual
-			for _, channelEntity := range channels {
-				channelWrapper := &Channel{Channel: channelEntity}
-				entry, ok := channelWrapper.GetModelEntries()[usage.DisplayModel]
-				if !ok {
-					continue
-				}
-
-				target := ModelHealthProbeTarget{
-					DisplayModel:  usage.DisplayModel,
-					ActualModelID: entry.ActualModel,
-					ChannelID:     channelEntity.ID,
-					Sources:       []string{ModelHealthTargetSourceRecent},
-					Source:        ModelHealthSourceDiscoveredRecentUsage,
-				}
-
-				key := modelHealthTargetKey(target)
-				if _, exists := seen[key]; exists {
-					continue
-				}
-				seen[key] = struct{}{}
-				targets = append(targets, target)
+		discoveredTargets := resolveDiscoveredModelHealthTargets(usage, channels)
+		for _, target := range discoveredTargets {
+			key := modelHealthTargetKey(target)
+			if _, exists := seen[key]; exists {
+				continue
 			}
+			seen[key] = struct{}{}
+			targets = append(targets, target)
 		}
 	}
 
@@ -147,6 +131,52 @@ func resolveAssociatedModelHealthTargets(item *ent.Model, channelEntities []*ent
 				ChannelID:     connection.Channel.ID,
 				Sources:       []string{ModelHealthTargetSourceRecent},
 				Source:        ModelHealthSourceAssociated,
+			})
+		}
+	}
+
+	return targets
+}
+
+func resolveDiscoveredModelHealthTargets(usage ModelHealthRecentUsage, channelEntities []*ent.Channel) []ModelHealthProbeTarget {
+	recentActualModels := make(map[ChannelModelKey]struct{})
+	for _, actual := range usage.ActualModels {
+		for _, channelID := range actual.ChannelIDs {
+			recentActualModels[ChannelModelKey{
+				ChannelID: channelID,
+				ModelID:   actual.ActualModelID,
+			}] = struct{}{}
+		}
+	}
+
+	targets := make([]ModelHealthProbeTarget, 0)
+	for _, channelEntity := range channelEntities {
+		channelWrapper := &Channel{Channel: channelEntity}
+
+		if entry, ok := channelWrapper.GetModelEntries()[usage.DisplayModel]; ok {
+			targets = append(targets, ModelHealthProbeTarget{
+				DisplayModel:  usage.DisplayModel,
+				ActualModelID: entry.ActualModel,
+				ChannelID:     channelEntity.ID,
+				Sources:       []string{ModelHealthTargetSourceRecent},
+				Source:        ModelHealthSourceDiscoveredRecentUsage,
+			})
+		}
+
+		for _, entry := range channelWrapper.GetModelEntries() {
+			if _, ok := recentActualModels[ChannelModelKey{
+				ChannelID: channelEntity.ID,
+				ModelID:   entry.ActualModel,
+			}]; !ok {
+				continue
+			}
+
+			targets = append(targets, ModelHealthProbeTarget{
+				DisplayModel:  usage.DisplayModel,
+				ActualModelID: entry.ActualModel,
+				ChannelID:     channelEntity.ID,
+				Sources:       []string{ModelHealthTargetSourceRecent},
+				Source:        ModelHealthSourceDiscoveredRecentUsage,
 			})
 		}
 	}

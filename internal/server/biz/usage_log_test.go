@@ -3,6 +3,7 @@ package biz
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
@@ -358,4 +359,155 @@ func TestUsageLogService_CreateUsageLog_WithCachedTokens(t *testing.T) {
 func toDecimalPtr(s string) *decimal.Decimal {
 	d, _ := decimal.NewFromString(s)
 	return &d
+}
+
+func TestUsageLogService_CreateUsageLogFromRequest_TriggersRequestHook(t *testing.T) {
+	client := enttest.NewEntClient(t, "sqlite3", "file:ent?mode=memory&_fk=0")
+	defer client.Close()
+
+	ctx := context.Background()
+	ctx = ent.NewContext(ctx, client)
+	ctx = authz.WithTestBypass(ctx)
+
+	p, err := client.Project.Create().
+		SetName("test-project").
+		SetStatus(project.StatusActive).
+		Save(ctx)
+	require.NoError(t, err)
+
+	req, err := client.Request.Create().
+		SetProjectID(p.ID).
+		SetModelID("gpt-4.1-mini").
+		SetStatus(request.StatusCompleted).
+		SetRequestBody(objects.JSONRawMessage([]byte(`{}`))).
+		Save(ctx)
+	require.NoError(t, err)
+
+	reqExec, err := client.RequestExecution.Create().
+		SetRequestID(req.ID).
+		SetChannelID(10).
+		SetModelID("gpt-4.1-mini").
+		SetStatus("completed").
+		SetRequestBody(objects.JSONRawMessage([]byte(`{}`))).
+		Save(ctx)
+	require.NoError(t, err)
+
+	systemService := NewSystemService(SystemServiceParams{
+		CacheConfig: xcache.Config{},
+		Ent:         client,
+	})
+	channelService := NewChannelServiceForTest(client)
+	svc := NewUsageLogService(client, systemService, channelService)
+
+	called := false
+	svc.OnUsageLogFromRequestCreated = func(hookCtx context.Context, hookReq *ent.Request, hookExec *ent.RequestExecution, usageLog *ent.UsageLog) {
+		called = true
+		require.Equal(t, req.ID, hookReq.ID)
+		require.Equal(t, reqExec.ID, hookExec.ID)
+		require.NotNil(t, usageLog)
+	}
+
+	created, err := svc.CreateUsageLogFromRequest(ctx, req, reqExec, &llm.Usage{
+		PromptTokens:     10,
+		CompletionTokens: 5,
+		TotalTokens:      15,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, created)
+	require.True(t, called)
+}
+
+func TestUsageLogService_CreateUsageLogFromRequest_DoesNotTriggerHookWithoutRequestExecution(t *testing.T) {
+	client := enttest.NewEntClient(t, "sqlite3", "file:ent?mode=memory&_fk=0")
+	defer client.Close()
+
+	ctx := context.Background()
+	ctx = ent.NewContext(ctx, client)
+	ctx = authz.WithTestBypass(ctx)
+
+	p, err := client.Project.Create().
+		SetName("test-project").
+		SetStatus(project.StatusActive).
+		Save(ctx)
+	require.NoError(t, err)
+
+	req, err := client.Request.Create().
+		SetProjectID(p.ID).
+		SetModelID("gpt-4.1-mini").
+		SetStatus(request.StatusCompleted).
+		SetRequestBody(objects.JSONRawMessage([]byte(`{}`))).
+		Save(ctx)
+	require.NoError(t, err)
+
+	systemService := NewSystemService(SystemServiceParams{
+		CacheConfig: xcache.Config{},
+		Ent:         client,
+	})
+	channelService := NewChannelServiceForTest(client)
+	svc := NewUsageLogService(client, systemService, channelService)
+
+	called := false
+	svc.OnUsageLogFromRequestCreated = func(context.Context, *ent.Request, *ent.RequestExecution, *ent.UsageLog) {
+		called = true
+	}
+
+	created, err := svc.CreateUsageLogFromRequest(ctx, req, nil, &llm.Usage{
+		PromptTokens: 10,
+		TotalTokens:  10,
+	})
+	require.NoError(t, err)
+	require.Nil(t, created)
+	require.False(t, called)
+}
+
+func TestUsageLogService_CreateUsageLogFromRequest_HookReceivesDetachedFlowContext(t *testing.T) {
+	client := enttest.NewEntClient(t, "sqlite3", "file:ent?mode=memory&_fk=0")
+	defer client.Close()
+
+	ctx := context.Background()
+	ctx = ent.NewContext(ctx, client)
+	ctx = authz.WithTestBypass(ctx)
+
+	p, err := client.Project.Create().
+		SetName("test-project").
+		SetStatus(project.StatusActive).
+		Save(ctx)
+	require.NoError(t, err)
+
+	req, err := client.Request.Create().
+		SetProjectID(p.ID).
+		SetModelID("gpt-4.1-mini").
+		SetStatus(request.StatusCompleted).
+		SetRequestBody(objects.JSONRawMessage([]byte(`{}`))).
+		Save(ctx)
+	require.NoError(t, err)
+
+	reqExec, err := client.RequestExecution.Create().
+		SetRequestID(req.ID).
+		SetChannelID(10).
+		SetModelID("gpt-4.1-mini").
+		SetStatus("completed").
+		SetRequestBody(objects.JSONRawMessage([]byte(`{}`))).
+		Save(ctx)
+	require.NoError(t, err)
+
+	systemService := NewSystemService(SystemServiceParams{
+		CacheConfig: xcache.Config{},
+		Ent:         client,
+	})
+	channelService := NewChannelServiceForTest(client)
+	svc := NewUsageLogService(client, systemService, channelService)
+
+	done := make(chan struct{})
+	svc.OnUsageLogFromRequestCreated = func(hookCtx context.Context, _ *ent.Request, _ *ent.RequestExecution, _ *ent.UsageLog) {
+		time.Sleep(5 * time.Millisecond)
+		close(done)
+	}
+
+	_, err = svc.CreateUsageLogFromRequest(ctx, req, reqExec, &llm.Usage{
+		PromptTokens: 10,
+		TotalTokens:  10,
+	})
+	require.NoError(t, err)
+	<-done
 }

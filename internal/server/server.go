@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
 
+	"github.com/looplj/axonhub/internal/ent"
 	"github.com/looplj/axonhub/internal/log"
 	"github.com/looplj/axonhub/internal/server/api"
 	"github.com/looplj/axonhub/internal/server/backup"
@@ -100,6 +102,11 @@ func Run(opts ...fx.Option) {
 			}),
 			fx.Invoke(func(usageLogSvc *biz.UsageLogService) {
 				usageLogSvc.OnUsageLogCreated = gql.InvalidateAllTimeTokenStatsCache
+			}),
+			fx.Invoke(func(usageLogSvc *biz.UsageLogService, channelProbeSvc *biz.ChannelProbeService) {
+				usageLogSvc.OnUsageLogFromRequestCreated = func(ctx context.Context, request *ent.Request, requestExec *ent.RequestExecution, _ *ent.UsageLog) {
+					channelProbeSvc.RefreshModelHealthFromUsage(ctx, request, requestExec, time.Now().UTC())
+				}
 			}),
 			fx.Invoke(func(cfg Config) {
 				if cfg.Dashboard.AllTimeTokenStatsSoftTTL > 0 && cfg.Dashboard.AllTimeTokenStatsHardTTL > 0 {

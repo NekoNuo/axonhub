@@ -8,6 +8,7 @@ import (
 
 	"github.com/samber/lo"
 
+	"github.com/looplj/axonhub/internal/authz"
 	"github.com/looplj/axonhub/internal/ent"
 	"github.com/looplj/axonhub/internal/ent/model"
 	"github.com/looplj/axonhub/internal/ent/modelhealthhistory"
@@ -178,12 +179,131 @@ func (svc *ChannelProbeService) RunManualModelProbe(ctx context.Context, target 
 	})
 }
 
+func (svc *ChannelProbeService) RefreshModelHealthFromUsage(
+	ctx context.Context,
+	request *ent.Request,
+	requestExec *ent.RequestExecution,
+	now time.Time,
+) {
+	if svc == nil || svc.SystemService == nil || svc.ChannelService == nil {
+		return
+	}
+	if request == nil || requestExec == nil || request.ModelID == "" || requestExec.ModelID == "" || requestExec.ChannelID == 0 {
+		return
+	}
+
+	settings := svc.SystemService.ModelSettingsOrDefault(ctx)
+	if settings == nil || !settings.EnableModelProbe {
+		return
+	}
+
+	currentTarget := ModelHealthProbeTarget{
+		DisplayModel:  request.ModelID,
+		ActualModelID: requestExec.ModelID,
+		ChannelID:     requestExec.ChannelID,
+		Source:        ModelHealthSourceDiscoveredRecentUsage,
+		Sources:       []string{ModelHealthTargetSourceRecent},
+	}
+
+	_ = svc.persistModelHealthResult(ctx, currentTarget, true, now.Unix(), false)
+
+	if svc.idleChannelModelProber == nil {
+		return
+	}
+
+	refreshCtx, cancel := xcontext.DetachWithTimeout(ctx, 30*time.Second)
+	go func() {
+		defer cancel()
+		svc.refreshModelHealthFromRecentUsage(authz.WithSystemBypass(refreshCtx, "model_health_recent_usage"), request, requestExec, now.Unix(), currentTarget)
+	}()
+}
+
+func (svc *ChannelProbeService) refreshModelHealthFromRecentUsage(
+	ctx context.Context,
+	request *ent.Request,
+	requestExec *ent.RequestExecution,
+	probedAt int64,
+	skipTarget ModelHealthProbeTarget,
+) {
+	recentUsage := []ModelHealthRecentUsage{
+		{
+			DisplayModel: request.ModelID,
+			ActualModels: []ModelHealthRecentActualModel{
+				{
+					ActualModelID: requestExec.ModelID,
+					ChannelIDs:    []int{requestExec.ChannelID},
+				},
+			},
+		},
+	}
+
+	targets, err := NewModelHealthTargetResolver(svc.db, nil).Resolve(ctx, recentUsage)
+	if err != nil {
+		return
+	}
+
+	svc.probeModelHealthTargets(ctx, targets, probedAt, skipTarget)
+}
+
 func (svc *ChannelProbeService) GetEffectiveModelHealth(ctx context.Context, target ModelHealthProbeTarget) (*ModelHealthSnapshotView, error) {
 	return getEffectiveModelHealthFromDB(ctx, svc.db, target.DisplayModel, target.ChannelID, target.ActualModelID)
 }
 
 func (svc *ChannelProbeService) runAutomaticModelHealthProbe(ctx context.Context) {
 	svc.runModelHealthProbe(ctx, time.Now().UTC())
+}
+
+func (svc *ChannelProbeService) probeModelHealthTargets(
+	ctx context.Context,
+	targets []ModelHealthProbeTarget,
+	probedAt int64,
+	skipTarget ModelHealthProbeTarget,
+) {
+	sem := make(chan struct{}, automaticModelProbeMaxConcurrency)
+	var wg sync.WaitGroup
+	type probeResult struct {
+		target  ModelHealthProbeTarget
+		healthy bool
+	}
+	results := make(chan probeResult, len(targets))
+
+	for _, target := range targets {
+		target := target
+		if target.DisplayModel == skipTarget.DisplayModel &&
+			target.ActualModelID == skipTarget.ActualModelID &&
+			target.ChannelID == skipTarget.ChannelID {
+			continue
+		}
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
+			bizChannel := svc.ChannelService.GetEnabledChannel(target.ChannelID)
+			if bizChannel == nil {
+				return
+			}
+
+			_, healthy, probeErr := svc.idleChannelModelProber(ctx, bizChannel.Channel, target.ActualModelID)
+			if probeErr != nil {
+				healthy = false
+			}
+
+			results <- probeResult{
+				target:  target,
+				healthy: healthy,
+			}
+		}()
+	}
+
+	wg.Wait()
+	close(results)
+
+	for result := range results {
+		_ = svc.persistModelHealthResult(ctx, result.target, result.healthy, probedAt, false)
+	}
 }
 
 func (svc *ChannelProbeService) listProbeEnabledModels(ctx context.Context) ([]*ent.Model, error) {
@@ -206,18 +326,26 @@ func getEffectiveModelHealthFromDB(
 	channelID int,
 	actualModelID string,
 ) (*ModelHealthSnapshotView, error) {
-	snapshot, err := client.ModelHealthSnapshot.Query().
+	snapshots, err := client.ModelHealthSnapshot.Query().
 		Where(
 			modelhealthsnapshot.DisplayModelEQ(displayModel),
 			modelhealthsnapshot.ChannelIDEQ(channelID),
 			modelhealthsnapshot.ActualModelIDEQ(actualModelID),
 		).
-		Only(ctx)
+		All(ctx)
 	if err != nil {
 		if ent.IsNotFound(err) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("query effective model health snapshot: %w", err)
+	}
+	if len(snapshots) == 0 {
+		return nil, nil
+	}
+
+	snapshot := selectEffectiveModelHealthSnapshot(snapshots)
+	if snapshot == nil {
+		return nil, nil
 	}
 
 	view := &ModelHealthSnapshotView{
@@ -259,6 +387,32 @@ func getEffectiveModelHealthFromDB(
 	}
 
 	return view, nil
+}
+
+func selectEffectiveModelHealthSnapshot(snapshots []*ent.ModelHealthSnapshot) *ent.ModelHealthSnapshot {
+	var preferred *ent.ModelHealthSnapshot
+
+	for _, snapshot := range snapshots {
+		if snapshot == nil {
+			continue
+		}
+
+		if preferred == nil {
+			preferred = snapshot
+			continue
+		}
+
+		if preferred.Source != ModelHealthSourceAssociated && snapshot.Source == ModelHealthSourceAssociated {
+			preferred = snapshot
+			continue
+		}
+
+		if preferred.Source == snapshot.Source && snapshot.ProbedAt > preferred.ProbedAt {
+			preferred = snapshot
+		}
+	}
+
+	return preferred
 }
 
 func (svc *ChannelProbeService) cleanupExpiredDiscoveredModelHealth(ctx context.Context, nowUnix int64) error {

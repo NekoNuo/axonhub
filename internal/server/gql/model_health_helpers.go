@@ -5,7 +5,6 @@ import (
 	"slices"
 
 	"github.com/looplj/axonhub/internal/ent"
-	"github.com/looplj/axonhub/internal/ent/channel"
 	"github.com/looplj/axonhub/internal/ent/model"
 	"github.com/looplj/axonhub/internal/server/biz"
 )
@@ -74,41 +73,19 @@ func compareStrings(a, b string) int {
 	}
 }
 
-func listAssociatedActualModelKeys(ctx context.Context, client *ent.Client) (map[biz.ChannelModelKey]struct{}, error) {
+func listProbeEnabledDisplayModels(ctx context.Context, client *ent.Client) (map[string]struct{}, error) {
 	models, err := client.Model.Query().
 		Where(model.StatusEQ(model.StatusEnabled)).
 		All(ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	channelEntities, err := client.Channel.Query().
-		Where(channel.StatusEQ(channel.StatusEnabled)).
-		All(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	channels := make([]*biz.Channel, 0, len(channelEntities))
-	for _, channelEntity := range channelEntities {
-		channels = append(channels, &biz.Channel{Channel: channelEntity})
-	}
-
-	keys := make(map[biz.ChannelModelKey]struct{})
+	keys := make(map[string]struct{})
 	for _, modelEntity := range models {
-		if modelEntity.Settings == nil || len(modelEntity.Settings.Associations) == 0 {
+		if modelEntity.Settings == nil || !modelEntity.Settings.ProbeEnabled {
 			continue
 		}
-
-		connections := biz.MatchAssociations(modelEntity.Settings.Associations, channels)
-		for _, connection := range connections {
-			for _, matchedModel := range connection.Models {
-				keys[biz.ChannelModelKey{
-					ChannelID: connection.Channel.ID,
-					ModelID:   matchedModel.ActualModel,
-				}] = struct{}{}
-			}
-		}
+		keys[modelEntity.ModelID] = struct{}{}
 	}
 
 	return keys, nil
@@ -116,13 +93,10 @@ func listAssociatedActualModelKeys(ctx context.Context, client *ent.Client) (map
 
 func filterDiscoveredSnapshots(
 	snapshots []*ent.ModelHealthSnapshot,
-	associatedActualModels map[biz.ChannelModelKey]struct{},
+	probeEnabledDisplayModels map[string]struct{},
 ) []*ent.ModelHealthSnapshot {
 	return slices.DeleteFunc(snapshots, func(snapshot *ent.ModelHealthSnapshot) bool {
-		_, exists := associatedActualModels[biz.ChannelModelKey{
-			ChannelID: snapshot.ChannelID,
-			ModelID:   snapshot.ActualModelID,
-		}]
+		_, exists := probeEnabledDisplayModels[snapshot.DisplayModel]
 		return exists
 	})
 }

@@ -2,6 +2,7 @@ package biz
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -210,4 +211,122 @@ func TestModelHealthManualProbe_PersistsAfterRequestContextTimeout(t *testing.T)
 	require.NoError(t, err)
 	require.True(t, snapshot.IsHealthy)
 	require.True(t, snapshot.ManualOverride)
+}
+
+func TestRefreshModelHealthFromRecentUsage_PersistsCurrentChannelImmediatelyAndProbesOthers(t *testing.T) {
+	client := enttest.Open(t, dialect.SQLite, "file:ent?mode=memory&_fk=0")
+	defer client.Close()
+
+	ctx := authz.WithTestBypass(ent.NewContext(context.Background(), client))
+
+	systemService := NewSystemService(SystemServiceParams{Ent: client, CacheConfig: xcache.Config{Mode: xcache.ModeMemory}})
+	err := systemService.SetModelSettings(ctx, SystemModelSettings{
+		EnableModelProbe:                  true,
+		FallbackToChannelsOnModelNotFound: true,
+		QueryAllChannelModels:             true,
+	})
+	require.NoError(t, err)
+
+	channelA, err := client.Channel.Create().
+		SetType("openai").
+		SetBaseURL("https://api.openai.com/v1").
+		SetName("OpenAI Channel A").
+		SetStatus("enabled").
+		SetCredentials(objects.ChannelCredentials{APIKeys: []string{"test-key"}}).
+		SetSupportedModels([]string{"gpt-4.1-mini"}).
+		SetDefaultTestModel("gpt-4.1-mini").
+		Save(ctx)
+	require.NoError(t, err)
+
+	channelB, err := client.Channel.Create().
+		SetType("openai").
+		SetBaseURL("https://api.openai.com/v1").
+		SetName("OpenAI Channel B").
+		SetStatus("enabled").
+		SetCredentials(objects.ChannelCredentials{APIKeys: []string{"test-key"}}).
+		SetSupportedModels([]string{"gpt-4.1-mini"}).
+		SetDefaultTestModel("gpt-4.1-mini").
+		Save(ctx)
+	require.NoError(t, err)
+
+	channelService := NewChannelServiceForTest(client)
+	enabledA, err := channelService.buildChannelWithTransformer(channelA)
+	require.NoError(t, err)
+	enabledB, err := channelService.buildChannelWithTransformer(channelB)
+	require.NoError(t, err)
+	channelService.SetEnabledChannelsForTest([]*Channel{enabledA, enabledB})
+
+	_, err = client.Project.Create().
+		SetName("default").
+		SetDescription("default project").
+		SetStatus("active").
+		Save(ctx)
+	require.NoError(t, err)
+
+	probeService := &ChannelProbeService{
+		AbstractService: &AbstractService{db: client},
+		SystemService:   systemService,
+		ChannelService:  channelService,
+	}
+
+	var mu sync.Mutex
+	called := make(map[int]int)
+	probeService.idleChannelModelProber = func(_ context.Context, ch *ent.Channel, modelID string) (time.Duration, bool, error) {
+		require.Equal(t, "gpt-4.1-mini", modelID)
+		mu.Lock()
+		called[ch.ID]++
+		mu.Unlock()
+		return 10 * time.Millisecond, ch.ID == channelB.ID, nil
+	}
+
+	req, err := client.Request.Create().
+		SetProjectID(1).
+		SetSource("api").
+		SetModelID("gpt-4.1-mini").
+		SetFormat("openai/chat_completions").
+		SetRequestBody([]byte(`{}`)).
+		SetStatus("completed").
+		SetStream(false).
+		SetClientIP("127.0.0.1").
+		Save(ctx)
+	require.NoError(t, err)
+
+	reqExec, err := client.RequestExecution.Create().
+		SetRequestID(req.ID).
+		SetChannelID(channelA.ID).
+		SetModelID("gpt-4.1-mini").
+		SetStatus("completed").
+		SetRequestBody([]byte(`{}`)).
+		Save(ctx)
+	require.NoError(t, err)
+
+	now := time.Date(2026, 4, 5, 13, 0, 0, 0, time.UTC)
+	currentTarget := ModelHealthProbeTarget{
+		DisplayModel:  req.ModelID,
+		ActualModelID: reqExec.ModelID,
+		ChannelID:     reqExec.ChannelID,
+		Source:        ModelHealthSourceDiscoveredRecentUsage,
+		Sources:       []string{ModelHealthTargetSourceRecent},
+	}
+	err = probeService.persistModelHealthResult(ctx, currentTarget, true, now.Unix(), false)
+	require.NoError(t, err)
+
+	probeService.refreshModelHealthFromRecentUsage(ctx, req, reqExec, now.Unix(), currentTarget)
+
+	snapshots, err := client.ModelHealthSnapshot.Query().
+		Order(ent.Asc("channel_id")).
+		All(ctx)
+	require.NoError(t, err)
+	require.Len(t, snapshots, 2)
+	require.Equal(t, channelA.ID, snapshots[0].ChannelID)
+	require.True(t, snapshots[0].IsHealthy)
+	require.Equal(t, channelB.ID, snapshots[1].ChannelID)
+	require.True(t, snapshots[1].IsHealthy)
+	require.Equal(t, ModelHealthSourceDiscoveredRecentUsage, snapshots[0].Source)
+	require.Equal(t, ModelHealthSourceDiscoveredRecentUsage, snapshots[1].Source)
+
+	mu.Lock()
+	require.Equal(t, 0, called[channelA.ID])
+	require.Equal(t, 1, called[channelB.ID])
+	mu.Unlock()
 }
