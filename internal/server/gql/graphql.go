@@ -117,11 +117,11 @@ func NewGraphqlHandlers(deps Dependencies) *GraphqlHandler {
 	gqlSrv.Use(&loggingTracer{})
 	gqlSrv.Use(entgql.Transactioner{
 		TxOpener: deps.Ent,
-		// Skip transaction for TestChannel mutation to avoid transaction conflicts
-		// when multiple test requests are sent in parallel from the frontend.
-		// TestChannel performs LLM API calls which can be long-running, and the
-		// database operations within don't require transactional consistency.
-		SkipTxFunc: entgql.SkipOperations("TestChannel"),
+		// Skip transaction for long-running probe/test mutations.
+		// They perform outbound API calls and can outlive the HTTP timeout budget;
+		// wrapping them in a request-scoped transaction causes the tx to roll back
+		// before the follow-up persistence step can complete.
+		SkipTxFunc: entgql.SkipOperations("TestChannel", "ManualModelProbe"),
 	})
 
 	// Set error presenter to handle CodedError and add extensions.code

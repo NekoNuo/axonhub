@@ -18,6 +18,18 @@ interface ModelHealthTreeProps {
   onProbeRow: (row: ModelHealthRow) => void;
 }
 
+export function getLatestProbeMeta(snapshot: Pick<ModelHealthHistory, 'isHealthy' | 'probedAt'> | undefined, history?: ModelHealthHistory[]) {
+  const latest = history?.[0] ?? snapshot;
+  if (!latest) {
+    return null;
+  }
+
+  return {
+    isHealthy: latest.isHealthy,
+    probedAt: latest.probedAt,
+  };
+}
+
 function getConnectionKey(displayModel: string, channelID: string, actualModelID: string) {
   return `${displayModel}:${channelID}:${actualModelID}`;
 }
@@ -86,6 +98,8 @@ export function ModelHealthTree({ groups, histories, probingKeys, locale, onProb
               {group.channels.map((channel) => {
                 const channelKey = `${group.displayModel}:${channel.channelID}`;
                 const summary = getChannelSummary(channel);
+                const channelHistory = getDisplayModelHistory(channel, histories);
+                const channelProbeMeta = getLatestProbeMeta(channel.rows[0], channelHistory);
                 return (
                   <Collapsible
                     key={channelKey}
@@ -102,15 +116,18 @@ export function ModelHealthTree({ groups, histories, probingKeys, locale, onProb
                               <div className='text-muted-foreground text-xs'>
                                 {t(`channels.status.${channel.channelStatus}`)} · {t('models.healthPage.channelSummary', { healthy: summary.healthyCount, total: summary.totalCount })}
                               </div>
+                              {channelProbeMeta ? (
+                                <div className='text-muted-foreground text-xs'>
+                                  {channelProbeMeta.isHealthy ? t('models.healthPage.healthy') : t('models.healthPage.unhealthy')}
+                                  {' · '}
+                                  {t('models.healthPage.lastProbe', { val: formatHealthTimestamp(channelProbeMeta.probedAt, locale) })}
+                                </div>
+                              ) : null}
                             </div>
                           </button>
                         </CollapsibleTrigger>
                         <div className='flex items-center gap-3'>
-                          <ModelHealthCell
-                            snapshot={channel.rows[0]}
-                            history={getDisplayModelHistory(channel, histories)}
-                            locale={locale}
-                          />
+                          <ModelHealthCell snapshot={channel.rows[0]} history={channelHistory} locale={locale} />
                           <Button
                             size='icon'
                             variant='ghost'
@@ -129,6 +146,8 @@ export function ModelHealthTree({ groups, histories, probingKeys, locale, onProb
                       <CollapsibleContent className='space-y-2 px-3 pb-3'>
                         {channel.rows.map((row) => {
                           const rowKey = getConnectionKey(row.displayModel, row.channelID, row.actualModelID);
+                          const rowHistory = getActualModelHistory(row, histories);
+                          const rowProbeMeta = getLatestProbeMeta(row, rowHistory);
                           return (
                             <div key={rowKey} className='flex items-center justify-between gap-4 rounded-md border p-3'>
                               <div className='space-y-1'>
@@ -136,10 +155,16 @@ export function ModelHealthTree({ groups, histories, probingKeys, locale, onProb
                                 <div className='text-muted-foreground text-xs'>
                                   {t('models.healthPage.priorityWeight', { priority: row.priority, weight: row.orderingWeight })}
                                 </div>
-                                <div className='text-muted-foreground text-xs'>{t('models.healthPage.lastProbe', { val: formatHealthTimestamp(row.probedAt, locale) })}</div>
+                                {rowProbeMeta ? (
+                                  <div className='text-muted-foreground text-xs'>
+                                    {rowProbeMeta.isHealthy ? t('models.healthPage.healthy') : t('models.healthPage.unhealthy')}
+                                    {' · '}
+                                    {t('models.healthPage.lastProbe', { val: formatHealthTimestamp(rowProbeMeta.probedAt, locale) })}
+                                  </div>
+                                ) : null}
                               </div>
                               <div className='flex items-center gap-2'>
-                                <ModelHealthCell snapshot={row} history={getActualModelHistory(row, histories)} locale={locale} />
+                                <ModelHealthCell snapshot={row} history={rowHistory} locale={locale} />
                                 <Button
                                   size='icon'
                                   variant='ghost'
