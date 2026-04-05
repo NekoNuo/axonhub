@@ -201,22 +201,34 @@ func (r *modelResolver) ID(ctx context.Context, obj *ent.Model) (*objects.GUID, 
 
 // ID is the resolver for the id field.
 func (r *modelHealthHistoryResolver) ID(ctx context.Context, obj *ent.ModelHealthHistory) (*objects.GUID, error) {
-	panic(fmt.Errorf("not implemented: ID - id"))
+	return &objects.GUID{
+		Type: ent.TypeModelHealthHistory,
+		ID:   obj.ID,
+	}, nil
 }
 
 // ChannelID is the resolver for the channelID field.
 func (r *modelHealthHistoryResolver) ChannelID(ctx context.Context, obj *ent.ModelHealthHistory) (*objects.GUID, error) {
-	panic(fmt.Errorf("not implemented: ChannelID - channelID"))
+	return &objects.GUID{
+		Type: ent.TypeChannel,
+		ID:   obj.ChannelID,
+	}, nil
 }
 
 // ID is the resolver for the id field.
 func (r *modelHealthSnapshotResolver) ID(ctx context.Context, obj *ent.ModelHealthSnapshot) (*objects.GUID, error) {
-	panic(fmt.Errorf("not implemented: ID - id"))
+	return &objects.GUID{
+		Type: ent.TypeModelHealthSnapshot,
+		ID:   obj.ID,
+	}, nil
 }
 
 // ChannelID is the resolver for the channelID field.
 func (r *modelHealthSnapshotResolver) ChannelID(ctx context.Context, obj *ent.ModelHealthSnapshot) (*objects.GUID, error) {
-	panic(fmt.Errorf("not implemented: ChannelID - channelID"))
+	return &objects.GUID{
+		Type: ent.TypeChannel,
+		ID:   obj.ChannelID,
+	}, nil
 }
 
 // ID is the resolver for the id field.

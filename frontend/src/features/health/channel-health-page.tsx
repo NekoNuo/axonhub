@@ -4,6 +4,7 @@ import { Main } from '@/components/layout/main';
 import { ChannelHealthCell } from '@/features/channels/components/channel-health-cell';
 import { useChannelHealthSnapshots, useChannelProbeData, useQueryChannels } from '@/features/channels/data/channels';
 import type { ChannelHealthSnapshot, ChannelProbeData } from '@/features/channels/data/schema';
+import { formatHealthTimestamp } from './channel-health-format';
 
 interface ChannelHealthPageChannel {
   id: string;
@@ -56,7 +57,8 @@ export function getLatestSnapshotDetails(snapshot?: ChannelHealthSnapshot | null
 }
 
 export function ChannelHealthPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language.startsWith('zh') ? 'zh-CN' : 'en-US';
   const { data } = useQueryChannels({
     first: 100,
     where: {
@@ -106,7 +108,7 @@ export function ChannelHealthPage() {
                 </div>
                 {details ? (
                   <div className='text-muted-foreground flex flex-wrap gap-4 text-xs'>
-                    <span>{t('channels.healthPage.summary.probeTime', { val: details.probeTimestamp })}</span>
+                    <span>{t('channels.healthPage.summary.probeTime', { val: formatHealthTimestamp(details.probeTimestamp, locale) })}</span>
                     <span>{t('channels.healthPage.summary.activeProbeLatency', { val: details.activeProbeLatencyMs ?? '-' })}</span>
                     <span>{t('channels.healthPage.summary.probeModelLatency', { val: details.probeModelLatencyMs ?? '-' })}</span>
                     <span>{t('channels.healthPage.summary.observedLatency', { val: details.observedLatencyMs ?? '-' })}</span>

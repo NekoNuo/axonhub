@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildChannelHealthRows, getLatestSnapshotDetails } from './channel-health-page';
+import { formatHealthTimestamp } from './channel-health-format';
 
 describe('Task 11 Channel Health Page', () => {
   it('channel health page renders probe bars', () => {
@@ -49,5 +50,9 @@ describe('Task 11 Channel Health Page', () => {
       observedTimestamp: 1712310360,
       observedLatencyMs: 150,
     });
+  });
+
+  it('formats probe timestamps for display', () => {
+    expect(formatHealthTimestamp(1712310300, 'en-US')).toMatch(/2024/);
   });
 });

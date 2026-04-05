@@ -8,21 +8,81 @@ package gql
 import (
 	"context"
 	"fmt"
+	"time"
 
+	"github.com/looplj/axonhub/internal/authz"
 	"github.com/looplj/axonhub/internal/ent"
+	"github.com/looplj/axonhub/internal/ent/modelhealthhistory"
+	"github.com/looplj/axonhub/internal/ent/predicate"
+	"github.com/looplj/axonhub/internal/ent/modelhealthsnapshot"
+	"github.com/looplj/axonhub/internal/objects"
+	"github.com/looplj/axonhub/internal/scopes"
+	"github.com/looplj/axonhub/internal/server/biz"
+	"github.com/samber/lo"
 )
 
 // ManualModelProbe is the resolver for the manualModelProbe field.
 func (r *mutationResolver) ManualModelProbe(ctx context.Context, input ManualModelProbeInput) (bool, error) {
-	panic(fmt.Errorf("not implemented: ManualModelProbe - manualModelProbe"))
+	channelID, err := objects.ConvertGUIDToInt(input.ChannelID)
+	if err != nil {
+		return false, fmt.Errorf("invalid channel id: %w", err)
+	}
+
+	target := biz.ModelHealthProbeTarget{
+		DisplayModel:  input.DisplayModel,
+		ActualModelID: input.ActualModelID,
+		ChannelID:     channelID,
+	}
+
+	_, err = authz.RunWithScopeDecision(ctx, scopes.ScopeWriteChannels, func(ctx context.Context) (bool, error) {
+		return true, r.channelProbeService.RunManualModelProbe(ctx, target, time.Now().UTC())
+	})
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 // ModelHealthSnapshots is the resolver for the modelHealthSnapshots field.
 func (r *queryResolver) ModelHealthSnapshots(ctx context.Context, input GetModelHealthSnapshotsInput) ([]*ent.ModelHealthSnapshot, error) {
-	panic(fmt.Errorf("not implemented: ModelHealthSnapshots - modelHealthSnapshots"))
+	return authz.RunWithScopeDecision(ctx, scopes.ScopeReadChannels, func(ctx context.Context) ([]*ent.ModelHealthSnapshot, error) {
+		query := r.client.ModelHealthSnapshot.Query().Order(
+			ent.Asc(modelhealthsnapshot.FieldDisplayModel),
+			ent.Asc(modelhealthsnapshot.FieldActualModelID),
+			ent.Asc(modelhealthsnapshot.FieldChannelID),
+		)
+
+		if len(input.DisplayModels) > 0 {
+			query = query.Where(modelhealthsnapshot.DisplayModelIn(input.DisplayModels...))
+		}
+
+		return query.All(ctx)
+	})
 }
 
 // ModelHealthHistory is the resolver for the modelHealthHistory field.
 func (r *queryResolver) ModelHealthHistory(ctx context.Context, input GetModelHealthHistoryInput) ([]*ent.ModelHealthHistory, error) {
-	panic(fmt.Errorf("not implemented: ModelHealthHistory - modelHealthHistory"))
+	return authz.RunWithScopeDecision(ctx, scopes.ScopeReadChannels, func(ctx context.Context) ([]*ent.ModelHealthHistory, error) {
+		query := r.client.ModelHealthHistory.Query().Order(ent.Desc(modelhealthhistory.FieldProbedAt))
+
+		predicates := make([]predicate.ModelHealthHistory, 0, 3)
+		if input.DisplayModel != nil && *input.DisplayModel != "" {
+			predicates = append(predicates, modelhealthhistory.DisplayModelEQ(*input.DisplayModel))
+		}
+		if input.ActualModelID != nil && *input.ActualModelID != "" {
+			predicates = append(predicates, modelhealthhistory.ActualModelIDEQ(*input.ActualModelID))
+		}
+		if len(input.ChannelIDs) > 0 {
+			channelIDs := lo.Map(input.ChannelIDs, func(item *objects.GUID, _ int) int {
+				return item.ID
+			})
+			predicates = append(predicates, modelhealthhistory.ChannelIDIn(channelIDs...))
+		}
+		if len(predicates) > 0 {
+			query = query.Where(predicates...)
+		}
+
+		return query.All(ctx)
+	})
 }
