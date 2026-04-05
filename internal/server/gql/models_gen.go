@@ -256,6 +256,10 @@ type LoadBalancerPreview struct {
 	Strategies     []*LoadBalancerPreviewStrategy `json:"strategies"`
 }
 
+type GetLoadBalancerPreviewInput struct {
+	ModelID *string `json:"modelId,omitempty"`
+}
+
 type LoadBalancerPreviewCandidate struct {
 	ChannelName    string                               `json:"channelName"`
 	TotalScore     float64                              `json:"totalScore"`

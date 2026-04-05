@@ -534,3 +534,50 @@ func TestQueryResolver_DiscoveredModelHealthSnapshotsExcludesDifferentDisplayMod
 	require.NoError(t, err)
 	require.Empty(t, rows)
 }
+
+func TestQueryResolver_DiscoveredModelHealthSnapshotsExcludesProbeEnabledDisplayModel(t *testing.T) {
+	resolver, ctx, client, _ := setupModelHealthResolverTest(t)
+	defer client.Close()
+
+	channelEntity, err := client.Channel.Create().
+		SetType("openai").
+		SetBaseURL("https://api.openai.com/v1").
+		SetName("OpenAI Channel").
+		SetStatus("enabled").
+		SetCredentials(objects.ChannelCredentials{APIKeys: []string{"test-key"}}).
+		SetSupportedModels([]string{"gpt-5.2"}).
+		SetDefaultTestModel("gpt-5.2").
+		Save(ctx)
+	require.NoError(t, err)
+
+	_, err = client.Model.Create().
+		SetDeveloper("openai").
+		SetModelID("gpt-5.2").
+		SetType(model.TypeChat).
+		SetName("GPT-5.2").
+		SetIcon("openai").
+		SetGroup("openai").
+		SetStatus(model.StatusEnabled).
+		SetModelCard(&objects.ModelCard{}).
+		SetSettings(&objects.ModelSettings{
+			ProbeEnabled: true,
+		}).
+		Save(ctx)
+	require.NoError(t, err)
+
+	_, err = client.ModelHealthSnapshot.Create().
+		SetDisplayModel("gpt-5.2").
+		SetChannelID(channelEntity.ID).
+		SetActualModelID("gpt-5.2").
+		SetSource("discovered_recent_usage").
+		SetIsHealthy(true).
+		SetManualOverride(false).
+		SetProbedAt(time.Now().UTC().Unix()).
+		Save(ctx)
+	require.NoError(t, err)
+
+	query := &queryResolver{resolver}
+	rows, err := query.DiscoveredModelHealthSnapshots(ctx, GetDiscoveredModelHealthSnapshotsInput{})
+	require.NoError(t, err)
+	require.Empty(t, rows)
+}

@@ -114,11 +114,35 @@ func listProbeEnabledAssociatedActualModels(ctx context.Context, client *ent.Cli
 	return keys, nil
 }
 
+func listProbeEnabledDisplayModels(ctx context.Context, client *ent.Client) (map[string]struct{}, error) {
+	models, err := client.Model.Query().
+		Where(model.StatusEQ(model.StatusEnabled)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	keys := make(map[string]struct{}, len(models))
+	for _, modelEntity := range models {
+		if modelEntity.Settings == nil || !modelEntity.Settings.ProbeEnabled {
+			continue
+		}
+		keys[modelEntity.ModelID] = struct{}{}
+	}
+
+	return keys, nil
+}
+
 func filterDiscoveredSnapshots(
 	snapshots []*ent.ModelHealthSnapshot,
 	probeEnabledAssociatedActualModels map[biz.ChannelModelKey]struct{},
+	probeEnabledDisplayModels map[string]struct{},
 ) []*ent.ModelHealthSnapshot {
 	return slices.DeleteFunc(snapshots, func(snapshot *ent.ModelHealthSnapshot) bool {
+		if _, exists := probeEnabledDisplayModels[snapshot.DisplayModel]; exists {
+			return true
+		}
+
 		_, exists := probeEnabledAssociatedActualModels[biz.ChannelModelKey{
 			ChannelID: snapshot.ChannelID,
 			ModelID:   snapshot.ActualModelID,

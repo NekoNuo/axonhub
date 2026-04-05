@@ -85,10 +85,15 @@ func (r *queryResolver) DashboardOverview(ctx context.Context) (*DashboardOvervi
 }
 
 // LoadBalancerPreview is the resolver for the loadBalancerPreview field.
-func (r *queryResolver) LoadBalancerPreview(ctx context.Context) (*LoadBalancerPreview, error) {
+func (r *queryResolver) LoadBalancerPreview(ctx context.Context, input *GetLoadBalancerPreviewInput) (*LoadBalancerPreview, error) {
 	ctx = authz.WithScopeDecision(ctx, scopes.ScopeReadDashboard)
 
-	preview, err := buildLoadBalancerPreview(ctx, r.Resolver)
+	var modelID *string
+	if input != nil && input.ModelID != nil && *input.ModelID != "" {
+		modelID = input.ModelID
+	}
+
+	preview, err := buildLoadBalancerPreview(ctx, r.Resolver, modelID)
 	if err != nil || preview == nil {
 		return nil, err
 	}

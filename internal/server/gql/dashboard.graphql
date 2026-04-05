@@ -49,6 +49,10 @@ type LoadBalancerPreview {
   strategies: [LoadBalancerPreviewStrategy!]!
 }
 
+input GetLoadBalancerPreviewInput {
+  modelId: String
+}
+
 type RequestStats {
   requestsToday: Int!
   requestsThisWeek: Int!
@@ -253,7 +257,7 @@ type CostStatsByAPIKey {
 
 extend type Query {
   dashboardOverview: DashboardOverview!
-  loadBalancerPreview: LoadBalancerPreview
+  loadBalancerPreview(input: GetLoadBalancerPreviewInput): LoadBalancerPreview
   requestStats: RequestStats!
   requestStatsByChannel(timeWindow: String): [RequestStatsByChannel!]!
   requestStatsByModel(timeWindow: String): [RequestStatsByModel!]!

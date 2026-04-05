@@ -1,14 +1,30 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ChevronDownIcon, RefreshCcwIcon, RouteIcon, SigmaIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { AutoCompleteSelect } from '@/components/auto-complete-select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useQueryAllModels } from '@/features/models/data/models';
 import { useLoadBalancerPreview } from '../data/dashboard';
 
 export function LoadBalancerPreview() {
   const { t } = useTranslation();
-  const { data, isLoading, error } = useLoadBalancerPreview();
+  const [selectedModelId, setSelectedModelId] = useState('');
+  const { data: allModels } = useQueryAllModels({
+    where: {
+      status: 'enabled',
+    },
+  });
+  const { data, isLoading, error } = useLoadBalancerPreview(selectedModelId || undefined);
   const [openStrategies, setOpenStrategies] = useState<Record<string, boolean>>({});
+
+  const modelItems = useMemo(() => {
+    const edges = allModels?.edges ?? [];
+    return edges.map((edge) => ({
+      value: edge.node.modelID,
+      label: edge.node.name ? `${edge.node.modelID} · ${edge.node.name}` : edge.node.modelID,
+    }));
+  }, [allModels]);
 
   if (isLoading) {
     return (
@@ -41,7 +57,17 @@ export function LoadBalancerPreview() {
               <CardTitle>{t('dashboard.preview.title')}</CardTitle>
               <CardDescription>{t('dashboard.preview.description')}</CardDescription>
             </div>
-            <div className='text-muted-foreground flex flex-wrap items-center gap-3 text-sm'>
+            <div className='flex flex-col gap-3 md:items-end'>
+              <div className='w-full min-w-[260px] max-w-[420px]'>
+                <AutoCompleteSelect
+                  selectedValue={selectedModelId}
+                  onSelectedValueChange={setSelectedModelId}
+                  items={modelItems}
+                  placeholder={t('dashboard.preview.modelPlaceholder')}
+                  emptyMessage={t('dashboard.preview.modelEmpty')}
+                />
+              </div>
+              <div className='text-muted-foreground flex flex-wrap items-center gap-3 text-sm'>
               <span>
                 {t('dashboard.preview.model')}: <span className='text-foreground font-medium'>{data.modelId}</span>
               </span>
@@ -52,6 +78,7 @@ export function LoadBalancerPreview() {
                 <RefreshCcwIcon className='h-3.5 w-3.5' />
                 {t('dashboard.preview.autoRefresh')}
               </span>
+              </div>
             </div>
           </div>
         </CardHeader>

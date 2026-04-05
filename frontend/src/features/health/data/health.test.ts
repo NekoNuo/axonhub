@@ -7,6 +7,7 @@ import {
   RESET_DISCOVERED_MODEL_HEALTH_MUTATION,
 } from './health';
 import { modelHealthHistorySchema, modelHealthSnapshotSchema } from './schema';
+import { buildLoadBalancerPreviewVariables } from '@/features/dashboard/data/dashboard';
 
 describe('Task 8 Model Health Data', () => {
   it('parses model health rows and history', () => {
@@ -79,5 +80,14 @@ describe('Task 8 Model Health Data', () => {
 
   it('exports reset discovered model health mutation', () => {
     expect(RESET_DISCOVERED_MODEL_HEALTH_MUTATION).toContain('resetDiscoveredModelHealth');
+  });
+
+  it('builds load balancer preview variables', () => {
+    expect(buildLoadBalancerPreviewVariables()).toEqual({ input: undefined });
+    expect(buildLoadBalancerPreviewVariables('gpt-5.4')).toEqual({
+      input: {
+        modelId: 'gpt-5.4',
+      },
+    });
   });
 });

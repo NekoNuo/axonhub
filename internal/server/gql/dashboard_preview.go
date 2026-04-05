@@ -57,16 +57,22 @@ type loadBalancerPreviewScoreBreakdown struct {
 	Reason       string
 }
 
-func buildLoadBalancerPreview(ctx context.Context, r *Resolver) (*loadBalancerPreviewSnapshot, error) {
+func buildLoadBalancerPreview(ctx context.Context, r *Resolver, explicitModelID *string) (*loadBalancerPreviewSnapshot, error) {
 	if r == nil || r.client == nil || r.systemService == nil || r.channelService == nil || r.modelService == nil {
 		return nil, nil
 	}
 
 	ctx = authz.WithSystemBypass(ctx, "dashboard-load-balancer-preview")
 
-	modelID, err := hottestRecentModel(ctx, r.client, 24*time.Hour)
-	if err != nil {
-		return nil, err
+	modelID := ""
+	var err error
+	if explicitModelID != nil && *explicitModelID != "" {
+		modelID = *explicitModelID
+	} else {
+		modelID, err = hottestRecentModel(ctx, r.client, 24*time.Hour)
+		if err != nil {
+			return nil, err
+		}
 	}
 	if modelID == "" {
 		return nil, nil

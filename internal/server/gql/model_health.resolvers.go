@@ -120,7 +120,12 @@ func (r *queryResolver) DiscoveredModelHealthSnapshots(ctx context.Context, inpu
 			return nil, err
 		}
 
-		snapshots = filterDiscoveredSnapshots(snapshots, probeEnabledAssociatedActualModels)
+		probeEnabledDisplayModels, err := listProbeEnabledDisplayModels(ctx, r.client)
+		if err != nil {
+			return nil, err
+		}
+
+		snapshots = filterDiscoveredSnapshots(snapshots, probeEnabledAssociatedActualModels, probeEnabledDisplayModels)
 
 		return buildModelHealthSnapshotRows(ctx, r.client, snapshots)
 	})

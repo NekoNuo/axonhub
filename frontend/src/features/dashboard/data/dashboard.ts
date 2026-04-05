@@ -386,8 +386,8 @@ const CHANNEL_PERFORMANCE_STATS_QUERY = `
 `;
 
 const LOAD_BALANCER_PREVIEW_QUERY = `
-  query GetLoadBalancerPreview {
-    loadBalancerPreview {
+  query GetLoadBalancerPreview($input: GetLoadBalancerPreviewInput) {
+    loadBalancerPreview(input: $input) {
       modelId
       activeStrategy
       strategies {
@@ -420,6 +420,18 @@ const LOAD_BALANCER_PREVIEW_QUERY = `
     }
   }
 `;
+
+export function buildLoadBalancerPreviewVariables(modelId?: string) {
+  if (!modelId) {
+    return { input: undefined };
+  }
+
+  return {
+    input: {
+      modelId,
+    },
+  };
+}
 
 // (removed) Old usageLogs-based token stats query is deprecated in favor of backend tokenStats aggregation
 
@@ -456,11 +468,14 @@ export function useDashboardStats() {
   });
 }
 
-export function useLoadBalancerPreview() {
+export function useLoadBalancerPreview(modelId?: string) {
   return useQuery({
-    queryKey: ['loadBalancerPreview'],
+    queryKey: ['loadBalancerPreview', modelId ?? 'auto'],
     queryFn: async () => {
-      const data = await graphqlRequest<{ loadBalancerPreview: LoadBalancerPreview | null }>(LOAD_BALANCER_PREVIEW_QUERY);
+      const data = await graphqlRequest<{ loadBalancerPreview: LoadBalancerPreview | null }>(
+        LOAD_BALANCER_PREVIEW_QUERY,
+        buildLoadBalancerPreviewVariables(modelId)
+      );
       if (!data.loadBalancerPreview) {
         return null;
       }

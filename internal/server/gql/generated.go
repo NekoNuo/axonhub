@@ -1187,7 +1187,7 @@ type ComplexityRoot struct {
 		FastestModels                func(childComplexity int, input FastestChannelsInput) int
 		FetchModels                  func(childComplexity int, input biz.FetchModelsInput) int
 		LatestChannelHealthSnapshots func(childComplexity int, input biz.GetChannelHealthSnapshotsInput) int
-		LoadBalancerPreview          func(childComplexity int) int
+		LoadBalancerPreview          func(childComplexity int, input *GetLoadBalancerPreviewInput) int
 		Me                           func(childComplexity int) int
 		ModelHealthHistory           func(childComplexity int, input GetModelHealthHistoryInput) int
 		ModelHealthSnapshots         func(childComplexity int, input GetModelHealthSnapshotsInput) int
@@ -2037,7 +2037,7 @@ type QueryResolver interface {
 	QueryChannels(ctx context.Context, input biz.QueryChannelsInput) (*ent.ChannelConnection, error)
 	APIKeyQuotaUsages(ctx context.Context, apiKeyID objects.GUID) ([]*APIKeyProfileQuotaUsage, error)
 	DashboardOverview(ctx context.Context) (*DashboardOverview, error)
-	LoadBalancerPreview(ctx context.Context) (*LoadBalancerPreview, error)
+	LoadBalancerPreview(ctx context.Context, input *GetLoadBalancerPreviewInput) (*LoadBalancerPreview, error)
 	RequestStats(ctx context.Context) (*RequestStats, error)
 	RequestStatsByChannel(ctx context.Context, timeWindow *string) ([]*RequestStatsByChannel, error)
 	RequestStatsByModel(ctx context.Context, timeWindow *string) ([]*RequestStatsByModel, error)
@@ -7121,7 +7121,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			break
 		}
 
-		return e.complexity.Query.LoadBalancerPreview(childComplexity), true
+		args, err := ec.field_Query_loadBalancerPreview_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.LoadBalancerPreview(childComplexity, args["input"].(*GetLoadBalancerPreviewInput)), true
 	case "Query.me":
 		if e.complexity.Query.Me == nil {
 			break
@@ -11879,6 +11884,17 @@ func (ec *executionContext) field_Query_apiKeyTokenUsageStats_args(ctx context.C
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalOAPIKeyTokenUsageStatsInput2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋgqlᚐAPIKeyTokenUsageStatsInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_loadBalancerPreview_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalOGetLoadBalancerPreviewInput2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋgqlᚐGetLoadBalancerPreviewInput)
 	if err != nil {
 		return nil, err
 	}
@@ -38013,7 +38029,8 @@ func (ec *executionContext) _Query_loadBalancerPreview(ctx context.Context, fiel
 		field,
 		ec.fieldContext_Query_loadBalancerPreview,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Query().LoadBalancerPreview(ctx)
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().LoadBalancerPreview(ctx, fc.Args["input"].(*GetLoadBalancerPreviewInput))
 		},
 		nil,
 		ec.marshalOLoadBalancerPreview2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋgqlᚐLoadBalancerPreview,
@@ -38022,7 +38039,7 @@ func (ec *executionContext) _Query_loadBalancerPreview(ctx context.Context, fiel
 	)
 }
 
-func (ec *executionContext) fieldContext_Query_loadBalancerPreview(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_loadBalancerPreview(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -38039,6 +38056,17 @@ func (ec *executionContext) fieldContext_Query_loadBalancerPreview(_ context.Con
 			}
 			return nil, fmt.Errorf("no field named %q was found under type LoadBalancerPreview", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_loadBalancerPreview_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -54552,6 +54580,33 @@ func (ec *executionContext) unmarshalInputAPIKeyTokenUsageStatsInput(ctx context
 				return it, err
 			}
 			it.CreatedAtLTE = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputGetLoadBalancerPreviewInput(ctx context.Context, obj any) (GetLoadBalancerPreviewInput, error) {
+	var it GetLoadBalancerPreviewInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"modelId"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "modelId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("modelId"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ModelID = data
 		}
 	}
 
@@ -102584,6 +102639,14 @@ func (ec *executionContext) unmarshalOAPIKeyTokenUsageStatsInput2ᚖgithubᚗcom
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputAPIKeyTokenUsageStatsInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOGetLoadBalancerPreviewInput2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋgqlᚐGetLoadBalancerPreviewInput(ctx context.Context, v any) (*GetLoadBalancerPreviewInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputGetLoadBalancerPreviewInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 

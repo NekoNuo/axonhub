@@ -1,10 +1,15 @@
 package gql
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
+	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 	"github.com/zhenzou/executors"
@@ -130,7 +135,7 @@ func TestBuildLoadBalancerPreviewSelectsHottestModelAndBuildsRetrySteps(t *testi
 		systemService:  systemService,
 		channelService: channelService,
 		modelService:   modelService,
-	})
+	}, nil)
 	require.NoError(t, err)
 	require.NotNil(t, preview)
 	require.Equal(t, "gpt-5.4", preview.ModelID)
@@ -153,6 +158,232 @@ func TestBuildLoadBalancerPreviewSelectsHottestModelAndBuildsRetrySteps(t *testi
 	require.Equal(t, []string{"Primary", "Retry A", "Retry B"}, lo.Map(failoverPreview.Candidates, func(item *loadBalancerPreviewCandidate, _ int) string {
 		return item.ChannelName
 	}))
+}
+
+func TestBuildLoadBalancerPreviewUsesExplicitModelID(t *testing.T) {
+	ctx := authz.WithTestBypass(context.Background())
+	client := enttest.NewEntClient(t, "sqlite3", "file:ent?mode=memory&_fk=0")
+	t.Cleanup(func() { client.Close() })
+	ctx = ent.NewContext(ctx, client)
+
+	systemService := biz.NewSystemService(biz.SystemServiceParams{
+		CacheConfig: xcache.Config{Mode: xcache.ModeMemory},
+		Ent:         client,
+	})
+	err := systemService.SetRetryPolicy(ctx, &biz.RetryPolicy{
+		Enabled:                 true,
+		MaxChannelRetries:       1,
+		MaxSingleChannelRetries: 0,
+		RetryDelayMs:            500,
+		LoadBalancerStrategy:    biz.LoadBalancerStrategyFailover,
+	})
+	require.NoError(t, err)
+
+	channelService := biz.NewChannelService(biz.ChannelServiceParams{
+		CacheConfig:   xcache.Config{Mode: xcache.ModeMemory},
+		Executor:      executors.NewPoolScheduleExecutor(),
+		Ent:           client,
+		SystemService: systemService,
+	})
+	t.Cleanup(channelService.Stop)
+
+	modelService := biz.NewModelService(biz.ModelServiceParams{Ent: client})
+
+	ch1, err := client.Channel.Create().
+		SetType(channel.TypeOpenai).
+		SetName("Claude Primary").
+		SetBaseURL("https://example.com/claude").
+		SetCredentials(objects.ChannelCredentials{APIKey: "k1"}).
+		SetSupportedModels([]string{"claude-4.6"}).
+		SetDefaultTestModel("claude-4.6").
+		SetOrderingWeight(100).
+		SetStatus(channel.StatusEnabled).
+		Save(ctx)
+	require.NoError(t, err)
+
+	ch2, err := client.Channel.Create().
+		SetType(channel.TypeOpenai).
+		SetName("Claude Retry").
+		SetBaseURL("https://example.com/claude-retry").
+		SetCredentials(objects.ChannelCredentials{APIKey: "k2"}).
+		SetSupportedModels([]string{"claude-4.6"}).
+		SetDefaultTestModel("claude-4.6").
+		SetOrderingWeight(80).
+		SetStatus(channel.StatusEnabled).
+		Save(ctx)
+	require.NoError(t, err)
+
+	channelService.SetEnabledChannelsForTest([]*biz.Channel{
+		{Channel: ch1},
+		{Channel: ch2},
+	})
+
+	_, err = client.Model.Create().
+		SetDeveloper("anthropic").
+		SetModelID("claude-4.6").
+		SetType(model.TypeChat).
+		SetName("Claude 4.6").
+		SetIcon("anthropic").
+		SetGroup("anthropic").
+		SetModelCard(&objects.ModelCard{}).
+		SetSettings(&objects.ModelSettings{}).
+		SetStatus(model.StatusEnabled).
+		Save(ctx)
+	require.NoError(t, err)
+
+	now := time.Now()
+	for range 5 {
+		_, err = client.UsageLog.Create().
+			SetRequestID(1).
+			SetProjectID(1).
+			SetChannelID(ch1.ID).
+			SetModelID("gpt-5.4").
+			SetCreatedAt(now).
+			Save(ctx)
+		require.NoError(t, err)
+	}
+
+	preview, err := buildLoadBalancerPreview(ctx, &Resolver{
+		client:         client,
+		systemService:  systemService,
+		channelService: channelService,
+		modelService:   modelService,
+	}, lo.ToPtr("claude-4.6"))
+	require.NoError(t, err)
+	require.NotNil(t, preview)
+	require.Equal(t, "claude-4.6", preview.ModelID)
+
+	failoverPreview := lo.FindOrElse(preview.Strategies, nil, func(item *loadBalancerPreviewStrategy) bool {
+		return item.Strategy == biz.LoadBalancerStrategyFailover
+	})
+	require.NotNil(t, failoverPreview)
+	require.Equal(t, []string{"Claude Primary", "Claude Retry"}, lo.Map(failoverPreview.Candidates, func(item *loadBalancerPreviewCandidate, _ int) string {
+		return item.ChannelName
+	}))
+}
+
+func TestQueryResolver_LoadBalancerPreviewGraphQLUsesExplicitModelID(t *testing.T) {
+	ctx := authz.WithTestBypass(context.Background())
+	client := enttest.NewEntClient(t, "sqlite3", "file:ent?mode=memory&_fk=0")
+	t.Cleanup(func() { client.Close() })
+	ctx = ent.NewContext(ctx, client)
+
+	systemService := biz.NewSystemService(biz.SystemServiceParams{
+		CacheConfig: xcache.Config{Mode: xcache.ModeMemory},
+		Ent:         client,
+	})
+	err := systemService.SetRetryPolicy(ctx, &biz.RetryPolicy{
+		Enabled:                 true,
+		MaxChannelRetries:       1,
+		MaxSingleChannelRetries: 0,
+		RetryDelayMs:            500,
+		LoadBalancerStrategy:    biz.LoadBalancerStrategyFailover,
+	})
+	require.NoError(t, err)
+
+	channelService := biz.NewChannelService(biz.ChannelServiceParams{
+		CacheConfig:   xcache.Config{Mode: xcache.ModeMemory},
+		Executor:      executors.NewPoolScheduleExecutor(),
+		Ent:           client,
+		SystemService: systemService,
+	})
+	t.Cleanup(channelService.Stop)
+
+	modelService := biz.NewModelService(biz.ModelServiceParams{Ent: client})
+
+	ch1, err := client.Channel.Create().
+		SetType(channel.TypeOpenai).
+		SetName("Claude Primary").
+		SetBaseURL("https://example.com/claude").
+		SetCredentials(objects.ChannelCredentials{APIKey: "k1"}).
+		SetSupportedModels([]string{"claude-4.6"}).
+		SetDefaultTestModel("claude-4.6").
+		SetOrderingWeight(100).
+		SetStatus(channel.StatusEnabled).
+		Save(ctx)
+	require.NoError(t, err)
+
+	ch2, err := client.Channel.Create().
+		SetType(channel.TypeOpenai).
+		SetName("Claude Retry").
+		SetBaseURL("https://example.com/claude-retry").
+		SetCredentials(objects.ChannelCredentials{APIKey: "k2"}).
+		SetSupportedModels([]string{"claude-4.6"}).
+		SetDefaultTestModel("claude-4.6").
+		SetOrderingWeight(80).
+		SetStatus(channel.StatusEnabled).
+		Save(ctx)
+	require.NoError(t, err)
+
+	channelService.SetEnabledChannelsForTest([]*biz.Channel{
+		{Channel: ch1},
+		{Channel: ch2},
+	})
+
+	_, err = client.Model.Create().
+		SetDeveloper("anthropic").
+		SetModelID("claude-4.6").
+		SetType(model.TypeChat).
+		SetName("Claude 4.6").
+		SetIcon("anthropic").
+		SetGroup("anthropic").
+		SetModelCard(&objects.ModelCard{}).
+		SetSettings(&objects.ModelSettings{}).
+		SetStatus(model.StatusEnabled).
+		Save(ctx)
+	require.NoError(t, err)
+
+	_, err = client.UsageLog.Create().
+		SetRequestID(1).
+		SetProjectID(1).
+		SetChannelID(ch1.ID).
+		SetModelID("gpt-5.4").
+		SetCreatedAt(time.Now()).
+		Save(ctx)
+	require.NoError(t, err)
+
+	resolver := &Resolver{
+		client:         client,
+		systemService:  systemService,
+		channelService: channelService,
+		modelService:   modelService,
+	}
+	server := handler.NewDefaultServer(NewExecutableSchema(Config{
+		Resolvers: resolver,
+	}))
+
+	body := bytes.NewBufferString(`{"query":"query($input:GetLoadBalancerPreviewInput){ loadBalancerPreview(input:$input){ modelId strategies { strategy candidates { channelName } } } }","variables":{"input":{"modelId":"claude-4.6"}}}`)
+	req := httptest.NewRequest(http.MethodPost, "/query", body)
+	req.Header.Set("Content-Type", "application/json")
+	req = req.WithContext(ctx)
+
+	rec := httptest.NewRecorder()
+	server.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+
+	var resp struct {
+		Data struct {
+			LoadBalancerPreview struct {
+				ModelID    string `json:"modelId"`
+				Strategies []struct {
+					Strategy   string `json:"strategy"`
+					Candidates []struct {
+						ChannelName string `json:"channelName"`
+					} `json:"candidates"`
+				} `json:"strategies"`
+			} `json:"loadBalancerPreview"`
+		} `json:"data"`
+		Errors []struct {
+			Message string `json:"message"`
+		} `json:"errors"`
+	}
+	err = json.Unmarshal(rec.Body.Bytes(), &resp)
+	require.NoError(t, err)
+	require.Empty(t, resp.Errors)
+	require.Equal(t, "claude-4.6", resp.Data.LoadBalancerPreview.ModelID)
+	require.NotEmpty(t, resp.Data.LoadBalancerPreview.Strategies)
+	require.Equal(t, "Claude Primary", resp.Data.LoadBalancerPreview.Strategies[0].Candidates[0].ChannelName)
 }
 
 func TestBuildLoadBalancerPreviewIncludesStrategyComparisonsAndScores(t *testing.T) {
@@ -242,7 +473,7 @@ func TestBuildLoadBalancerPreviewIncludesStrategyComparisonsAndScores(t *testing
 		channelService: channelService,
 		modelService:   modelService,
 		requestService: requestService,
-	})
+	}, nil)
 	require.NoError(t, err)
 	require.NotNil(t, preview)
 	require.NotEmpty(t, preview.Strategies)
@@ -374,7 +605,7 @@ func TestBuildLoadBalancerPreviewIncludesCandidateDiagnostics(t *testing.T) {
 		systemService:  systemService,
 		channelService: channelService,
 		modelService:   modelService,
-	})
+	}, nil)
 	require.NoError(t, err)
 
 	lowLatencyPreview := lo.FindOrElse(preview.Strategies, nil, func(item *loadBalancerPreviewStrategy) bool {
@@ -522,7 +753,7 @@ func TestBuildLoadBalancerPreviewHighAvailabilityUsesModelHealthAndFiltersUnheal
 		systemService:  systemService,
 		channelService: channelService,
 		modelService:   modelService,
-	})
+	}, nil)
 	require.NoError(t, err)
 	require.NotNil(t, preview)
 
