@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/samber/lo"
-
 	"github.com/looplj/axonhub/internal/ent"
+	"github.com/looplj/axonhub/internal/ent/channel"
 	"github.com/looplj/axonhub/internal/ent/model"
 )
 
@@ -53,13 +52,11 @@ func (r *ModelHealthTargetResolver) Resolve(ctx context.Context, recent []ModelH
 		associatedByDisplayModel[item.ModelID] = item
 	}
 
-	channelMap := make(map[int]*ent.Channel)
-	channels, err := r.client.Channel.Query().All(ctx)
+	channels, err := r.client.Channel.Query().
+		Where(channel.StatusEQ(channel.StatusEnabled)).
+		All(ctx)
 	if err != nil {
 		return nil, err
-	}
-	for _, ch := range channels {
-		channelMap[ch.ID] = ch
 	}
 
 	targets := make([]ModelHealthProbeTarget, 0)
@@ -80,19 +77,18 @@ func (r *ModelHealthTargetResolver) Resolve(ctx context.Context, recent []ModelH
 		}
 
 		for _, actual := range usage.ActualModels {
-			for _, channelID := range actual.ChannelIDs {
-				ch := channelMap[channelID]
-				if ch == nil {
-					continue
-				}
-				if !lo.Contains(ch.SupportedModels, usage.DisplayModel) && !lo.Contains(ch.SupportedModels, actual.ActualModelID) {
+			_ = actual
+			for _, channelEntity := range channels {
+				channelWrapper := &Channel{Channel: channelEntity}
+				entry, ok := channelWrapper.GetModelEntries()[usage.DisplayModel]
+				if !ok {
 					continue
 				}
 
 				target := ModelHealthProbeTarget{
 					DisplayModel:  usage.DisplayModel,
-					ActualModelID: actual.ActualModelID,
-					ChannelID:     channelID,
+					ActualModelID: entry.ActualModel,
+					ChannelID:     channelEntity.ID,
 					Sources:       []string{ModelHealthTargetSourceRecent},
 					Source:        ModelHealthSourceDiscoveredRecentUsage,
 				}

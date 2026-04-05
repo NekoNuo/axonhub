@@ -416,3 +416,154 @@ func TestModelHealthProbe_ProbesRecentlyRequestedUnassociatedModel(t *testing.T)
 	require.Equal(t, "gpt-5-2", snapshot.ActualModelID)
 	require.Equal(t, "discovered_recent_usage", snapshot.Source)
 }
+
+func TestModelHealthProbe_ProbesAllChannelsSupportingRecentlyRequestedUnassociatedModel(t *testing.T) {
+	client := enttest.Open(t, dialect.SQLite, "file:ent?mode=memory&_fk=0")
+	defer client.Close()
+
+	ctx := authz.WithTestBypass(ent.NewContext(context.Background(), client))
+
+	systemService := NewSystemService(SystemServiceParams{Ent: client, CacheConfig: xcache.Config{Mode: xcache.ModeMemory}})
+	err := systemService.SetModelSettings(ctx, SystemModelSettings{
+		EnableModelProbe:                  true,
+		FallbackToChannelsOnModelNotFound: true,
+		QueryAllChannelModels:             true,
+	})
+	require.NoError(t, err)
+
+	channelA, err := client.Channel.Create().
+		SetType("openai").
+		SetBaseURL("https://api.openai.com/v1").
+		SetName("OpenAI Channel A").
+		SetStatus("enabled").
+		SetCredentials(objects.ChannelCredentials{APIKeys: []string{"test-key"}}).
+		SetSupportedModels([]string{"gpt-5-2"}).
+		SetDefaultTestModel("gpt-5-2").
+		Save(ctx)
+	require.NoError(t, err)
+
+	channelB, err := client.Channel.Create().
+		SetType("openai").
+		SetBaseURL("https://api.openai.com/v1").
+		SetName("OpenAI Channel B").
+		SetStatus("enabled").
+		SetCredentials(objects.ChannelCredentials{APIKeys: []string{"test-key"}}).
+		SetSupportedModels([]string{"gpt-5-2"}).
+		SetDefaultTestModel("gpt-5-2").
+		Save(ctx)
+	require.NoError(t, err)
+
+	channelService := NewChannelServiceForTest(client)
+	enabledA, err := channelService.buildChannelWithTransformer(channelA)
+	require.NoError(t, err)
+	enabledB, err := channelService.buildChannelWithTransformer(channelB)
+	require.NoError(t, err)
+	channelService.SetEnabledChannelsForTest([]*Channel{enabledA, enabledB})
+
+	_, err = client.Project.Create().
+		SetName("default").
+		SetDescription("default project").
+		SetStatus("active").
+		Save(ctx)
+	require.NoError(t, err)
+
+	now := time.Date(2026, 4, 5, 11, 0, 0, 0, time.UTC)
+	req, err := client.Request.Create().
+		SetProjectID(1).
+		SetSource("api").
+		SetModelID("gpt-5-2").
+		SetFormat("openai/chat_completions").
+		SetRequestBody([]byte(`{}`)).
+		SetStatus("completed").
+		SetStream(false).
+		SetClientIP("127.0.0.1").
+		SetCreatedAt(now.Add(-10 * time.Minute)).
+		SetUpdatedAt(now.Add(-10 * time.Minute)).
+		Save(ctx)
+	require.NoError(t, err)
+
+	_, err = client.UsageLog.Create().
+		SetRequestID(req.ID).
+		SetProjectID(1).
+		SetChannelID(channelA.ID).
+		SetModelID("gpt-5-2").
+		SetPromptTokens(1).
+		SetCompletionTokens(1).
+		SetTotalTokens(2).
+		SetSource("api").
+		SetFormat("openai/chat_completions").
+		SetCreatedAt(now.Add(-10 * time.Minute)).
+		SetUpdatedAt(now.Add(-10 * time.Minute)).
+		Save(ctx)
+	require.NoError(t, err)
+
+	probeService := &ChannelProbeService{
+		AbstractService: &AbstractService{db: client},
+		SystemService:   systemService,
+		ChannelService:  channelService,
+	}
+
+	called := map[int]int{}
+	probeService.idleChannelModelProber = func(_ context.Context, ch *ent.Channel, modelID string) (time.Duration, bool, error) {
+		called[ch.ID]++
+		require.Equal(t, "gpt-5-2", modelID)
+		return 10 * time.Millisecond, true, nil
+	}
+
+	probeService.runModelHealthProbe(ctx, now)
+
+	require.Equal(t, 1, called[channelA.ID])
+	require.Equal(t, 1, called[channelB.ID])
+
+	snapshots, err := client.ModelHealthSnapshot.Query().
+		Order(ent.Asc(modelhealthsnapshot.FieldChannelID)).
+		All(ctx)
+	require.NoError(t, err)
+	require.Len(t, snapshots, 2)
+	require.Equal(t, channelA.ID, snapshots[0].ChannelID)
+	require.Equal(t, channelB.ID, snapshots[1].ChannelID)
+}
+
+func TestModelHealthTargetResolver_ExpandsUnassociatedRecentModelToAllSupportingChannels(t *testing.T) {
+	client := enttest.Open(t, dialect.SQLite, "file:ent?mode=memory&_fk=0")
+	defer client.Close()
+
+	ctx := authz.WithTestBypass(ent.NewContext(context.Background(), client))
+
+	channelA, err := client.Channel.Create().
+		SetType("openai").
+		SetBaseURL("https://api.openai.com/v1").
+		SetName("OpenAI Channel A").
+		SetStatus("enabled").
+		SetCredentials(objects.ChannelCredentials{APIKeys: []string{"test-key"}}).
+		SetSupportedModels([]string{"gpt-5-2"}).
+		SetDefaultTestModel("gpt-5-2").
+		Save(ctx)
+	require.NoError(t, err)
+
+	channelB, err := client.Channel.Create().
+		SetType("openai").
+		SetBaseURL("https://api.openai.com/v1").
+		SetName("OpenAI Channel B").
+		SetStatus("enabled").
+		SetCredentials(objects.ChannelCredentials{APIKeys: []string{"test-key"}}).
+		SetSupportedModels([]string{"gpt-5-2"}).
+		SetDefaultTestModel("gpt-5-2").
+		Save(ctx)
+	require.NoError(t, err)
+
+	targets, err := NewModelHealthTargetResolver(client, nil).Resolve(ctx, []ModelHealthRecentUsage{
+		{
+			DisplayModel: "gpt-5-2",
+			ActualModels: []ModelHealthRecentActualModel{
+				{
+					ActualModelID: "gpt-5-2",
+					ChannelIDs:    []int{channelA.ID},
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+	require.Len(t, targets, 2)
+	require.Equal(t, []int{channelA.ID, channelB.ID}, []int{targets[0].ChannelID, targets[1].ChannelID})
+}

@@ -53,6 +53,11 @@ func (svc *ChannelProbeService) runModelHealthProbe(ctx context.Context, now tim
 
 	sem := make(chan struct{}, automaticModelProbeMaxConcurrency)
 	var wg sync.WaitGroup
+	type probeResult struct {
+		target  ModelHealthProbeTarget
+		healthy bool
+	}
+	results := make(chan probeResult, len(targets))
 
 	for _, target := range targets {
 		target := target
@@ -73,11 +78,20 @@ func (svc *ChannelProbeService) runModelHealthProbe(ctx context.Context, now tim
 				healthy = false
 			}
 
-			_ = svc.persistModelHealthResult(ctx, target, healthy, now.Unix(), false)
+			results <- probeResult{
+				target:  target,
+				healthy: healthy,
+			}
 		}()
 	}
 
 	wg.Wait()
+	close(results)
+
+	for result := range results {
+		_ = svc.persistModelHealthResult(ctx, result.target, result.healthy, now.Unix(), false)
+	}
+
 	_ = svc.cleanupExpiredDiscoveredModelHealth(ctx, now.Unix())
 }
 

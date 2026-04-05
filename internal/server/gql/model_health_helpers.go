@@ -5,6 +5,8 @@ import (
 	"slices"
 
 	"github.com/looplj/axonhub/internal/ent"
+	"github.com/looplj/axonhub/internal/ent/channel"
+	"github.com/looplj/axonhub/internal/ent/model"
 	"github.com/looplj/axonhub/internal/server/biz"
 )
 
@@ -70,4 +72,57 @@ func compareStrings(a, b string) int {
 	default:
 		return 0
 	}
+}
+
+func listAssociatedActualModelKeys(ctx context.Context, client *ent.Client) (map[biz.ChannelModelKey]struct{}, error) {
+	models, err := client.Model.Query().
+		Where(model.StatusEQ(model.StatusEnabled)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	channelEntities, err := client.Channel.Query().
+		Where(channel.StatusEQ(channel.StatusEnabled)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	channels := make([]*biz.Channel, 0, len(channelEntities))
+	for _, channelEntity := range channelEntities {
+		channels = append(channels, &biz.Channel{Channel: channelEntity})
+	}
+
+	keys := make(map[biz.ChannelModelKey]struct{})
+	for _, modelEntity := range models {
+		if modelEntity.Settings == nil || len(modelEntity.Settings.Associations) == 0 {
+			continue
+		}
+
+		connections := biz.MatchAssociations(modelEntity.Settings.Associations, channels)
+		for _, connection := range connections {
+			for _, matchedModel := range connection.Models {
+				keys[biz.ChannelModelKey{
+					ChannelID: connection.Channel.ID,
+					ModelID:   matchedModel.ActualModel,
+				}] = struct{}{}
+			}
+		}
+	}
+
+	return keys, nil
+}
+
+func filterDiscoveredSnapshots(
+	snapshots []*ent.ModelHealthSnapshot,
+	associatedActualModels map[biz.ChannelModelKey]struct{},
+) []*ent.ModelHealthSnapshot {
+	return slices.DeleteFunc(snapshots, func(snapshot *ent.ModelHealthSnapshot) bool {
+		_, exists := associatedActualModels[biz.ChannelModelKey{
+			ChannelID: snapshot.ChannelID,
+			ModelID:   snapshot.ActualModelID,
+		}]
+		return exists
+	})
 }
