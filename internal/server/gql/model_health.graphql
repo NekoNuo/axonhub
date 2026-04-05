@@ -26,4 +26,5 @@ extend type Query {
 
 extend type Mutation {
   manualModelProbe(input: ManualModelProbeInput!): Boolean!
+  resetDiscoveredModelHealth: Boolean!
 }

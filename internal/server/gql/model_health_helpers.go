@@ -5,6 +5,7 @@ import (
 	"slices"
 
 	"github.com/looplj/axonhub/internal/ent"
+	"github.com/looplj/axonhub/internal/ent/channel"
 	"github.com/looplj/axonhub/internal/ent/model"
 	"github.com/looplj/axonhub/internal/server/biz"
 )
@@ -73,19 +74,41 @@ func compareStrings(a, b string) int {
 	}
 }
 
-func listProbeEnabledDisplayModels(ctx context.Context, client *ent.Client) (map[string]struct{}, error) {
+func listProbeEnabledAssociatedActualModels(ctx context.Context, client *ent.Client) (map[biz.ChannelModelKey]struct{}, error) {
 	models, err := client.Model.Query().
 		Where(model.StatusEQ(model.StatusEnabled)).
 		All(ctx)
 	if err != nil {
 		return nil, err
 	}
-	keys := make(map[string]struct{})
+
+	channelEntities, err := client.Channel.Query().
+		Where(channel.StatusEQ(channel.StatusEnabled)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	channels := make([]*biz.Channel, 0, len(channelEntities))
+	for _, channelEntity := range channelEntities {
+		channels = append(channels, &biz.Channel{Channel: channelEntity})
+	}
+
+	keys := make(map[biz.ChannelModelKey]struct{})
 	for _, modelEntity := range models {
 		if modelEntity.Settings == nil || !modelEntity.Settings.ProbeEnabled {
 			continue
 		}
-		keys[modelEntity.ModelID] = struct{}{}
+
+		connections := biz.MatchAssociations(modelEntity.Settings.Associations, channels)
+		for _, connection := range connections {
+			for _, matchedModel := range connection.Models {
+				keys[biz.ChannelModelKey{
+					ChannelID: connection.Channel.ID,
+					ModelID:   matchedModel.ActualModel,
+				}] = struct{}{}
+			}
+		}
 	}
 
 	return keys, nil
@@ -93,10 +116,13 @@ func listProbeEnabledDisplayModels(ctx context.Context, client *ent.Client) (map
 
 func filterDiscoveredSnapshots(
 	snapshots []*ent.ModelHealthSnapshot,
-	probeEnabledDisplayModels map[string]struct{},
+	probeEnabledAssociatedActualModels map[biz.ChannelModelKey]struct{},
 ) []*ent.ModelHealthSnapshot {
 	return slices.DeleteFunc(snapshots, func(snapshot *ent.ModelHealthSnapshot) bool {
-		_, exists := probeEnabledDisplayModels[snapshot.DisplayModel]
+		_, exists := probeEnabledAssociatedActualModels[biz.ChannelModelKey{
+			ChannelID: snapshot.ChannelID,
+			ModelID:   snapshot.ActualModelID,
+		}]
 		return exists
 	})
 }

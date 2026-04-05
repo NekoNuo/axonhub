@@ -1,6 +1,8 @@
 import { startTransition, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { Main } from '@/components/layout/main';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search } from 'lucide-react';
@@ -9,7 +11,7 @@ import { useQueryChannels } from '@/features/channels/data/channels';
 import { useQueryAllModels, useQueryModelChannelConnections, type ModelAssociationInput, type ModelChannelConnection } from '@/features/models/data/models';
 import { formatHealthTimestamp } from './channel-health-format';
 import { ModelHealthTree } from './components/model-health-tree';
-import { fetchDiscoveredModelHealthSnapshots, fetchModelHealthHistory, fetchModelHealthSnapshots, manualModelProbe } from './data/health';
+import { fetchDiscoveredModelHealthSnapshots, fetchModelHealthHistory, fetchModelHealthSnapshots, manualModelProbe, resetDiscoveredModelHealth } from './data/health';
 import type { ManualModelProbeInput, ModelHealthHistory, ModelHealthSnapshot } from './data/schema';
 
 const MANUAL_MODEL_PROBE_MAX_CONCURRENCY = 2;
@@ -220,6 +222,8 @@ export function ModelHealthPage() {
   const [probingKeys, setProbingKeys] = useState<Record<string, true>>({});
   const [connectionsByModel, setConnectionsByModel] = useState<Record<string, ModelChannelConnection[]>>({});
   const [pendingConnectionModelIDs, setPendingConnectionModelIDs] = useState<Record<string, true>>({});
+  const [isResetDiscoveredOpen, setIsResetDiscoveredOpen] = useState(false);
+  const [isResettingDiscovered, setIsResettingDiscovered] = useState(false);
   const { data: modelsData } = useQueryAllModels({
     where: {
       statusIn: ['enabled', 'disabled'],
@@ -367,6 +371,11 @@ export function ModelHealthPage() {
   );
   const discoveredGroups = useMemo(() => buildModelHealthTree(discoveredRows), [discoveredRows]);
 
+  const discoveredHistoryKeys = useMemo(
+    () => new Set(discoveredRows.map((row) => getConnectionKey(row.displayModel, row.channelID, row.actualModelID))),
+    [discoveredRows]
+  );
+
   useEffect(() => {
     rows.forEach((row) => {
       const key = getConnectionKey(row.displayModel, row.channelID, row.actualModelID);
@@ -436,6 +445,27 @@ export function ModelHealthPage() {
     }
   };
 
+  const handleResetDiscovered = async () => {
+    setIsResettingDiscovered(true);
+    try {
+      await resetDiscoveredModelHealth();
+      setDiscoveredSnapshots([]);
+      setHistories((current) => {
+        const next = { ...current };
+        discoveredHistoryKeys.forEach((key) => {
+          delete next[key];
+        });
+        return next;
+      });
+      setIsResetDiscoveredOpen(false);
+      toast.success(t('models.healthPage.resetDiscoveredSuccess'));
+    } catch (error) {
+      toast.error(t('models.healthPage.resetDiscoveredError', { error: error instanceof Error ? error.message : String(error) }));
+    } finally {
+      setIsResettingDiscovered(false);
+    }
+  };
+
   return (
     <Main>
       <div className='space-y-6'>
@@ -479,9 +509,14 @@ export function ModelHealthPage() {
         />
 
         <div className='space-y-3'>
-          <div>
-            <h2 className='text-lg font-semibold'>{t('models.healthPage.discoveredTitle')}</h2>
-            <p className='text-muted-foreground text-sm'>{t('models.healthPage.discoveredDescription')}</p>
+          <div className='flex items-start justify-between gap-3'>
+            <div>
+              <h2 className='text-lg font-semibold'>{t('models.healthPage.discoveredTitle')}</h2>
+              <p className='text-muted-foreground text-sm'>{t('models.healthPage.discoveredDescription')}</p>
+            </div>
+            <Button variant='outline' onClick={() => setIsResetDiscoveredOpen(true)} disabled={isResettingDiscovered || discoveredSnapshots.length === 0}>
+              {t('models.healthPage.resetDiscovered')}
+            </Button>
           </div>
           <ModelHealthTree
             groups={discoveredGroups}
@@ -493,6 +528,15 @@ export function ModelHealthPage() {
             onProbeRow={(row) => runProbeTargets(`discovered-row:${row.displayModel}:${row.channelID}:${row.actualModelID}`, [getRowProbeTarget(row)])}
           />
         </div>
+        <ConfirmDialog
+          open={isResetDiscoveredOpen}
+          onOpenChange={setIsResetDiscoveredOpen}
+          title={t('models.healthPage.resetDiscovered')}
+          desc={t('models.healthPage.resetDiscoveredConfirm')}
+          confirmText={t('common.filters.reset')}
+          handleConfirm={handleResetDiscovered}
+          isLoading={isResettingDiscovered}
+        />
       </div>
     </Main>
   );

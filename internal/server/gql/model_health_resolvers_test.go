@@ -1,10 +1,15 @@
 package gql
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
+	"github.com/99designs/gqlgen/graphql/handler"
 	"entgo.io/ent/dialect"
 	"github.com/stretchr/testify/require"
 
@@ -12,6 +17,8 @@ import (
 	"github.com/looplj/axonhub/internal/ent"
 	"github.com/looplj/axonhub/internal/ent/enttest"
 	"github.com/looplj/axonhub/internal/ent/model"
+	"github.com/looplj/axonhub/internal/ent/modelhealthhistory"
+	"github.com/looplj/axonhub/internal/ent/modelhealthsnapshot"
 	"github.com/looplj/axonhub/internal/objects"
 	"github.com/looplj/axonhub/internal/pkg/xcache"
 	"github.com/looplj/axonhub/internal/server/biz"
@@ -189,6 +196,138 @@ func TestMutationResolver_ManualModelProbe(t *testing.T) {
 	require.True(t, snapshot.IsHealthy)
 }
 
+func TestMutationResolver_ResetDiscoveredModelHealth(t *testing.T) {
+	resolver, ctx, client, _ := setupModelHealthResolverTest(t)
+	defer client.Close()
+
+	channelEntity, err := client.Channel.Create().
+		SetType("openai").
+		SetBaseURL("https://api.openai.com/v1").
+		SetName("OpenAI Channel").
+		SetStatus("enabled").
+		SetCredentials(objects.ChannelCredentials{APIKeys: []string{"test-key"}}).
+		SetSupportedModels([]string{"gpt-4.1-mini"}).
+		SetDefaultTestModel("gpt-4.1-mini").
+		Save(ctx)
+	require.NoError(t, err)
+
+	_, err = client.ModelHealthSnapshot.Create().
+		SetDisplayModel("gpt-4.1-mini").
+		SetChannelID(channelEntity.ID).
+		SetActualModelID("gpt-4.1-mini").
+		SetSource(biz.ModelHealthSourceDiscoveredRecentUsage).
+		SetIsHealthy(true).
+		SetManualOverride(false).
+		SetProbedAt(time.Now().UTC().Unix()).
+		Save(ctx)
+	require.NoError(t, err)
+
+	_, err = client.ModelHealthHistory.Create().
+		SetDisplayModel("gpt-4.1-mini").
+		SetChannelID(channelEntity.ID).
+		SetActualModelID("gpt-4.1-mini").
+		SetSource(biz.ModelHealthSourceDiscoveredRecentUsage).
+		SetIsHealthy(true).
+		SetManualOverride(false).
+		SetProbedAt(time.Now().UTC().Unix()).
+		Save(ctx)
+	require.NoError(t, err)
+
+	_, err = client.ModelHealthSnapshot.Create().
+		SetDisplayModel("gpt-5-4").
+		SetChannelID(channelEntity.ID).
+		SetActualModelID("gpt-5.4-high").
+		SetSource(biz.ModelHealthSourceAssociated).
+		SetIsHealthy(true).
+		SetManualOverride(false).
+		SetProbedAt(time.Now().UTC().Unix()).
+		Save(ctx)
+	require.NoError(t, err)
+
+	mutation := &mutationResolver{resolver}
+	ok, err := mutation.ResetDiscoveredModelHealth(ctx)
+	require.NoError(t, err)
+	require.True(t, ok)
+
+	discoveredSnapshots, err := client.ModelHealthSnapshot.Query().
+		Where(modelhealthsnapshot.SourceEQ(biz.ModelHealthSourceDiscoveredRecentUsage)).
+		All(ctx)
+	require.NoError(t, err)
+	require.Empty(t, discoveredSnapshots)
+
+	discoveredHistory, err := client.ModelHealthHistory.Query().
+		Where(modelhealthhistory.SourceEQ(biz.ModelHealthSourceDiscoveredRecentUsage)).
+		All(ctx)
+	require.NoError(t, err)
+	require.Empty(t, discoveredHistory)
+
+	associatedSnapshots, err := client.ModelHealthSnapshot.Query().
+		Where(modelhealthsnapshot.SourceEQ(biz.ModelHealthSourceAssociated)).
+		All(ctx)
+	require.NoError(t, err)
+	require.Len(t, associatedSnapshots, 1)
+}
+
+func TestMutationResolver_ResetDiscoveredModelHealthGraphQLMutation(t *testing.T) {
+	resolver, ctx, client, _ := setupModelHealthResolverTest(t)
+	defer client.Close()
+
+	channelEntity, err := client.Channel.Create().
+		SetType("openai").
+		SetBaseURL("https://api.openai.com/v1").
+		SetName("OpenAI Channel").
+		SetStatus("enabled").
+		SetCredentials(objects.ChannelCredentials{APIKeys: []string{"test-key"}}).
+		SetSupportedModels([]string{"gpt-4.1-mini"}).
+		SetDefaultTestModel("gpt-4.1-mini").
+		Save(ctx)
+	require.NoError(t, err)
+
+	_, err = client.ModelHealthSnapshot.Create().
+		SetDisplayModel("gpt-4.1-mini").
+		SetChannelID(channelEntity.ID).
+		SetActualModelID("gpt-4.1-mini").
+		SetSource(biz.ModelHealthSourceDiscoveredRecentUsage).
+		SetIsHealthy(true).
+		SetManualOverride(false).
+		SetProbedAt(time.Now().UTC().Unix()).
+		Save(ctx)
+	require.NoError(t, err)
+
+	server := handler.NewDefaultServer(NewExecutableSchema(Config{
+		Resolvers: resolver,
+	}))
+
+	body := bytes.NewBufferString(`{"query":"mutation { resetDiscoveredModelHealth }"}`)
+	req := httptest.NewRequest(http.MethodPost, "/query", body)
+	req.Header.Set("Content-Type", "application/json")
+	req = req.WithContext(ctx)
+
+	rec := httptest.NewRecorder()
+	server.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+
+	var resp struct {
+		Data struct {
+			ResetDiscoveredModelHealth bool `json:"resetDiscoveredModelHealth"`
+		} `json:"data"`
+		Errors []struct {
+			Message string `json:"message"`
+		} `json:"errors"`
+	}
+	err = json.Unmarshal(rec.Body.Bytes(), &resp)
+	require.NoError(t, err)
+	require.Empty(t, resp.Errors)
+	require.True(t, resp.Data.ResetDiscoveredModelHealth)
+
+	discoveredSnapshots, err := client.ModelHealthSnapshot.Query().
+		Where(modelhealthsnapshot.SourceEQ(biz.ModelHealthSourceDiscoveredRecentUsage)).
+		All(ctx)
+	require.NoError(t, err)
+	require.Empty(t, discoveredSnapshots)
+}
+
 func TestQueryResolver_DiscoveredModelHealthSnapshotsFiltersExpiredRows(t *testing.T) {
 	resolver, ctx, client, _ := setupModelHealthResolverTest(t)
 	defer client.Close()
@@ -235,7 +374,7 @@ func TestQueryResolver_DiscoveredModelHealthSnapshotsFiltersExpiredRows(t *testi
 	require.Equal(t, "gpt-5-2", rows[0].DisplayModel)
 }
 
-func TestQueryResolver_DiscoveredModelHealthSnapshotsExcludesProbeEnabledDisplayModel(t *testing.T) {
+func TestQueryResolver_DiscoveredModelHealthSnapshotsExcludesProbeCoveredActualModel(t *testing.T) {
 	resolver, ctx, client, _ := setupModelHealthResolverTest(t)
 	defer client.Close()
 
@@ -291,7 +430,7 @@ func TestQueryResolver_DiscoveredModelHealthSnapshotsExcludesProbeEnabledDisplay
 	require.Empty(t, rows)
 }
 
-func TestListProbeEnabledDisplayModels(t *testing.T) {
+func TestListProbeEnabledAssociatedActualModels(t *testing.T) {
 	resolver, ctx, client, _ := setupModelHealthResolverTest(t)
 	_ = resolver
 	defer client.Close()
@@ -331,13 +470,16 @@ func TestListProbeEnabledDisplayModels(t *testing.T) {
 		Save(ctx)
 	require.NoError(t, err)
 
-	keys, err := listProbeEnabledDisplayModels(ctx, client)
+	keys, err := listProbeEnabledAssociatedActualModels(ctx, client)
 	require.NoError(t, err)
-	_, exists := keys["gpt-5-4"]
+	_, exists := keys[biz.ChannelModelKey{
+		ChannelID: channelEntity.ID,
+		ModelID:   "gpt-5.4-2026-03-05",
+	}]
 	require.True(t, exists)
 }
 
-func TestQueryResolver_DiscoveredModelHealthSnapshotsKeepsDifferentDisplayModel(t *testing.T) {
+func TestQueryResolver_DiscoveredModelHealthSnapshotsExcludesDifferentDisplayModelWhenActualModelCovered(t *testing.T) {
 	resolver, ctx, client, _ := setupModelHealthResolverTest(t)
 	defer client.Close()
 
@@ -390,6 +532,5 @@ func TestQueryResolver_DiscoveredModelHealthSnapshotsKeepsDifferentDisplayModel(
 	query := &queryResolver{resolver}
 	rows, err := query.DiscoveredModelHealthSnapshots(ctx, GetDiscoveredModelHealthSnapshotsInput{})
 	require.NoError(t, err)
-	require.Len(t, rows, 1)
-	require.Equal(t, "gpt-4.1-mini", rows[0].DisplayModel)
+	require.Empty(t, rows)
 }

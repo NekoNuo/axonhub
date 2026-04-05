@@ -56,6 +56,12 @@ export const MANUAL_MODEL_PROBE_MUTATION = `
   }
 `;
 
+export const RESET_DISCOVERED_MODEL_HEALTH_MUTATION = `
+  mutation ResetDiscoveredModelHealth {
+    resetDiscoveredModelHealth
+  }
+`;
+
 export function parseModelHealthSnapshots(data: unknown[]): ModelHealthSnapshot[] {
   return modelHealthSnapshotSchema.array().parse(data);
 }
@@ -97,4 +103,9 @@ export async function manualModelProbe(input: ManualModelProbeInput) {
     buildManualModelProbeVariables(input)
   );
   return data.manualModelProbe;
+}
+
+export async function resetDiscoveredModelHealth() {
+  const data = await graphqlRequest<{ resetDiscoveredModelHealth: boolean }>(RESET_DISCOVERED_MODEL_HEALTH_MUTATION);
+  return data.resetDiscoveredModelHealth;
 }

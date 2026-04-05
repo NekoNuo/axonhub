@@ -4,6 +4,7 @@ import {
   parseModelHealthHistory,
   parseModelHealthSnapshots,
   buildManualModelProbeVariables,
+  RESET_DISCOVERED_MODEL_HEALTH_MUTATION,
 } from './health';
 import { modelHealthHistorySchema, modelHealthSnapshotSchema } from './schema';
 
@@ -74,5 +75,9 @@ describe('Task 8 Model Health Data', () => {
     ]);
 
     expect(modelHealthSnapshotSchema.array().parse(snapshots)[0].displayModel).toBe('gpt-5-2');
+  });
+
+  it('exports reset discovered model health mutation', () => {
+    expect(RESET_DISCOVERED_MODEL_HEALTH_MUTATION).toContain('resetDiscoveredModelHealth');
   });
 });

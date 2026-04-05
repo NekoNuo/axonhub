@@ -9,6 +9,7 @@ import {
   getModelsPendingConnectionQuery,
   getProbeEnabledModelEntries,
   getRowProbeTarget,
+  getGroupProbeTargets,
 } from './model-health-page';
 
 describe('Task 12 Model Health Page', () => {
@@ -322,6 +323,45 @@ describe('Task 12 Model Health Page', () => {
         channelName: 'Channel A',
         actualModelID: 'gpt-5-2',
       }),
+    ]);
+  });
+
+  it('builds group probe targets from all enabled channel rows', () => {
+    const [group] = buildModelHealthTree([
+      {
+        channelName: 'Channel A',
+        channelStatus: 'enabled',
+        channelType: 'openai',
+        orderingWeight: 10,
+        priority: 1,
+        displayModel: 'gpt-4o',
+        channelID: 'Q2hhbm5lbDox',
+        actualModelID: 'gpt-4o-2024-11-20',
+        isHealthy: true,
+        manualOverride: false,
+        probedAt: 1712310000,
+      },
+      {
+        channelName: 'Channel B',
+        channelStatus: 'disabled',
+        channelType: 'openai',
+        orderingWeight: 5,
+        priority: 1,
+        displayModel: 'gpt-4o',
+        channelID: 'Q2hhbm5lbDoy',
+        actualModelID: 'gpt-4o-2024-08-06',
+        isHealthy: false,
+        manualOverride: false,
+        probedAt: 1712310300,
+      },
+    ]);
+
+    expect(getGroupProbeTargets(group)).toEqual([
+      {
+        displayModel: 'gpt-4o',
+        channelID: 'Q2hhbm5lbDox',
+        actualModelID: 'gpt-4o-2024-11-20',
+      },
     ]);
   });
 });

@@ -44,6 +44,32 @@ func (r *mutationResolver) ManualModelProbe(ctx context.Context, input ManualMod
 	return true, nil
 }
 
+// ResetDiscoveredModelHealth is the resolver for the resetDiscoveredModelHealth field.
+func (r *mutationResolver) ResetDiscoveredModelHealth(ctx context.Context) (bool, error) {
+	_, err := authz.RunWithScopeDecision(ctx, scopes.ScopeWriteChannels, func(ctx context.Context) (bool, error) {
+		_, err := r.client.ModelHealthHistory.Delete().
+			Where(modelhealthhistory.SourceEQ(biz.ModelHealthSourceDiscoveredRecentUsage)).
+			Exec(ctx)
+		if err != nil {
+			return false, err
+		}
+
+		_, err = r.client.ModelHealthSnapshot.Delete().
+			Where(modelhealthsnapshot.SourceEQ(biz.ModelHealthSourceDiscoveredRecentUsage)).
+			Exec(ctx)
+		if err != nil {
+			return false, err
+		}
+
+		return true, nil
+	})
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
 // ModelHealthSnapshots is the resolver for the modelHealthSnapshots field.
 func (r *queryResolver) ModelHealthSnapshots(ctx context.Context, input GetModelHealthSnapshotsInput) ([]*ent.ModelHealthSnapshot, error) {
 	return authz.RunWithScopeDecision(ctx, scopes.ScopeReadChannels, func(ctx context.Context) ([]*ent.ModelHealthSnapshot, error) {
@@ -89,12 +115,12 @@ func (r *queryResolver) DiscoveredModelHealthSnapshots(ctx context.Context, inpu
 			return nil, err
 		}
 
-		probeEnabledDisplayModels, err := listProbeEnabledDisplayModels(ctx, r.client)
+		probeEnabledAssociatedActualModels, err := listProbeEnabledAssociatedActualModels(ctx, r.client)
 		if err != nil {
 			return nil, err
 		}
 
-		snapshots = filterDiscoveredSnapshots(snapshots, probeEnabledDisplayModels)
+		snapshots = filterDiscoveredSnapshots(snapshots, probeEnabledAssociatedActualModels)
 
 		return buildModelHealthSnapshotRows(ctx, r.client, snapshots)
 	})

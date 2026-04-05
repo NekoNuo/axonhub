@@ -919,6 +919,7 @@ type ComplexityRoot struct {
 		EnableChannelAPIKey                  func(childComplexity int, channelID objects.GUID, key string) int
 		EnableSelectedChannelAPIKeys         func(childComplexity int, channelID objects.GUID, keys []string) int
 		ManualModelProbe                     func(childComplexity int, input ManualModelProbeInput) int
+		ResetDiscoveredModelHealth           func(childComplexity int) int
 		RemoveUserFromProject                func(childComplexity int, input RemoveUserFromProjectInput) int
 		Restore                              func(childComplexity int, file graphql.Upload, input backup.RestoreOptions) int
 		SaveChannelModelPrices               func(childComplexity int, channelID objects.GUID, input []*biz.SaveChannelModelPriceInput) int
@@ -1975,6 +1976,7 @@ type MutationResolver interface {
 	BulkEnableModels(ctx context.Context, ids []*objects.GUID) (bool, error)
 	BulkDeleteModels(ctx context.Context, ids []*objects.GUID) (bool, error)
 	ManualModelProbe(ctx context.Context, input ManualModelProbeInput) (bool, error)
+	ResetDiscoveredModelHealth(ctx context.Context) (bool, error)
 	Backup(ctx context.Context, input backup.BackupOptions) (*BackupPayload, error)
 	Restore(ctx context.Context, file graphql.Upload, input backup.RestoreOptions) (*RestorePayload, error)
 	UpdateAutoBackupSettings(ctx context.Context, input UpdateAutoBackupSettingsInput) (bool, error)
@@ -5662,6 +5664,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.ManualModelProbe(childComplexity, args["input"].(ManualModelProbeInput)), true
+	case "Mutation.resetDiscoveredModelHealth":
+		if e.complexity.Mutation.ResetDiscoveredModelHealth == nil {
+			break
+		}
+
+		return e.complexity.Mutation.ResetDiscoveredModelHealth(childComplexity), true
 	case "Mutation.removeUserFromProject":
 		if e.complexity.Mutation.RemoveUserFromProject == nil {
 			break
@@ -32091,6 +32099,22 @@ func (ec *executionContext) _Mutation_manualModelProbe(ctx context.Context, fiel
 	)
 }
 
+func (ec *executionContext) _Mutation_resetDiscoveredModelHealth(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_resetDiscoveredModelHealth,
+		func(ctx context.Context) (any, error) {
+			return ec.resolvers.Mutation().ResetDiscoveredModelHealth(ctx)
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
 func (ec *executionContext) fieldContext_Mutation_manualModelProbe(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Mutation",
@@ -32112,6 +32136,25 @@ func (ec *executionContext) fieldContext_Mutation_manualModelProbe(ctx context.C
 		ec.Error(ctx, err)
 		return fc, err
 	}
+	return fc, nil
+}
+
+func (ec *executionContext) fieldContext_Mutation_resetDiscoveredModelHealth(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
 	return fc, nil
 }
 
@@ -86205,6 +86248,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "manualModelProbe":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_manualModelProbe(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "resetDiscoveredModelHealth":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_resetDiscoveredModelHealth(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
