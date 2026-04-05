@@ -849,6 +849,7 @@ type ComplexityRoot struct {
 	}
 
 	ModelSettings struct {
+		ProbeEnabled func(childComplexity int) int
 		Associations func(childComplexity int) int
 	}
 
@@ -5007,6 +5008,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.ModelSettings.Associations(childComplexity), true
+	case "ModelSettings.probeEnabled":
+		if e.complexity.ModelSettings.ProbeEnabled == nil {
+			break
+		}
+
+		return e.complexity.ModelSettings.ProbeEnabled(childComplexity), true
 
 	case "ModelTokenUsageStats.cachedTokens":
 		if e.complexity.ModelTokenUsageStats.CachedTokens == nil {
@@ -25164,6 +25171,8 @@ func (ec *executionContext) fieldContext_Model_settings(_ context.Context, field
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "probeEnabled":
+				return ec.fieldContext_ModelSettings_probeEnabled(ctx, field)
 			case "associations":
 				return ec.fieldContext_ModelSettings_associations(ctx, field)
 			}
@@ -27735,6 +27744,35 @@ func (ec *executionContext) fieldContext_ModelPriceItem_promptWriteCacheVariants
 				return ec.fieldContext_PromptWriteCacheVariant_pricing(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type PromptWriteCacheVariant", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ModelSettings_probeEnabled(ctx context.Context, field graphql.CollectedField, obj *objects.ModelSettings) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ModelSettings_probeEnabled,
+		func(ctx context.Context) (any, error) {
+			return obj.ProbeEnabled, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ModelSettings_probeEnabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ModelSettings",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -63620,13 +63658,22 @@ func (ec *executionContext) unmarshalInputModelSettingsInput(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"associations"}
+	fieldsInOrder := [...]string{"probeEnabled", "associations"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
+		case "probeEnabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("probeEnabled"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if data != nil {
+				it.ProbeEnabled = *data
+			}
 		case "associations":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("associations"))
 			data, err := ec.unmarshalNModelAssociationInput2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐModelAssociationᚄ(ctx, v)
@@ -85132,6 +85179,11 @@ func (ec *executionContext) _ModelSettings(ctx context.Context, sel ast.Selectio
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("ModelSettings")
+		case "probeEnabled":
+			out.Values[i] = ec._ModelSettings_probeEnabled(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "associations":
 			out.Values[i] = ec._ModelSettings_associations(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

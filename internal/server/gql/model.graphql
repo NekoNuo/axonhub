@@ -36,6 +36,7 @@ type ModelCardLimit {
 
 # ModelSettings represents model Association configuration
 type ModelSettings {
+  probeEnabled: Boolean!
   associations: [ModelAssociation!]!
 }
 
@@ -129,6 +130,7 @@ input ModelCardLimitInput {
 }
 
 input ModelSettingsInput {
+  probeEnabled: Boolean
   associations: [ModelAssociationInput!]!
 }
 

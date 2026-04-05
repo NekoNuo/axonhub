@@ -22,6 +22,7 @@ import { Route as authSignInRouteImport } from './routes/(auth)/sign-in'
 import { Route as authInitializationRouteImport } from './routes/(auth)/initialization'
 import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-password'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
+import { Route as AuthenticatedHealthRouteRouteImport } from './routes/_authenticated/health/route'
 import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users/index'
 import { Route as AuthenticatedSystemIndexRouteImport } from './routes/_authenticated/system/index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
@@ -39,6 +40,8 @@ import { Route as AuthenticatedSettingsProfileRouteImport } from './routes/_auth
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
 import { Route as AuthenticatedSettingsDisplayRouteImport } from './routes/_authenticated/settings/display'
 import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_authenticated/settings/appearance'
+import { Route as AuthenticatedHealthModelsRouteImport } from './routes/_authenticated/health/models'
+import { Route as AuthenticatedHealthChannelsRouteImport } from './routes/_authenticated/health/channels'
 import { Route as AuthenticatedProjectUsersIndexRouteImport } from './routes/_authenticated/project/users/index'
 import { Route as AuthenticatedProjectTracesIndexRouteImport } from './routes/_authenticated/project/traces/index'
 import { Route as AuthenticatedProjectThreadsIndexRouteImport } from './routes/_authenticated/project/threads/index'
@@ -114,6 +117,12 @@ const AuthenticatedSettingsRouteRoute =
   AuthenticatedSettingsRouteRouteImport.update({
     id: '/settings',
     path: '/settings',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedHealthRouteRoute =
+  AuthenticatedHealthRouteRouteImport.update({
+    id: '/health',
+    path: '/health',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedUsersIndexRoute = AuthenticatedUsersIndexRouteImport.update({
@@ -215,6 +224,18 @@ const AuthenticatedSettingsAppearanceRoute =
     path: '/appearance',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
+const AuthenticatedHealthModelsRoute =
+  AuthenticatedHealthModelsRouteImport.update({
+    id: '/models',
+    path: '/models',
+    getParentRoute: () => AuthenticatedHealthRouteRoute,
+  } as any)
+const AuthenticatedHealthChannelsRoute =
+  AuthenticatedHealthChannelsRouteImport.update({
+    id: '/channels',
+    path: '/channels',
+    getParentRoute: () => AuthenticatedHealthRouteRoute,
+  } as any)
 const AuthenticatedProjectUsersIndexRoute =
   AuthenticatedProjectUsersIndexRouteImport.update({
     id: '/project/users/',
@@ -284,6 +305,7 @@ const AuthenticatedProjectRequestsRequestIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
+  '/health': typeof AuthenticatedHealthRouteRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
   '/initialization': typeof authInitializationRoute
@@ -295,6 +317,8 @@ export interface FileRoutesByFullPath {
   '/500': typeof errors500Route
   '/503': typeof errors503Route
   '/permission': typeof AuthenticatedPermissionRoute
+  '/health/channels': typeof AuthenticatedHealthChannelsRoute
+  '/health/models': typeof AuthenticatedHealthModelsRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
@@ -325,6 +349,7 @@ export interface FileRoutesByFullPath {
   '/project/users/': typeof AuthenticatedProjectUsersIndexRoute
 }
 export interface FileRoutesByTo {
+  '/health': typeof AuthenticatedHealthRouteRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
   '/initialization': typeof authInitializationRoute
   '/sign-in': typeof authSignInRoute
@@ -336,6 +361,8 @@ export interface FileRoutesByTo {
   '/503': typeof errors503Route
   '/permission': typeof AuthenticatedPermissionRoute
   '/': typeof AuthenticatedIndexRoute
+  '/health/channels': typeof AuthenticatedHealthChannelsRoute
+  '/health/models': typeof AuthenticatedHealthModelsRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
@@ -368,6 +395,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/_authenticated/health': typeof AuthenticatedHealthRouteRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/(auth)/forgot-password': typeof authForgotPasswordRoute
   '/(auth)/initialization': typeof authInitializationRoute
@@ -380,6 +408,8 @@ export interface FileRoutesById {
   '/(errors)/503': typeof errors503Route
   '/_authenticated/permission': typeof AuthenticatedPermissionRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/health/channels': typeof AuthenticatedHealthChannelsRoute
+  '/_authenticated/health/models': typeof AuthenticatedHealthModelsRoute
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/_authenticated/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
@@ -413,6 +443,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/health'
     | '/settings'
     | '/forgot-password'
     | '/initialization'
@@ -424,6 +455,8 @@ export interface FileRouteTypes {
     | '/500'
     | '/503'
     | '/permission'
+    | '/health/channels'
+    | '/health/models'
     | '/settings/appearance'
     | '/settings/display'
     | '/settings/notifications'
@@ -454,6 +487,7 @@ export interface FileRouteTypes {
     | '/project/users/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/health'
     | '/forgot-password'
     | '/initialization'
     | '/sign-in'
@@ -465,6 +499,8 @@ export interface FileRouteTypes {
     | '/503'
     | '/permission'
     | '/'
+    | '/health/channels'
+    | '/health/models'
     | '/settings/appearance'
     | '/settings/display'
     | '/settings/notifications'
@@ -496,6 +532,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_authenticated'
+    | '/_authenticated/health'
     | '/_authenticated/settings'
     | '/(auth)/forgot-password'
     | '/(auth)/initialization'
@@ -508,6 +545,8 @@ export interface FileRouteTypes {
     | '/(errors)/503'
     | '/_authenticated/permission'
     | '/_authenticated/'
+    | '/_authenticated/health/channels'
+    | '/_authenticated/health/models'
     | '/_authenticated/settings/appearance'
     | '/_authenticated/settings/display'
     | '/_authenticated/settings/notifications'
@@ -644,6 +683,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/health': {
+      id: '/_authenticated/health'
+      path: '/health'
+      fullPath: '/health'
+      preLoaderRoute: typeof AuthenticatedHealthRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/users/': {
       id: '/_authenticated/users/'
       path: '/users'
@@ -763,6 +809,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsAppearanceRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
+    '/_authenticated/health/models': {
+      id: '/_authenticated/health/models'
+      path: '/models'
+      fullPath: '/health/models'
+      preLoaderRoute: typeof AuthenticatedHealthModelsRouteImport
+      parentRoute: typeof AuthenticatedHealthRouteRoute
+    }
+    '/_authenticated/health/channels': {
+      id: '/_authenticated/health/channels'
+      path: '/channels'
+      fullPath: '/health/channels'
+      preLoaderRoute: typeof AuthenticatedHealthChannelsRouteImport
+      parentRoute: typeof AuthenticatedHealthRouteRoute
+    }
     '/_authenticated/project/users/': {
       id: '/_authenticated/project/users/'
       path: '/project/users'
@@ -843,6 +903,22 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedHealthRouteRouteChildren {
+  AuthenticatedHealthChannelsRoute: typeof AuthenticatedHealthChannelsRoute
+  AuthenticatedHealthModelsRoute: typeof AuthenticatedHealthModelsRoute
+}
+
+const AuthenticatedHealthRouteRouteChildren: AuthenticatedHealthRouteRouteChildren =
+  {
+    AuthenticatedHealthChannelsRoute: AuthenticatedHealthChannelsRoute,
+    AuthenticatedHealthModelsRoute: AuthenticatedHealthModelsRoute,
+  }
+
+const AuthenticatedHealthRouteRouteWithChildren =
+  AuthenticatedHealthRouteRoute._addFileChildren(
+    AuthenticatedHealthRouteRouteChildren,
+  )
+
 interface AuthenticatedSettingsRouteRouteChildren {
   AuthenticatedSettingsAppearanceRoute: typeof AuthenticatedSettingsAppearanceRoute
   AuthenticatedSettingsDisplayRoute: typeof AuthenticatedSettingsDisplayRoute
@@ -867,6 +943,7 @@ const AuthenticatedSettingsRouteRouteWithChildren =
   )
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedHealthRouteRoute: typeof AuthenticatedHealthRouteRouteWithChildren
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedPermissionRoute: typeof AuthenticatedPermissionRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
@@ -896,6 +973,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedHealthRouteRoute: AuthenticatedHealthRouteRouteWithChildren,
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
   AuthenticatedPermissionRoute: AuthenticatedPermissionRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,

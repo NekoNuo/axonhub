@@ -24,6 +24,7 @@ import { ServerSidePagination } from '@/components/server-side-pagination';
 import { useChannels } from '../context/channels-context';
 import { Channel, ChannelConnection } from '../data/schema';
 import { ChannelExpandedRow } from './channel-expanded-row';
+import { DEFAULT_COLUMN_VISIBILITY, getInitialColumnVisibility } from './channels-table-visibility';
 import { DataTableToolbar } from './data-table-toolbar';
 
 const MotionTableRow = motion.create(TableRow);
@@ -128,15 +129,7 @@ export function ChannelsTable({
 
   // Load column visibility from localStorage with useMemo to avoid re-parsing
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(() => {
-    const stored = localStorage.getItem('channels-table-column-visibility');
-    if (stored) {
-      try {
-        return { ...DEFAULT_COLUMN_VISIBILITY, ...JSON.parse(stored) };
-      } catch {
-        return DEFAULT_COLUMN_VISIBILITY;
-      }
-    }
-    return DEFAULT_COLUMN_VISIBILITY; // Hide optional columns by default but keep them available in column settings
+    return getInitialColumnVisibility(localStorage.getItem('channels-table-column-visibility'));
   });
 
   // Sync server state to local column filters using useMemo instead of useEffect
