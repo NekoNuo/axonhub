@@ -22,7 +22,8 @@ export function getModelHealthPointDetails(point: ModelHealthHistory, locale: st
 
 export const ModelHealthCell = memo(({ snapshot, history = [], locale }: ModelHealthCellProps) => {
   const { t } = useTranslation();
-  const displayPoints = history.slice(0, 15).reverse();
+  const maxBars = 15;
+  const displayPoints = history.slice(0, maxBars).reverse();
 
   if (displayPoints.length === 0) {
     return <span className={cn('h-8 w-1.5 rounded-sm', snapshot.isHealthy ? 'bg-green-500' : 'bg-red-500')} />;
@@ -45,7 +46,7 @@ export const ModelHealthCell = memo(({ snapshot, history = [], locale }: ModelHe
             );
           })()}
         >
-          <div className={cn('h-8 w-1.5 rounded-sm', point.isHealthy ? 'bg-green-500' : 'bg-red-500')} />
+          <div className={cn('h-8 w-1.5 cursor-help rounded-sm', point.isHealthy ? 'bg-green-500' : 'bg-red-500')} />
         </InteractiveTooltip>
       ))}
     </div>

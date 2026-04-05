@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { IconSearch, IconPlayerPlay } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -28,6 +29,30 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   channel: Channel;
+}
+
+export function buildSingleModelTestSuccessMessage(
+  t: (key: string, vars?: Record<string, unknown>) => string,
+  modelName: string,
+  latency: number
+) {
+  return t('channels.dialogs.test.singleSuccess', {
+    model: modelName,
+    latency: latency.toFixed(2),
+  });
+}
+
+export function buildBatchTestSuccessMessage(
+  t: (key: string, vars?: Record<string, unknown>) => string,
+  count: number,
+  success: number,
+  failed: number
+) {
+  return t('channels.dialogs.test.batchSuccess', {
+    count,
+    success,
+    failed,
+  });
 }
 
 export function ChannelsTestDialog({ open, onOpenChange, channel }: Props) {
@@ -80,7 +105,9 @@ export function ChannelsTestDialog({ open, onOpenChange, channel }: Props) {
   };
 
   // Test a single model
-  const testModel = async (modelName: string) => {
+  const testModel = async (modelName: string, options?: { showToast?: boolean }) => {
+    const showToast = options?.showToast ?? true;
+
     setTestResults((prev) => ({
       ...prev,
       [modelName]: { ...prev[modelName], status: 'testing' },
@@ -103,6 +130,12 @@ export function ChannelsTestDialog({ open, onOpenChange, channel }: Props) {
           error: result.success ? undefined : result.error || 'Test failed',
         },
       }));
+
+      if (result.success && showToast) {
+        toast.success(buildSingleModelTestSuccessMessage(t, modelName, result.latency || latency));
+      }
+
+      return result.success;
     } catch (error) {
       setTestResults((prev) => ({
         ...prev,
@@ -112,6 +145,8 @@ export function ChannelsTestDialog({ open, onOpenChange, channel }: Props) {
           error: error instanceof Error ? error.message : 'Unknown error',
         },
       }));
+
+      return false;
     }
   };
 
@@ -122,7 +157,11 @@ export function ChannelsTestDialog({ open, onOpenChange, channel }: Props) {
     setIsTesting(true);
 
     // Test models in parallel
-    await Promise.all(selectedModels.map((model) => testModel(model)));
+    const results = await Promise.all(selectedModels.map((model) => testModel(model, { showToast: false })));
+    const successCount = results.filter(Boolean).length;
+    const failedCount = results.length - successCount;
+
+    toast.success(buildBatchTestSuccessMessage(t, selectedModels.length, successCount, failedCount));
 
     setIsTesting(false);
   };

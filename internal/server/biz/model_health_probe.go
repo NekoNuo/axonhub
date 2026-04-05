@@ -11,6 +11,7 @@ import (
 	"github.com/looplj/axonhub/internal/ent/model"
 	"github.com/looplj/axonhub/internal/ent/modelhealthhistory"
 	"github.com/looplj/axonhub/internal/ent/modelhealthsnapshot"
+	"github.com/looplj/axonhub/internal/pkg/xcontext"
 )
 
 type ModelHealthSnapshotView struct {
@@ -134,7 +135,10 @@ func (svc *ChannelProbeService) RunManualModelProbe(ctx context.Context, target 
 		healthy = false
 	}
 
-	return svc.persistModelHealthResult(ctx, target, healthy, now.Unix(), true)
+	persistCtx, cancel := xcontext.DetachWithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	return svc.persistModelHealthResult(persistCtx, target, healthy, now.Unix(), true)
 }
 
 func (svc *ChannelProbeService) GetEffectiveModelHealth(ctx context.Context, target ModelHealthProbeTarget) (*ModelHealthSnapshotView, error) {
@@ -216,4 +220,14 @@ func getEffectiveModelHealthFromDB(
 	}
 
 	return view, nil
+}
+
+func GetEffectiveModelHealthFromDBForResolver(
+	ctx context.Context,
+	client *ent.Client,
+	displayModel string,
+	channelID int,
+	actualModelID string,
+) (*ModelHealthSnapshotView, error) {
+	return getEffectiveModelHealthFromDB(ctx, client, displayModel, channelID, actualModelID)
 }

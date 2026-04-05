@@ -6,7 +6,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import type { ModelHealthHistory } from '../data/schema';
 import { formatHealthTimestamp } from '../channel-health-format';
 import { ModelHealthCell } from './model-health-cell';
-import type { ModelHealthChannelGroup, ModelHealthGroup, ModelHealthRow } from '../model-health-page';
+import { getActualModelHistory, getDisplayModelHistory, type ModelHealthChannelGroup, type ModelHealthGroup, type ModelHealthRow } from '../model-health-page';
 
 interface ModelHealthTreeProps {
   groups: ModelHealthGroup[];
@@ -65,15 +65,22 @@ export function ModelHealthTree({ groups, histories, probingKeys, locale, onProb
                   </div>
                 </button>
               </CollapsibleTrigger>
-              <Button
-                size='icon'
-                variant='outline'
-                title={t('models.healthPage.manualProbe')}
-                onClick={() => onProbeGroup(group)}
-                disabled={probingKeys[`group:${group.displayModel}`] || group.channels.every((channel) => channel.channelStatus !== 'enabled')}
-              >
-                {probingKeys[`group:${group.displayModel}`] ? <Loader2 className='h-4 w-4 animate-spin' /> : <Radar className='h-4 w-4' />}
-              </Button>
+              <div className='flex items-center gap-3'>
+                <ModelHealthCell
+                  snapshot={group.channels[0]?.rows[0]}
+                  history={group.channels.flatMap((channel) => getDisplayModelHistory(channel, histories))}
+                  locale={locale}
+                />
+                <Button
+                  size='icon'
+                  variant='outline'
+                  title={t('models.healthPage.manualProbe')}
+                  onClick={() => onProbeGroup(group)}
+                  disabled={probingKeys[`group:${group.displayModel}`] || group.channels.every((channel) => channel.channelStatus !== 'enabled')}
+                >
+                  {probingKeys[`group:${group.displayModel}`] ? <Loader2 className='h-4 w-4 animate-spin' /> : <Radar className='h-4 w-4' />}
+                </Button>
+              </div>
             </div>
             <CollapsibleContent className='space-y-3 px-4 pb-4'>
               {group.channels.map((channel) => {
@@ -101,7 +108,7 @@ export function ModelHealthTree({ groups, histories, probingKeys, locale, onProb
                         <div className='flex items-center gap-3'>
                           <ModelHealthCell
                             snapshot={channel.rows[0]}
-                            history={channel.rows.flatMap((row) => histories[getConnectionKey(row.displayModel, row.channelID, row.actualModelID)] || [])}
+                            history={getDisplayModelHistory(channel, histories)}
                             locale={locale}
                           />
                           <Button
@@ -132,7 +139,7 @@ export function ModelHealthTree({ groups, histories, probingKeys, locale, onProb
                                 <div className='text-muted-foreground text-xs'>{t('models.healthPage.lastProbe', { val: formatHealthTimestamp(row.probedAt, locale) })}</div>
                               </div>
                               <div className='flex items-center gap-2'>
-                                <ModelHealthCell snapshot={row} history={histories[rowKey]} locale={locale} />
+                                <ModelHealthCell snapshot={row} history={getActualModelHistory(row, histories)} locale={locale} />
                                 <Button
                                   size='icon'
                                   variant='ghost'

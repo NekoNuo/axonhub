@@ -210,6 +210,8 @@
   "channels.dialogs.test.testingModel": "测试中...",
   "channels.dialogs.test.testSuccess": "✅ 成功",
   "channels.dialogs.test.testFailed": "❌ 失败",
+  "channels.dialogs.test.singleSuccess": "模型 {{model}} 测试成功（耗时 {{latency}} 秒）",
+  "channels.dialogs.test.batchSuccess": "已完成 {{count}} 个模型测试，成功 {{success}} 个，失败 {{failed}} 个",
   "channels.dialogs.test.notStarted": "未开始",
   "channels.dialogs.test.removeFailed": "移除失败模型",
   "channels.dialogs.test.removeFailedConfirm": "确定要从选中列表中移除所有失败的模型吗？",

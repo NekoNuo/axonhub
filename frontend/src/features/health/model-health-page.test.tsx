@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildModelHealthTree,
+  getActualModelHistory,
   getChannelProbeTargets,
+  getDisplayModelHistory,
   getModelsPendingConnectionQuery,
   getProbeEnabledModelEntries,
   getRowProbeTarget,
@@ -189,6 +191,65 @@ describe('Task 12 Model Health Page', () => {
         actualModelID: 'gpt-4o-2024-11-20',
       },
     ]);
+  });
+
+  it('builds model-level and actual-model-level histories from all rows', () => {
+    const rows = [
+      {
+        channelName: 'Channel A',
+        channelStatus: 'enabled',
+        channelType: 'openai',
+        orderingWeight: 10,
+        priority: 1,
+        displayModel: 'gpt-5.4',
+        channelID: 'Q2hhbm5lbDox',
+        actualModelID: 'gpt-5.4-high',
+        isHealthy: true,
+        manualOverride: false,
+        probedAt: 1712310000,
+      },
+      {
+        channelName: 'Channel A',
+        channelStatus: 'enabled',
+        channelType: 'openai',
+        orderingWeight: 10,
+        priority: 2,
+        displayModel: 'gpt-5.4',
+        channelID: 'Q2hhbm5lbDox',
+        actualModelID: 'gpt-5.4-low',
+        isHealthy: false,
+        manualOverride: false,
+        probedAt: 1712310300,
+      },
+    ];
+    const groups = buildModelHealthTree(rows);
+    const histories = {
+      'gpt-5.4:Q2hhbm5lbDox:gpt-5.4-high': [
+        {
+          id: 'h1',
+          displayModel: 'gpt-5.4',
+          channelID: 'Q2hhbm5lbDox',
+          actualModelID: 'gpt-5.4-high',
+          isHealthy: true,
+          manualOverride: false,
+          probedAt: 1712310000,
+        },
+      ],
+      'gpt-5.4:Q2hhbm5lbDox:gpt-5.4-low': [
+        {
+          id: 'h2',
+          displayModel: 'gpt-5.4',
+          channelID: 'Q2hhbm5lbDox',
+          actualModelID: 'gpt-5.4-low',
+          isHealthy: false,
+          manualOverride: false,
+          probedAt: 1712310300,
+        },
+      ],
+    };
+
+    expect(getDisplayModelHistory(groups[0].channels[0], histories).map((item) => item.actualModelID)).toEqual(['gpt-5.4-low', 'gpt-5.4-high']);
+    expect(getActualModelHistory(groups[0].channels[0].rows[0], histories)[0].actualModelID).toBe('gpt-5.4-high');
   });
 
   it('builds row probe target', () => {

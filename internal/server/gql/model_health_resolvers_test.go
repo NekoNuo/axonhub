@@ -114,6 +114,51 @@ func TestQueryResolver_ModelHealthSnapshots(t *testing.T) {
 	require.Equal(t, target.DisplayModel, rows[0].DisplayModel)
 }
 
+func TestQueryResolver_ModelHealthSnapshotsUsesEffectiveHealth(t *testing.T) {
+	resolver, ctx, client, probeService := setupModelHealthResolverTest(t)
+	defer client.Close()
+
+	_, target := seedModelHealthData(t, ctx, client, probeService)
+
+	_, err := client.ModelHealthSnapshot.Create().
+		SetDisplayModel(target.DisplayModel).
+		SetChannelID(target.ChannelID).
+		SetActualModelID(target.ActualModelID).
+		SetIsHealthy(true).
+		SetManualOverride(true).
+		SetProbedAt(time.Date(2026, 4, 5, 10, 1, 0, 0, time.UTC).Unix()).
+		Save(ctx)
+	require.NoError(t, err)
+
+	_, err = client.ModelHealthHistory.Create().
+		SetDisplayModel(target.DisplayModel).
+		SetChannelID(target.ChannelID).
+		SetActualModelID(target.ActualModelID).
+		SetIsHealthy(true).
+		SetManualOverride(true).
+		SetProbedAt(time.Date(2026, 4, 5, 10, 1, 0, 0, time.UTC).Unix()).
+		Save(ctx)
+	require.NoError(t, err)
+
+	_, err = client.ModelHealthHistory.Create().
+		SetDisplayModel(target.DisplayModel).
+		SetChannelID(target.ChannelID).
+		SetActualModelID(target.ActualModelID).
+		SetIsHealthy(false).
+		SetManualOverride(false).
+		SetProbedAt(time.Date(2026, 4, 5, 10, 2, 0, 0, time.UTC).Unix()).
+		Save(ctx)
+	require.NoError(t, err)
+
+	query := &queryResolver{resolver}
+	rows, err := query.ModelHealthSnapshots(ctx, GetModelHealthSnapshotsInput{})
+	require.NoError(t, err)
+	require.Len(t, rows, 1)
+	require.False(t, rows[0].IsHealthy)
+	require.False(t, rows[0].ManualOverride)
+	require.Equal(t, time.Date(2026, 4, 5, 10, 2, 0, 0, time.UTC).Unix(), rows[0].ProbedAt)
+}
+
 func TestMutationResolver_ManualModelProbe(t *testing.T) {
 	resolver, ctx, client, probeService := setupModelHealthResolverTest(t)
 	defer client.Close()

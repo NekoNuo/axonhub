@@ -213,6 +213,8 @@
   "channels.dialogs.test.testingModel": "Testing...",
   "channels.dialogs.test.testSuccess": "✅ Success",
   "channels.dialogs.test.testFailed": "❌ Failed",
+  "channels.dialogs.test.singleSuccess": "Model {{model}} test succeeded ({{latency}}s latency)",
+  "channels.dialogs.test.batchSuccess": "Completed {{count}} model tests: {{success}} succeeded, {{failed}} failed",
   "channels.dialogs.test.notStarted": "Not started",
   "channels.dialogs.test.removeFailed": "Remove Failed",
   "channels.dialogs.test.removeFailedConfirm": "Are you sure you want to remove all failed models from the selected list?",

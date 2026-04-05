@@ -8,6 +8,7 @@ package gql
 import (
 	"context"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/looplj/axonhub/internal/authz"
@@ -57,8 +58,68 @@ func (r *queryResolver) ModelHealthSnapshots(ctx context.Context, input GetModel
 			query = query.Where(modelhealthsnapshot.DisplayModelIn(input.DisplayModels...))
 		}
 
-		return query.All(ctx)
+		snapshots, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		rows := make([]*ent.ModelHealthSnapshot, 0, len(snapshots))
+		for _, snapshot := range snapshots {
+			view, err := biz.GetEffectiveModelHealthFromDBForResolver(
+				ctx,
+				r.client,
+				snapshot.DisplayModel,
+				snapshot.ChannelID,
+				snapshot.ActualModelID,
+			)
+			if err != nil {
+				return nil, err
+			}
+			if view == nil {
+				continue
+			}
+
+			rows = append(rows, &ent.ModelHealthSnapshot{
+				ID:             snapshot.ID,
+				DisplayModel:   view.DisplayModel,
+				ChannelID:      view.ChannelID,
+				ActualModelID:  view.ActualModelID,
+				IsHealthy:      view.IsHealthy,
+				ManualOverride: view.ManualOverride,
+				ProbedAt:       view.ProbedAt,
+			})
+		}
+
+		slices.SortFunc(rows, func(a, b *ent.ModelHealthSnapshot) int {
+			if cmp := compareStrings(a.DisplayModel, b.DisplayModel); cmp != 0 {
+				return cmp
+			}
+			if cmp := compareStrings(a.ActualModelID, b.ActualModelID); cmp != 0 {
+				return cmp
+			}
+			switch {
+			case a.ChannelID < b.ChannelID:
+				return -1
+			case a.ChannelID > b.ChannelID:
+				return 1
+			default:
+				return 0
+			}
+		})
+
+		return rows, nil
 	})
+}
+
+func compareStrings(a, b string) int {
+	switch {
+	case a < b:
+		return -1
+	case a > b:
+		return 1
+	default:
+		return 0
+	}
 }
 
 // ModelHealthHistory is the resolver for the modelHealthHistory field.

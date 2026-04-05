@@ -125,6 +125,19 @@ function getConnectionKey(displayModel: string, channelID: string, actualModelID
   return `${displayModel}:${channelID}:${actualModelID}`;
 }
 
+export function getDisplayModelHistory(
+  channelGroup: ModelHealthChannelGroup,
+  histories: Record<string, ModelHealthHistory[]>
+): ModelHealthHistory[] {
+  return channelGroup.rows
+    .flatMap((row) => histories[getConnectionKey(row.displayModel, row.channelID, row.actualModelID)] || [])
+    .sort((a, b) => b.probedAt - a.probedAt);
+}
+
+export function getActualModelHistory(row: ModelHealthRow, histories: Record<string, ModelHealthHistory[]>) {
+  return histories[getConnectionKey(row.displayModel, row.channelID, row.actualModelID)] || [];
+}
+
 async function refreshModelHealthTarget(input: ManualModelProbeInput) {
   const [snapshots, history] = await Promise.all([
     fetchModelHealthSnapshots({ input: { displayModels: [input.displayModel] } }),
