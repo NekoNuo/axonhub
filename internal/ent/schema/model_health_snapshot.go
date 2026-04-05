@@ -22,6 +22,7 @@ func (ModelHealthSnapshot) Fields() []ent.Field {
 		field.String("display_model"),
 		field.Int("channel_id"),
 		field.String("actual_model_id"),
+		field.String("source").Default("associated"),
 		field.Bool("is_healthy").Default(false),
 		field.Bool("manual_override").Default(false),
 		field.Int64("probed_at"),

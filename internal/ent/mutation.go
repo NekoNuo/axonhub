@@ -9417,6 +9417,7 @@ type ModelHealthHistoryMutation struct {
 	updated_at      *time.Time
 	display_model   *string
 	actual_model_id *string
+	source          *string
 	is_healthy      *bool
 	manual_override *bool
 	probed_at       *int64
@@ -9707,6 +9708,42 @@ func (m *ModelHealthHistoryMutation) ResetActualModelID() {
 	m.actual_model_id = nil
 }
 
+// SetSource sets the "source" field.
+func (m *ModelHealthHistoryMutation) SetSource(s string) {
+	m.source = &s
+}
+
+// Source returns the value of the "source" field in the mutation.
+func (m *ModelHealthHistoryMutation) Source() (r string, exists bool) {
+	v := m.source
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSource returns the old "source" field's value of the ModelHealthHistory entity.
+// If the ModelHealthHistory object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelHealthHistoryMutation) OldSource(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSource is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSource requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSource: %w", err)
+	}
+	return oldValue.Source, nil
+}
+
+// ResetSource resets all changes to the "source" field.
+func (m *ModelHealthHistoryMutation) ResetSource() {
+	m.source = nil
+}
+
 // SetIsHealthy sets the "is_healthy" field.
 func (m *ModelHealthHistoryMutation) SetIsHealthy(b bool) {
 	m.is_healthy = &b
@@ -9896,7 +9933,7 @@ func (m *ModelHealthHistoryMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ModelHealthHistoryMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
 	if m.created_at != nil {
 		fields = append(fields, modelhealthhistory.FieldCreatedAt)
 	}
@@ -9911,6 +9948,9 @@ func (m *ModelHealthHistoryMutation) Fields() []string {
 	}
 	if m.actual_model_id != nil {
 		fields = append(fields, modelhealthhistory.FieldActualModelID)
+	}
+	if m.source != nil {
+		fields = append(fields, modelhealthhistory.FieldSource)
 	}
 	if m.is_healthy != nil {
 		fields = append(fields, modelhealthhistory.FieldIsHealthy)
@@ -9939,6 +9979,8 @@ func (m *ModelHealthHistoryMutation) Field(name string) (ent.Value, bool) {
 		return m.ChannelID()
 	case modelhealthhistory.FieldActualModelID:
 		return m.ActualModelID()
+	case modelhealthhistory.FieldSource:
+		return m.Source()
 	case modelhealthhistory.FieldIsHealthy:
 		return m.IsHealthy()
 	case modelhealthhistory.FieldManualOverride:
@@ -9964,6 +10006,8 @@ func (m *ModelHealthHistoryMutation) OldField(ctx context.Context, name string) 
 		return m.OldChannelID(ctx)
 	case modelhealthhistory.FieldActualModelID:
 		return m.OldActualModelID(ctx)
+	case modelhealthhistory.FieldSource:
+		return m.OldSource(ctx)
 	case modelhealthhistory.FieldIsHealthy:
 		return m.OldIsHealthy(ctx)
 	case modelhealthhistory.FieldManualOverride:
@@ -10013,6 +10057,13 @@ func (m *ModelHealthHistoryMutation) SetField(name string, value ent.Value) erro
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetActualModelID(v)
+		return nil
+	case modelhealthhistory.FieldSource:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSource(v)
 		return nil
 	case modelhealthhistory.FieldIsHealthy:
 		v, ok := value.(bool)
@@ -10114,6 +10165,9 @@ func (m *ModelHealthHistoryMutation) ResetField(name string) error {
 	case modelhealthhistory.FieldActualModelID:
 		m.ResetActualModelID()
 		return nil
+	case modelhealthhistory.FieldSource:
+		m.ResetSource()
+		return nil
 	case modelhealthhistory.FieldIsHealthy:
 		m.ResetIsHealthy()
 		return nil
@@ -10211,6 +10265,7 @@ type ModelHealthSnapshotMutation struct {
 	updated_at      *time.Time
 	display_model   *string
 	actual_model_id *string
+	source          *string
 	is_healthy      *bool
 	manual_override *bool
 	probed_at       *int64
@@ -10501,6 +10556,42 @@ func (m *ModelHealthSnapshotMutation) ResetActualModelID() {
 	m.actual_model_id = nil
 }
 
+// SetSource sets the "source" field.
+func (m *ModelHealthSnapshotMutation) SetSource(s string) {
+	m.source = &s
+}
+
+// Source returns the value of the "source" field in the mutation.
+func (m *ModelHealthSnapshotMutation) Source() (r string, exists bool) {
+	v := m.source
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSource returns the old "source" field's value of the ModelHealthSnapshot entity.
+// If the ModelHealthSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelHealthSnapshotMutation) OldSource(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSource is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSource requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSource: %w", err)
+	}
+	return oldValue.Source, nil
+}
+
+// ResetSource resets all changes to the "source" field.
+func (m *ModelHealthSnapshotMutation) ResetSource() {
+	m.source = nil
+}
+
 // SetIsHealthy sets the "is_healthy" field.
 func (m *ModelHealthSnapshotMutation) SetIsHealthy(b bool) {
 	m.is_healthy = &b
@@ -10690,7 +10781,7 @@ func (m *ModelHealthSnapshotMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ModelHealthSnapshotMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
 	if m.created_at != nil {
 		fields = append(fields, modelhealthsnapshot.FieldCreatedAt)
 	}
@@ -10705,6 +10796,9 @@ func (m *ModelHealthSnapshotMutation) Fields() []string {
 	}
 	if m.actual_model_id != nil {
 		fields = append(fields, modelhealthsnapshot.FieldActualModelID)
+	}
+	if m.source != nil {
+		fields = append(fields, modelhealthsnapshot.FieldSource)
 	}
 	if m.is_healthy != nil {
 		fields = append(fields, modelhealthsnapshot.FieldIsHealthy)
@@ -10733,6 +10827,8 @@ func (m *ModelHealthSnapshotMutation) Field(name string) (ent.Value, bool) {
 		return m.ChannelID()
 	case modelhealthsnapshot.FieldActualModelID:
 		return m.ActualModelID()
+	case modelhealthsnapshot.FieldSource:
+		return m.Source()
 	case modelhealthsnapshot.FieldIsHealthy:
 		return m.IsHealthy()
 	case modelhealthsnapshot.FieldManualOverride:
@@ -10758,6 +10854,8 @@ func (m *ModelHealthSnapshotMutation) OldField(ctx context.Context, name string)
 		return m.OldChannelID(ctx)
 	case modelhealthsnapshot.FieldActualModelID:
 		return m.OldActualModelID(ctx)
+	case modelhealthsnapshot.FieldSource:
+		return m.OldSource(ctx)
 	case modelhealthsnapshot.FieldIsHealthy:
 		return m.OldIsHealthy(ctx)
 	case modelhealthsnapshot.FieldManualOverride:
@@ -10807,6 +10905,13 @@ func (m *ModelHealthSnapshotMutation) SetField(name string, value ent.Value) err
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetActualModelID(v)
+		return nil
+	case modelhealthsnapshot.FieldSource:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSource(v)
 		return nil
 	case modelhealthsnapshot.FieldIsHealthy:
 		v, ok := value.(bool)
@@ -10907,6 +11012,9 @@ func (m *ModelHealthSnapshotMutation) ResetField(name string) error {
 		return nil
 	case modelhealthsnapshot.FieldActualModelID:
 		m.ResetActualModelID()
+		return nil
+	case modelhealthsnapshot.FieldSource:
+		m.ResetSource()
 		return nil
 	case modelhealthsnapshot.FieldIsHealthy:
 		m.ResetIsHealthy()

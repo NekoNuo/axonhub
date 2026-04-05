@@ -23,6 +23,7 @@ func TestModelHealthGraphQL(t *testing.T) {
 		require.Contains(t, modelHealthSchema, "ModelHealthSnapshot")
 		require.Contains(t, modelHealthSchema, "ModelHealthHistory")
 		require.Contains(t, modelHealthSchema, "modelHealthSnapshots")
+		require.Contains(t, modelHealthSchema, "discoveredModelHealthSnapshots")
 		require.Contains(t, modelHealthSchema, "modelHealthHistory")
 	})
 

@@ -84,6 +84,7 @@ type ChannelProbeService struct {
 	modelFetcher           *ModelFetcher
 	idleChannelProber      func(ctx context.Context, ch *ent.Channel) (time.Duration, bool, error)
 	idleChannelModelProber func(ctx context.Context, ch *ent.Channel, modelID string) (time.Duration, bool, error)
+	manualModelProbeLocks  sync.Map
 }
 
 // NewChannelProbeService creates a new ChannelProbeService.
@@ -107,6 +108,14 @@ func (svc *ChannelProbeService) SetIdleChannelModelProber(
 	prober func(ctx context.Context, ch *ent.Channel, modelID string) (time.Duration, bool, error),
 ) {
 	svc.idleChannelModelProber = prober
+}
+
+func (svc *ChannelProbeService) withManualModelProbeChannelLock(channelID int, fn func() error) error {
+	lock, _ := svc.manualModelProbeLocks.LoadOrStore(channelID, &sync.Mutex{})
+	mu := lock.(*sync.Mutex)
+	mu.Lock()
+	defer mu.Unlock()
+	return fn()
 }
 
 // Start starts the channel probe service with scheduled task.

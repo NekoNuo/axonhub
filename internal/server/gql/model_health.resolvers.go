@@ -8,14 +8,13 @@ package gql
 import (
 	"context"
 	"fmt"
-	"slices"
 	"time"
 
 	"github.com/looplj/axonhub/internal/authz"
 	"github.com/looplj/axonhub/internal/ent"
 	"github.com/looplj/axonhub/internal/ent/modelhealthhistory"
-	"github.com/looplj/axonhub/internal/ent/predicate"
 	"github.com/looplj/axonhub/internal/ent/modelhealthsnapshot"
+	"github.com/looplj/axonhub/internal/ent/predicate"
 	"github.com/looplj/axonhub/internal/objects"
 	"github.com/looplj/axonhub/internal/scopes"
 	"github.com/looplj/axonhub/internal/server/biz"
@@ -52,6 +51,33 @@ func (r *queryResolver) ModelHealthSnapshots(ctx context.Context, input GetModel
 			ent.Asc(modelhealthsnapshot.FieldDisplayModel),
 			ent.Asc(modelhealthsnapshot.FieldActualModelID),
 			ent.Asc(modelhealthsnapshot.FieldChannelID),
+		).Where(modelhealthsnapshot.SourceEQ(biz.ModelHealthSourceAssociated))
+
+		if len(input.DisplayModels) > 0 {
+			query = query.Where(modelhealthsnapshot.DisplayModelIn(input.DisplayModels...))
+		}
+
+		snapshots, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		return buildModelHealthSnapshotRows(ctx, r.client, snapshots)
+	})
+}
+
+// DiscoveredModelHealthSnapshots is the resolver for the discoveredModelHealthSnapshots field.
+func (r *queryResolver) DiscoveredModelHealthSnapshots(ctx context.Context, input GetDiscoveredModelHealthSnapshotsInput) ([]*ent.ModelHealthSnapshot, error) {
+	return authz.RunWithScopeDecision(ctx, scopes.ScopeReadChannels, func(ctx context.Context) ([]*ent.ModelHealthSnapshot, error) {
+		expireBefore := time.Now().UTC().Unix() - biz.ModelHealthDiscoveredRetentionForResolver()
+
+		query := r.client.ModelHealthSnapshot.Query().Order(
+			ent.Asc(modelhealthsnapshot.FieldDisplayModel),
+			ent.Asc(modelhealthsnapshot.FieldActualModelID),
+			ent.Asc(modelhealthsnapshot.FieldChannelID),
+		).Where(
+			modelhealthsnapshot.SourceEQ(biz.ModelHealthSourceDiscoveredRecentUsage),
+			modelhealthsnapshot.ProbedAtGTE(expireBefore),
 		)
 
 		if len(input.DisplayModels) > 0 {
@@ -63,63 +89,8 @@ func (r *queryResolver) ModelHealthSnapshots(ctx context.Context, input GetModel
 			return nil, err
 		}
 
-		rows := make([]*ent.ModelHealthSnapshot, 0, len(snapshots))
-		for _, snapshot := range snapshots {
-			view, err := biz.GetEffectiveModelHealthFromDBForResolver(
-				ctx,
-				r.client,
-				snapshot.DisplayModel,
-				snapshot.ChannelID,
-				snapshot.ActualModelID,
-			)
-			if err != nil {
-				return nil, err
-			}
-			if view == nil {
-				continue
-			}
-
-			rows = append(rows, &ent.ModelHealthSnapshot{
-				ID:             snapshot.ID,
-				DisplayModel:   view.DisplayModel,
-				ChannelID:      view.ChannelID,
-				ActualModelID:  view.ActualModelID,
-				IsHealthy:      view.IsHealthy,
-				ManualOverride: view.ManualOverride,
-				ProbedAt:       view.ProbedAt,
-			})
-		}
-
-		slices.SortFunc(rows, func(a, b *ent.ModelHealthSnapshot) int {
-			if cmp := compareStrings(a.DisplayModel, b.DisplayModel); cmp != 0 {
-				return cmp
-			}
-			if cmp := compareStrings(a.ActualModelID, b.ActualModelID); cmp != 0 {
-				return cmp
-			}
-			switch {
-			case a.ChannelID < b.ChannelID:
-				return -1
-			case a.ChannelID > b.ChannelID:
-				return 1
-			default:
-				return 0
-			}
-		})
-
-		return rows, nil
+		return buildModelHealthSnapshotRows(ctx, r.client, snapshots)
 	})
-}
-
-func compareStrings(a, b string) int {
-	switch {
-	case a < b:
-		return -1
-	case a > b:
-		return 1
-	default:
-		return 0
-	}
 }
 
 // ModelHealthHistory is the resolver for the modelHealthHistory field.

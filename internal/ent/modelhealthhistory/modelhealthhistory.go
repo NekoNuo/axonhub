@@ -24,6 +24,8 @@ const (
 	FieldChannelID = "channel_id"
 	// FieldActualModelID holds the string denoting the actual_model_id field in the database.
 	FieldActualModelID = "actual_model_id"
+	// FieldSource holds the string denoting the source field in the database.
+	FieldSource = "source"
 	// FieldIsHealthy holds the string denoting the is_healthy field in the database.
 	FieldIsHealthy = "is_healthy"
 	// FieldManualOverride holds the string denoting the manual_override field in the database.
@@ -51,6 +53,7 @@ var Columns = []string{
 	FieldDisplayModel,
 	FieldChannelID,
 	FieldActualModelID,
+	FieldSource,
 	FieldIsHealthy,
 	FieldManualOverride,
 	FieldProbedAt,
@@ -73,6 +76,8 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultSource holds the default value on creation for the "source" field.
+	DefaultSource string
 	// DefaultIsHealthy holds the default value on creation for the "is_healthy" field.
 	DefaultIsHealthy bool
 	// DefaultManualOverride holds the default value on creation for the "manual_override" field.
@@ -110,6 +115,11 @@ func ByChannelID(opts ...sql.OrderTermOption) OrderOption {
 // ByActualModelID orders the results by the actual_model_id field.
 func ByActualModelID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldActualModelID, opts...).ToFunc()
+}
+
+// BySource orders the results by the source field.
+func BySource(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSource, opts...).ToFunc()
 }
 
 // ByIsHealthy orders the results by the is_healthy field.

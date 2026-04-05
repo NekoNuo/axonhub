@@ -357,12 +357,16 @@ func init() {
 	modelhealthhistory.DefaultUpdatedAt = modelhealthhistoryDescUpdatedAt.Default.(func() time.Time)
 	// modelhealthhistory.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	modelhealthhistory.UpdateDefaultUpdatedAt = modelhealthhistoryDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// modelhealthhistoryDescSource is the schema descriptor for source field.
+	modelhealthhistoryDescSource := modelhealthhistoryFields[3].Descriptor()
+	// modelhealthhistory.DefaultSource holds the default value on creation for the source field.
+	modelhealthhistory.DefaultSource = modelhealthhistoryDescSource.Default.(string)
 	// modelhealthhistoryDescIsHealthy is the schema descriptor for is_healthy field.
-	modelhealthhistoryDescIsHealthy := modelhealthhistoryFields[3].Descriptor()
+	modelhealthhistoryDescIsHealthy := modelhealthhistoryFields[4].Descriptor()
 	// modelhealthhistory.DefaultIsHealthy holds the default value on creation for the is_healthy field.
 	modelhealthhistory.DefaultIsHealthy = modelhealthhistoryDescIsHealthy.Default.(bool)
 	// modelhealthhistoryDescManualOverride is the schema descriptor for manual_override field.
-	modelhealthhistoryDescManualOverride := modelhealthhistoryFields[4].Descriptor()
+	modelhealthhistoryDescManualOverride := modelhealthhistoryFields[5].Descriptor()
 	// modelhealthhistory.DefaultManualOverride holds the default value on creation for the manual_override field.
 	modelhealthhistory.DefaultManualOverride = modelhealthhistoryDescManualOverride.Default.(bool)
 	modelhealthsnapshotMixin := schema.ModelHealthSnapshot{}.Mixin()
@@ -380,12 +384,16 @@ func init() {
 	modelhealthsnapshot.DefaultUpdatedAt = modelhealthsnapshotDescUpdatedAt.Default.(func() time.Time)
 	// modelhealthsnapshot.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	modelhealthsnapshot.UpdateDefaultUpdatedAt = modelhealthsnapshotDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// modelhealthsnapshotDescSource is the schema descriptor for source field.
+	modelhealthsnapshotDescSource := modelhealthsnapshotFields[3].Descriptor()
+	// modelhealthsnapshot.DefaultSource holds the default value on creation for the source field.
+	modelhealthsnapshot.DefaultSource = modelhealthsnapshotDescSource.Default.(string)
 	// modelhealthsnapshotDescIsHealthy is the schema descriptor for is_healthy field.
-	modelhealthsnapshotDescIsHealthy := modelhealthsnapshotFields[3].Descriptor()
+	modelhealthsnapshotDescIsHealthy := modelhealthsnapshotFields[4].Descriptor()
 	// modelhealthsnapshot.DefaultIsHealthy holds the default value on creation for the is_healthy field.
 	modelhealthsnapshot.DefaultIsHealthy = modelhealthsnapshotDescIsHealthy.Default.(bool)
 	// modelhealthsnapshotDescManualOverride is the schema descriptor for manual_override field.
-	modelhealthsnapshotDescManualOverride := modelhealthsnapshotFields[4].Descriptor()
+	modelhealthsnapshotDescManualOverride := modelhealthsnapshotFields[5].Descriptor()
 	// modelhealthsnapshot.DefaultManualOverride holds the default value on creation for the manual_override field.
 	modelhealthsnapshot.DefaultManualOverride = modelhealthsnapshotDescManualOverride.Default.(bool)
 	projectMixin := schema.Project{}.Mixin()

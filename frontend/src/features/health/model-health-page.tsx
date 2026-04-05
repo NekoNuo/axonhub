@@ -9,8 +9,10 @@ import { useQueryChannels } from '@/features/channels/data/channels';
 import { useQueryAllModels, useQueryModelChannelConnections, type ModelAssociationInput, type ModelChannelConnection } from '@/features/models/data/models';
 import { formatHealthTimestamp } from './channel-health-format';
 import { ModelHealthTree } from './components/model-health-tree';
-import { fetchModelHealthHistory, fetchModelHealthSnapshots, manualModelProbe } from './data/health';
+import { fetchDiscoveredModelHealthSnapshots, fetchModelHealthHistory, fetchModelHealthSnapshots, manualModelProbe } from './data/health';
 import type { ManualModelProbeInput, ModelHealthHistory, ModelHealthSnapshot } from './data/schema';
+
+const MANUAL_MODEL_PROBE_MAX_CONCURRENCY = 2;
 
 export interface ModelHealthRow extends ModelHealthSnapshot {
   channelName: string;
@@ -83,6 +85,29 @@ export function buildModelHealthTree(rows: ModelHealthRow[]): ModelHealthGroup[]
         }))
         .sort((a, b) => b.orderingWeight - a.orderingWeight || a.channelName.localeCompare(b.channelName)),
     }));
+}
+
+export function buildDiscoveredModelHealthRows(
+  snapshots: ModelHealthSnapshot[],
+  channelsByID: Map<string, { name: string; status: string; type: string; orderingWeight: number }>
+): ModelHealthRow[] {
+  return snapshots.map((snapshot) => {
+    const channelMeta = channelsByID.get(snapshot.channelID) ?? {
+      name: snapshot.channelID,
+      status: 'disabled',
+      type: 'unknown',
+      orderingWeight: 0,
+    };
+
+    return {
+      ...snapshot,
+      channelName: channelMeta.name,
+      channelStatus: channelMeta.status,
+      channelType: channelMeta.type,
+      orderingWeight: channelMeta.orderingWeight,
+      priority: 0,
+    };
+  });
 }
 
 export function getModelsPendingConnectionQuery(
@@ -162,6 +187,27 @@ async function refreshModelHealthTarget(input: ManualModelProbeInput) {
   };
 }
 
+export async function runProbeTargetsWithLimit(
+  targets: ManualModelProbeInput[],
+  maxConcurrency: number,
+  worker: (input: ManualModelProbeInput) => Promise<void>
+) {
+  if (targets.length === 0) return;
+
+  const concurrency = Math.max(1, maxConcurrency);
+  let index = 0;
+
+  const runners = Array.from({ length: Math.min(concurrency, targets.length) }, async () => {
+    while (index < targets.length) {
+      const currentIndex = index;
+      index++;
+      await worker(targets[currentIndex]);
+    }
+  });
+
+  await Promise.all(runners);
+}
+
 export function ModelHealthPage() {
   const { t, i18n } = useTranslation();
   const locale = i18n.language.startsWith('zh') ? 'zh-CN' : 'en-US';
@@ -169,6 +215,7 @@ export function ModelHealthPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'enabled' | 'disabled'>('all');
   const [histories, setHistories] = useState<Record<string, ModelHealthHistory[]>>({});
   const [snapshots, setSnapshots] = useState<ModelHealthSnapshot[]>([]);
+  const [discoveredSnapshots, setDiscoveredSnapshots] = useState<ModelHealthSnapshot[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [probingKeys, setProbingKeys] = useState<Record<string, true>>({});
   const [connectionsByModel, setConnectionsByModel] = useState<Record<string, ModelChannelConnection[]>>({});
@@ -194,8 +241,12 @@ export function ModelHealthPage() {
     void (async () => {
       setIsLoading(true);
       try {
-        const data = await fetchModelHealthSnapshots({ input: {} });
-        setSnapshots(data);
+        const [associated, discovered] = await Promise.all([
+          fetchModelHealthSnapshots({ input: {} }),
+          fetchDiscoveredModelHealthSnapshots({ input: {} }),
+        ]);
+        setSnapshots(associated);
+        setDiscoveredSnapshots(discovered);
       } finally {
         setIsLoading(false);
       }
@@ -301,6 +352,20 @@ export function ModelHealthPage() {
   }, [channelsByID, connectionsByModel, modelEntries, search, snapshots, statusFilter]);
 
   const groups = useMemo(() => buildModelHealthTree(rows), [rows]);
+  const discoveredRows = useMemo(
+    () =>
+      buildDiscoveredModelHealthRows(discoveredSnapshots, channelsByID).filter((row) => {
+        const matchesSearch =
+          search.trim() === '' ||
+          row.displayModel.toLowerCase().includes(search.toLowerCase()) ||
+          row.actualModelID.toLowerCase().includes(search.toLowerCase()) ||
+          row.channelName.toLowerCase().includes(search.toLowerCase());
+        const matchesStatus = statusFilter === 'all' || row.channelStatus === statusFilter;
+        return matchesSearch && matchesStatus;
+      }),
+    [channelsByID, discoveredSnapshots, search, statusFilter]
+  );
+  const discoveredGroups = useMemo(() => buildModelHealthTree(discoveredRows), [discoveredRows]);
 
   useEffect(() => {
     rows.forEach((row) => {
@@ -332,8 +397,7 @@ export function ModelHealthPage() {
 
     setProbingKeys((current) => ({ ...current, [scopeKey]: true }));
     try {
-      await Promise.all(
-        targets.map(async (input) => {
+      await runProbeTargetsWithLimit(targets, MANUAL_MODEL_PROBE_MAX_CONCURRENCY, async (input) => {
           await manualModelProbe(input);
           const refreshed = await refreshModelHealthTarget(input);
           if (refreshed.snapshot) {
@@ -360,8 +424,7 @@ export function ModelHealthPage() {
           } else {
             toast.success(t('common.messages.success'));
           }
-        })
-      );
+        });
     } catch (error) {
       toast.error(t('models.healthPage.probeError', { error: error instanceof Error ? error.message : String(error) }));
     } finally {
@@ -414,6 +477,22 @@ export function ModelHealthPage() {
           onProbeChannel={(group, channel) => runProbeTargets(`channel:${group.displayModel}:${channel.channelID}`, getChannelProbeTargets(channel))}
           onProbeRow={(row) => runProbeTargets(`row:${row.displayModel}:${row.channelID}:${row.actualModelID}`, [getRowProbeTarget(row)])}
         />
+
+        <div className='space-y-3'>
+          <div>
+            <h2 className='text-lg font-semibold'>{t('models.healthPage.discoveredTitle')}</h2>
+            <p className='text-muted-foreground text-sm'>{t('models.healthPage.discoveredDescription')}</p>
+          </div>
+          <ModelHealthTree
+            groups={discoveredGroups}
+            histories={histories}
+            probingKeys={probingKeys}
+            locale={locale}
+            onProbeGroup={(group) => runProbeTargets(`discovered-group:${group.displayModel}`, getGroupProbeTargets(group))}
+            onProbeChannel={(group, channel) => runProbeTargets(`discovered-channel:${group.displayModel}:${channel.channelID}`, getChannelProbeTargets(channel))}
+            onProbeRow={(row) => runProbeTargets(`discovered-row:${row.displayModel}:${row.channelID}:${row.actualModelID}`, [getRowProbeTarget(row)])}
+          />
+        </div>
       </div>
     </Main>
   );

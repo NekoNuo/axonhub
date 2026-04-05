@@ -188,3 +188,49 @@ func TestMutationResolver_ManualModelProbe(t *testing.T) {
 	require.True(t, snapshot.ManualOverride)
 	require.True(t, snapshot.IsHealthy)
 }
+
+func TestQueryResolver_DiscoveredModelHealthSnapshotsFiltersExpiredRows(t *testing.T) {
+	resolver, ctx, client, _ := setupModelHealthResolverTest(t)
+	defer client.Close()
+
+	channelEntity, err := client.Channel.Create().
+		SetType("openai").
+		SetBaseURL("https://api.openai.com/v1").
+		SetName("OpenAI Channel").
+		SetStatus("enabled").
+		SetCredentials(objects.ChannelCredentials{APIKeys: []string{"test-key"}}).
+		SetSupportedModels([]string{"gpt-5-2"}).
+		SetDefaultTestModel("gpt-5-2").
+		Save(ctx)
+	require.NoError(t, err)
+
+	now := time.Now().UTC().Unix()
+
+	_, err = client.ModelHealthSnapshot.Create().
+		SetDisplayModel("gpt-5-2").
+		SetChannelID(channelEntity.ID).
+		SetActualModelID("gpt-5-2").
+		SetSource("discovered_recent_usage").
+		SetIsHealthy(true).
+		SetManualOverride(false).
+		SetProbedAt(now).
+		Save(ctx)
+	require.NoError(t, err)
+
+	_, err = client.ModelHealthSnapshot.Create().
+		SetDisplayModel("gpt-5-1").
+		SetChannelID(channelEntity.ID).
+		SetActualModelID("gpt-5-1").
+		SetSource("discovered_recent_usage").
+		SetIsHealthy(true).
+		SetManualOverride(false).
+		SetProbedAt(now-(25*60*60)).
+		Save(ctx)
+	require.NoError(t, err)
+
+	query := &queryResolver{resolver}
+	rows, err := query.DiscoveredModelHealthSnapshots(ctx, GetDiscoveredModelHealthSnapshotsInput{})
+	require.NoError(t, err)
+	require.Len(t, rows, 1)
+	require.Equal(t, "gpt-5-2", rows[0].DisplayModel)
+}

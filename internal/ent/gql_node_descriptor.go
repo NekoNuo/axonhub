@@ -988,7 +988,7 @@ func (_m *ModelHealthHistory) Node(ctx context.Context) (node *Node, err error) 
 	node = &Node{
 		ID:     _m.ID,
 		Type:   "ModelHealthHistory",
-		Fields: make([]*Field, 8),
+		Fields: make([]*Field, 9),
 		Edges:  make([]*Edge, 1),
 	}
 	var buf []byte
@@ -1032,10 +1032,18 @@ func (_m *ModelHealthHistory) Node(ctx context.Context) (node *Node, err error) 
 		Name:  "actual_model_id",
 		Value: string(buf),
 	}
-	if buf, err = json.Marshal(_m.IsHealthy); err != nil {
+	if buf, err = json.Marshal(_m.Source); err != nil {
 		return nil, err
 	}
 	node.Fields[5] = &Field{
+		Type:  "string",
+		Name:  "source",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(_m.IsHealthy); err != nil {
+		return nil, err
+	}
+	node.Fields[6] = &Field{
 		Type:  "bool",
 		Name:  "is_healthy",
 		Value: string(buf),
@@ -1043,7 +1051,7 @@ func (_m *ModelHealthHistory) Node(ctx context.Context) (node *Node, err error) 
 	if buf, err = json.Marshal(_m.ManualOverride); err != nil {
 		return nil, err
 	}
-	node.Fields[6] = &Field{
+	node.Fields[7] = &Field{
 		Type:  "bool",
 		Name:  "manual_override",
 		Value: string(buf),
@@ -1051,7 +1059,7 @@ func (_m *ModelHealthHistory) Node(ctx context.Context) (node *Node, err error) 
 	if buf, err = json.Marshal(_m.ProbedAt); err != nil {
 		return nil, err
 	}
-	node.Fields[7] = &Field{
+	node.Fields[8] = &Field{
 		Type:  "int64",
 		Name:  "probed_at",
 		Value: string(buf),
@@ -1074,7 +1082,7 @@ func (_m *ModelHealthSnapshot) Node(ctx context.Context) (node *Node, err error)
 	node = &Node{
 		ID:     _m.ID,
 		Type:   "ModelHealthSnapshot",
-		Fields: make([]*Field, 8),
+		Fields: make([]*Field, 9),
 		Edges:  make([]*Edge, 1),
 	}
 	var buf []byte
@@ -1118,10 +1126,18 @@ func (_m *ModelHealthSnapshot) Node(ctx context.Context) (node *Node, err error)
 		Name:  "actual_model_id",
 		Value: string(buf),
 	}
-	if buf, err = json.Marshal(_m.IsHealthy); err != nil {
+	if buf, err = json.Marshal(_m.Source); err != nil {
 		return nil, err
 	}
 	node.Fields[5] = &Field{
+		Type:  "string",
+		Name:  "source",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(_m.IsHealthy); err != nil {
+		return nil, err
+	}
+	node.Fields[6] = &Field{
 		Type:  "bool",
 		Name:  "is_healthy",
 		Value: string(buf),
@@ -1129,7 +1145,7 @@ func (_m *ModelHealthSnapshot) Node(ctx context.Context) (node *Node, err error)
 	if buf, err = json.Marshal(_m.ManualOverride); err != nil {
 		return nil, err
 	}
-	node.Fields[6] = &Field{
+	node.Fields[7] = &Field{
 		Type:  "bool",
 		Name:  "manual_override",
 		Value: string(buf),
@@ -1137,7 +1153,7 @@ func (_m *ModelHealthSnapshot) Node(ctx context.Context) (node *Node, err error)
 	if buf, err = json.Marshal(_m.ProbedAt); err != nil {
 		return nil, err
 	}
-	node.Fields[7] = &Field{
+	node.Fields[8] = &Field{
 		Type:  "int64",
 		Name:  "probed_at",
 		Value: string(buf),

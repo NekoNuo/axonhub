@@ -45,6 +45,7 @@ func TestModelHealthSchema(t *testing.T) {
 			require.Contains(t, content, `field.String("display_model")`)
 			require.Contains(t, content, `field.Int("channel_id")`)
 			require.Contains(t, content, `field.String("actual_model_id")`)
+			require.Contains(t, content, `field.String("source")`)
 			require.Contains(t, content, `field.Bool("is_healthy")`)
 			require.Contains(t, content, `field.Bool("manual_override")`)
 		}

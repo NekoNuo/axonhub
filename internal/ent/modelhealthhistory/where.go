@@ -80,6 +80,11 @@ func ActualModelID(v string) predicate.ModelHealthHistory {
 	return predicate.ModelHealthHistory(sql.FieldEQ(FieldActualModelID, v))
 }
 
+// Source applies equality check predicate on the "source" field. It's identical to SourceEQ.
+func Source(v string) predicate.ModelHealthHistory {
+	return predicate.ModelHealthHistory(sql.FieldEQ(FieldSource, v))
+}
+
 // IsHealthy applies equality check predicate on the "is_healthy" field. It's identical to IsHealthyEQ.
 func IsHealthy(v bool) predicate.ModelHealthHistory {
 	return predicate.ModelHealthHistory(sql.FieldEQ(FieldIsHealthy, v))
@@ -323,6 +328,71 @@ func ActualModelIDEqualFold(v string) predicate.ModelHealthHistory {
 // ActualModelIDContainsFold applies the ContainsFold predicate on the "actual_model_id" field.
 func ActualModelIDContainsFold(v string) predicate.ModelHealthHistory {
 	return predicate.ModelHealthHistory(sql.FieldContainsFold(FieldActualModelID, v))
+}
+
+// SourceEQ applies the EQ predicate on the "source" field.
+func SourceEQ(v string) predicate.ModelHealthHistory {
+	return predicate.ModelHealthHistory(sql.FieldEQ(FieldSource, v))
+}
+
+// SourceNEQ applies the NEQ predicate on the "source" field.
+func SourceNEQ(v string) predicate.ModelHealthHistory {
+	return predicate.ModelHealthHistory(sql.FieldNEQ(FieldSource, v))
+}
+
+// SourceIn applies the In predicate on the "source" field.
+func SourceIn(vs ...string) predicate.ModelHealthHistory {
+	return predicate.ModelHealthHistory(sql.FieldIn(FieldSource, vs...))
+}
+
+// SourceNotIn applies the NotIn predicate on the "source" field.
+func SourceNotIn(vs ...string) predicate.ModelHealthHistory {
+	return predicate.ModelHealthHistory(sql.FieldNotIn(FieldSource, vs...))
+}
+
+// SourceGT applies the GT predicate on the "source" field.
+func SourceGT(v string) predicate.ModelHealthHistory {
+	return predicate.ModelHealthHistory(sql.FieldGT(FieldSource, v))
+}
+
+// SourceGTE applies the GTE predicate on the "source" field.
+func SourceGTE(v string) predicate.ModelHealthHistory {
+	return predicate.ModelHealthHistory(sql.FieldGTE(FieldSource, v))
+}
+
+// SourceLT applies the LT predicate on the "source" field.
+func SourceLT(v string) predicate.ModelHealthHistory {
+	return predicate.ModelHealthHistory(sql.FieldLT(FieldSource, v))
+}
+
+// SourceLTE applies the LTE predicate on the "source" field.
+func SourceLTE(v string) predicate.ModelHealthHistory {
+	return predicate.ModelHealthHistory(sql.FieldLTE(FieldSource, v))
+}
+
+// SourceContains applies the Contains predicate on the "source" field.
+func SourceContains(v string) predicate.ModelHealthHistory {
+	return predicate.ModelHealthHistory(sql.FieldContains(FieldSource, v))
+}
+
+// SourceHasPrefix applies the HasPrefix predicate on the "source" field.
+func SourceHasPrefix(v string) predicate.ModelHealthHistory {
+	return predicate.ModelHealthHistory(sql.FieldHasPrefix(FieldSource, v))
+}
+
+// SourceHasSuffix applies the HasSuffix predicate on the "source" field.
+func SourceHasSuffix(v string) predicate.ModelHealthHistory {
+	return predicate.ModelHealthHistory(sql.FieldHasSuffix(FieldSource, v))
+}
+
+// SourceEqualFold applies the EqualFold predicate on the "source" field.
+func SourceEqualFold(v string) predicate.ModelHealthHistory {
+	return predicate.ModelHealthHistory(sql.FieldEqualFold(FieldSource, v))
+}
+
+// SourceContainsFold applies the ContainsFold predicate on the "source" field.
+func SourceContainsFold(v string) predicate.ModelHealthHistory {
+	return predicate.ModelHealthHistory(sql.FieldContainsFold(FieldSource, v))
 }
 
 // IsHealthyEQ applies the EQ predicate on the "is_healthy" field.

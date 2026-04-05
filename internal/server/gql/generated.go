@@ -795,6 +795,7 @@ type ComplexityRoot struct {
 		IsHealthy      func(childComplexity int) int
 		ManualOverride func(childComplexity int) int
 		ProbedAt       func(childComplexity int) int
+		Source         func(childComplexity int) int
 		UpdatedAt      func(childComplexity int) int
 	}
 
@@ -808,6 +809,7 @@ type ComplexityRoot struct {
 		IsHealthy      func(childComplexity int) int
 		ManualOverride func(childComplexity int) int
 		ProbedAt       func(childComplexity int) int
+		Source         func(childComplexity int) int
 		UpdatedAt      func(childComplexity int) int
 	}
 
@@ -849,8 +851,8 @@ type ComplexityRoot struct {
 	}
 
 	ModelSettings struct {
-		ProbeEnabled func(childComplexity int) int
 		Associations func(childComplexity int) int
+		ProbeEnabled func(childComplexity int) int
 	}
 
 	ModelTokenUsageStats struct {
@@ -1179,6 +1181,7 @@ type ComplexityRoot struct {
 		DashboardOverview            func(childComplexity int) int
 		DataStorages                 func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.DataStorageOrder, where *ent.DataStorageWhereInput) int
 		DefaultDataStorageID         func(childComplexity int) int
+		DiscoveredModelHealthSnapshots func(childComplexity int, input GetDiscoveredModelHealthSnapshotsInput) int
 		FastestChannels              func(childComplexity int, input FastestChannelsInput) int
 		FastestModels                func(childComplexity int, input FastestChannelsInput) int
 		FetchModels                  func(childComplexity int, input biz.FetchModelsInput) int
@@ -2074,6 +2077,7 @@ type QueryResolver interface {
 	QueryModelChannelConnections(ctx context.Context, associations []*objects.ModelAssociation) ([]*biz.ModelChannelConnection, error)
 	QueryUnassociatedChannels(ctx context.Context) ([]*biz.UnassociatedChannel, error)
 	ModelHealthSnapshots(ctx context.Context, input GetModelHealthSnapshotsInput) ([]*ent.ModelHealthSnapshot, error)
+	DiscoveredModelHealthSnapshots(ctx context.Context, input GetDiscoveredModelHealthSnapshotsInput) ([]*ent.ModelHealthSnapshot, error)
 	ModelHealthHistory(ctx context.Context, input GetModelHealthHistoryInput) ([]*ent.ModelHealthHistory, error)
 	AutoBackupSettings(ctx context.Context) (*biz.AutoBackupSettings, error)
 	ChannelProbeData(ctx context.Context, input biz.GetChannelProbeDataInput) ([]*biz.ChannelProbeData, error)
@@ -4831,6 +4835,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.ModelHealthHistory.ProbedAt(childComplexity), true
+	case "ModelHealthHistory.source":
+		if e.complexity.ModelHealthHistory.Source == nil {
+			break
+		}
+
+		return e.complexity.ModelHealthHistory.Source(childComplexity), true
 	case "ModelHealthHistory.updatedAt":
 		if e.complexity.ModelHealthHistory.UpdatedAt == nil {
 			break
@@ -4892,6 +4902,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.ModelHealthSnapshot.ProbedAt(childComplexity), true
+	case "ModelHealthSnapshot.source":
+		if e.complexity.ModelHealthSnapshot.Source == nil {
+			break
+		}
+
+		return e.complexity.ModelHealthSnapshot.Source(childComplexity), true
 	case "ModelHealthSnapshot.updatedAt":
 		if e.complexity.ModelHealthSnapshot.UpdatedAt == nil {
 			break
@@ -7037,6 +7053,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.DefaultDataStorageID(childComplexity), true
+	case "Query.discoveredModelHealthSnapshots":
+		if e.complexity.Query.DiscoveredModelHealthSnapshots == nil {
+			break
+		}
+
+		args, err := ec.field_Query_discoveredModelHealthSnapshots_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.DiscoveredModelHealthSnapshots(childComplexity, args["input"].(GetDiscoveredModelHealthSnapshotsInput)), true
 	case "Query.fastestChannels":
 		if e.complexity.Query.FastestChannels == nil {
 			break
@@ -9886,6 +9913,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputGCSInput,
 		ec.unmarshalInputGetChannelHealthSnapshotsInput,
 		ec.unmarshalInputGetChannelProbeDataInput,
+		ec.unmarshalInputGetDiscoveredModelHealthSnapshotsInput,
 		ec.unmarshalInputGetModelHealthHistoryInput,
 		ec.unmarshalInputGetModelHealthSnapshotsInput,
 		ec.unmarshalInputHeaderEntryInput,
@@ -12046,6 +12074,17 @@ func (ec *executionContext) field_Query_dataStorages_args(ctx context.Context, r
 		return nil, err
 	}
 	args["where"] = arg5
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_discoveredModelHealthSnapshots_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNGetDiscoveredModelHealthSnapshotsInput2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋgqlᚐGetDiscoveredModelHealthSnapshotsInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
 	return args, nil
 }
 
@@ -16828,6 +16867,8 @@ func (ec *executionContext) fieldContext_Channel_modelHealthSnapshots(_ context.
 				return ec.fieldContext_ModelHealthSnapshot_channelID(ctx, field)
 			case "actualModelID":
 				return ec.fieldContext_ModelHealthSnapshot_actualModelID(ctx, field)
+			case "source":
+				return ec.fieldContext_ModelHealthSnapshot_source(ctx, field)
 			case "isHealthy":
 				return ec.fieldContext_ModelHealthSnapshot_isHealthy(ctx, field)
 			case "manualOverride":
@@ -16879,6 +16920,8 @@ func (ec *executionContext) fieldContext_Channel_modelHealthHistories(_ context.
 				return ec.fieldContext_ModelHealthHistory_channelID(ctx, field)
 			case "actualModelID":
 				return ec.fieldContext_ModelHealthHistory_actualModelID(ctx, field)
+			case "source":
+				return ec.fieldContext_ModelHealthHistory_source(ctx, field)
 			case "isHealthy":
 				return ec.fieldContext_ModelHealthHistory_isHealthy(ctx, field)
 			case "manualOverride":
@@ -26727,6 +26770,35 @@ func (ec *executionContext) fieldContext_ModelHealthHistory_actualModelID(_ cont
 	return fc, nil
 }
 
+func (ec *executionContext) _ModelHealthHistory_source(ctx context.Context, field graphql.CollectedField, obj *ent.ModelHealthHistory) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ModelHealthHistory_source,
+		func(ctx context.Context) (any, error) {
+			return obj.Source, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ModelHealthHistory_source(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ModelHealthHistory",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ModelHealthHistory_isHealthy(ctx context.Context, field graphql.CollectedField, obj *ent.ModelHealthHistory) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -27065,6 +27137,35 @@ func (ec *executionContext) _ModelHealthSnapshot_actualModelID(ctx context.Conte
 }
 
 func (ec *executionContext) fieldContext_ModelHealthSnapshot_actualModelID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ModelHealthSnapshot",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ModelHealthSnapshot_source(ctx context.Context, field graphql.CollectedField, obj *ent.ModelHealthSnapshot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ModelHealthSnapshot_source,
+		func(ctx context.Context) (any, error) {
+			return obj.Source, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ModelHealthSnapshot_source(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ModelHealthSnapshot",
 		Field:      field,
@@ -39722,6 +39823,8 @@ func (ec *executionContext) fieldContext_Query_modelHealthSnapshots(ctx context.
 				return ec.fieldContext_ModelHealthSnapshot_channelID(ctx, field)
 			case "actualModelID":
 				return ec.fieldContext_ModelHealthSnapshot_actualModelID(ctx, field)
+			case "source":
+				return ec.fieldContext_ModelHealthSnapshot_source(ctx, field)
 			case "isHealthy":
 				return ec.fieldContext_ModelHealthSnapshot_isHealthy(ctx, field)
 			case "manualOverride":
@@ -39742,6 +39845,71 @@ func (ec *executionContext) fieldContext_Query_modelHealthSnapshots(ctx context.
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_modelHealthSnapshots_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_discoveredModelHealthSnapshots(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_discoveredModelHealthSnapshots,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().DiscoveredModelHealthSnapshots(ctx, fc.Args["input"].(GetDiscoveredModelHealthSnapshotsInput))
+		},
+		nil,
+		ec.marshalNModelHealthSnapshot2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐModelHealthSnapshotᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_discoveredModelHealthSnapshots(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_ModelHealthSnapshot_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_ModelHealthSnapshot_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_ModelHealthSnapshot_updatedAt(ctx, field)
+			case "displayModel":
+				return ec.fieldContext_ModelHealthSnapshot_displayModel(ctx, field)
+			case "channelID":
+				return ec.fieldContext_ModelHealthSnapshot_channelID(ctx, field)
+			case "actualModelID":
+				return ec.fieldContext_ModelHealthSnapshot_actualModelID(ctx, field)
+			case "source":
+				return ec.fieldContext_ModelHealthSnapshot_source(ctx, field)
+			case "isHealthy":
+				return ec.fieldContext_ModelHealthSnapshot_isHealthy(ctx, field)
+			case "manualOverride":
+				return ec.fieldContext_ModelHealthSnapshot_manualOverride(ctx, field)
+			case "probedAt":
+				return ec.fieldContext_ModelHealthSnapshot_probedAt(ctx, field)
+			case "channel":
+				return ec.fieldContext_ModelHealthSnapshot_channel(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ModelHealthSnapshot", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_discoveredModelHealthSnapshots_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -39785,6 +39953,8 @@ func (ec *executionContext) fieldContext_Query_modelHealthHistory(ctx context.Co
 				return ec.fieldContext_ModelHealthHistory_channelID(ctx, field)
 			case "actualModelID":
 				return ec.fieldContext_ModelHealthHistory_actualModelID(ctx, field)
+			case "source":
+				return ec.fieldContext_ModelHealthHistory_source(ctx, field)
 			case "isHealthy":
 				return ec.fieldContext_ModelHealthHistory_isHealthy(ctx, field)
 			case "manualOverride":
@@ -61743,6 +61913,33 @@ func (ec *executionContext) unmarshalInputGetChannelProbeDataInput(ctx context.C
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputGetDiscoveredModelHealthSnapshotsInput(ctx context.Context, obj any) (GetDiscoveredModelHealthSnapshotsInput, error) {
+	var it GetDiscoveredModelHealthSnapshotsInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"displayModels"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "displayModels":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("displayModels"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DisplayModels = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputGetModelHealthHistoryInput(ctx context.Context, obj any) (GetModelHealthHistoryInput, error) {
 	var it GetModelHealthHistoryInput
 	asMap := map[string]any{}
@@ -62316,7 +62513,7 @@ func (ec *executionContext) unmarshalInputModelHealthHistoryWhereInput(ctx conte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "updatedAt", "updatedAtNEQ", "updatedAtIn", "updatedAtNotIn", "updatedAtGT", "updatedAtGTE", "updatedAtLT", "updatedAtLTE", "displayModel", "displayModelNEQ", "displayModelIn", "displayModelNotIn", "displayModelGT", "displayModelGTE", "displayModelLT", "displayModelLTE", "displayModelContains", "displayModelHasPrefix", "displayModelHasSuffix", "displayModelEqualFold", "displayModelContainsFold", "channelID", "channelIDNEQ", "channelIDIn", "channelIDNotIn", "actualModelID", "actualModelIDNEQ", "actualModelIDIn", "actualModelIDNotIn", "actualModelIDGT", "actualModelIDGTE", "actualModelIDLT", "actualModelIDLTE", "actualModelIDContains", "actualModelIDHasPrefix", "actualModelIDHasSuffix", "actualModelIDEqualFold", "actualModelIDContainsFold", "isHealthy", "isHealthyNEQ", "manualOverride", "manualOverrideNEQ", "probedAt", "probedAtNEQ", "probedAtIn", "probedAtNotIn", "probedAtGT", "probedAtGTE", "probedAtLT", "probedAtLTE", "hasChannel", "hasChannelWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "updatedAt", "updatedAtNEQ", "updatedAtIn", "updatedAtNotIn", "updatedAtGT", "updatedAtGTE", "updatedAtLT", "updatedAtLTE", "displayModel", "displayModelNEQ", "displayModelIn", "displayModelNotIn", "displayModelGT", "displayModelGTE", "displayModelLT", "displayModelLTE", "displayModelContains", "displayModelHasPrefix", "displayModelHasSuffix", "displayModelEqualFold", "displayModelContainsFold", "channelID", "channelIDNEQ", "channelIDIn", "channelIDNotIn", "actualModelID", "actualModelIDNEQ", "actualModelIDIn", "actualModelIDNotIn", "actualModelIDGT", "actualModelIDGTE", "actualModelIDLT", "actualModelIDLTE", "actualModelIDContains", "actualModelIDHasPrefix", "actualModelIDHasSuffix", "actualModelIDEqualFold", "actualModelIDContainsFold", "source", "sourceNEQ", "sourceIn", "sourceNotIn", "sourceGT", "sourceGTE", "sourceLT", "sourceLTE", "sourceContains", "sourceHasPrefix", "sourceHasSuffix", "sourceEqualFold", "sourceContainsFold", "isHealthy", "isHealthyNEQ", "manualOverride", "manualOverrideNEQ", "probedAt", "probedAtNEQ", "probedAtIn", "probedAtNotIn", "probedAtGT", "probedAtGTE", "probedAtLT", "probedAtLTE", "hasChannel", "hasChannelWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -62770,6 +62967,97 @@ func (ec *executionContext) unmarshalInputModelHealthHistoryWhereInput(ctx conte
 				return it, err
 			}
 			it.ActualModelIDContainsFold = data
+		case "source":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("source"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Source = data
+		case "sourceNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SourceNEQ = data
+		case "sourceIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SourceIn = data
+		case "sourceNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SourceNotIn = data
+		case "sourceGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SourceGT = data
+		case "sourceGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SourceGTE = data
+		case "sourceLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SourceLT = data
+		case "sourceLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SourceLTE = data
+		case "sourceContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SourceContains = data
+		case "sourceHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SourceHasPrefix = data
+		case "sourceHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SourceHasSuffix = data
+		case "sourceEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SourceEqualFold = data
+		case "sourceContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SourceContainsFold = data
 		case "isHealthy":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isHealthy"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -62919,7 +63207,7 @@ func (ec *executionContext) unmarshalInputModelHealthSnapshotWhereInput(ctx cont
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "updatedAt", "updatedAtNEQ", "updatedAtIn", "updatedAtNotIn", "updatedAtGT", "updatedAtGTE", "updatedAtLT", "updatedAtLTE", "displayModel", "displayModelNEQ", "displayModelIn", "displayModelNotIn", "displayModelGT", "displayModelGTE", "displayModelLT", "displayModelLTE", "displayModelContains", "displayModelHasPrefix", "displayModelHasSuffix", "displayModelEqualFold", "displayModelContainsFold", "channelID", "channelIDNEQ", "channelIDIn", "channelIDNotIn", "actualModelID", "actualModelIDNEQ", "actualModelIDIn", "actualModelIDNotIn", "actualModelIDGT", "actualModelIDGTE", "actualModelIDLT", "actualModelIDLTE", "actualModelIDContains", "actualModelIDHasPrefix", "actualModelIDHasSuffix", "actualModelIDEqualFold", "actualModelIDContainsFold", "isHealthy", "isHealthyNEQ", "manualOverride", "manualOverrideNEQ", "probedAt", "probedAtNEQ", "probedAtIn", "probedAtNotIn", "probedAtGT", "probedAtGTE", "probedAtLT", "probedAtLTE", "hasChannel", "hasChannelWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "updatedAt", "updatedAtNEQ", "updatedAtIn", "updatedAtNotIn", "updatedAtGT", "updatedAtGTE", "updatedAtLT", "updatedAtLTE", "displayModel", "displayModelNEQ", "displayModelIn", "displayModelNotIn", "displayModelGT", "displayModelGTE", "displayModelLT", "displayModelLTE", "displayModelContains", "displayModelHasPrefix", "displayModelHasSuffix", "displayModelEqualFold", "displayModelContainsFold", "channelID", "channelIDNEQ", "channelIDIn", "channelIDNotIn", "actualModelID", "actualModelIDNEQ", "actualModelIDIn", "actualModelIDNotIn", "actualModelIDGT", "actualModelIDGTE", "actualModelIDLT", "actualModelIDLTE", "actualModelIDContains", "actualModelIDHasPrefix", "actualModelIDHasSuffix", "actualModelIDEqualFold", "actualModelIDContainsFold", "source", "sourceNEQ", "sourceIn", "sourceNotIn", "sourceGT", "sourceGTE", "sourceLT", "sourceLTE", "sourceContains", "sourceHasPrefix", "sourceHasSuffix", "sourceEqualFold", "sourceContainsFold", "isHealthy", "isHealthyNEQ", "manualOverride", "manualOverrideNEQ", "probedAt", "probedAtNEQ", "probedAtIn", "probedAtNotIn", "probedAtGT", "probedAtGTE", "probedAtLT", "probedAtLTE", "hasChannel", "hasChannelWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -63373,6 +63661,97 @@ func (ec *executionContext) unmarshalInputModelHealthSnapshotWhereInput(ctx cont
 				return it, err
 			}
 			it.ActualModelIDContainsFold = data
+		case "source":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("source"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Source = data
+		case "sourceNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SourceNEQ = data
+		case "sourceIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SourceIn = data
+		case "sourceNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SourceNotIn = data
+		case "sourceGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SourceGT = data
+		case "sourceGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SourceGTE = data
+		case "sourceLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SourceLT = data
+		case "sourceLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SourceLTE = data
+		case "sourceContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SourceContains = data
+		case "sourceHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SourceHasPrefix = data
+		case "sourceHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SourceHasSuffix = data
+		case "sourceEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SourceEqualFold = data
+		case "sourceContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SourceContainsFold = data
 		case "isHealthy":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isHealthy"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -63667,13 +64046,11 @@ func (ec *executionContext) unmarshalInputModelSettingsInput(ctx context.Context
 		switch k {
 		case "probeEnabled":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("probeEnabled"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			if data != nil {
-				it.ProbeEnabled = *data
-			}
+			it.ProbeEnabled = data
 		case "associations":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("associations"))
 			data, err := ec.unmarshalNModelAssociationInput2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐModelAssociationᚄ(ctx, v)
@@ -84611,6 +84988,11 @@ func (ec *executionContext) _ModelHealthHistory(ctx context.Context, sel ast.Sel
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "source":
+			out.Values[i] = ec._ModelHealthHistory_source(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "isHealthy":
 			out.Values[i] = ec._ModelHealthHistory_isHealthy(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -84785,6 +85167,11 @@ func (ec *executionContext) _ModelHealthSnapshot(ctx context.Context, sel ast.Se
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "actualModelID":
 			out.Values[i] = ec._ModelHealthSnapshot_actualModelID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "source":
+			out.Values[i] = ec._ModelHealthSnapshot_source(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
@@ -89262,6 +89649,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_modelHealthSnapshots(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "discoveredModelHealthSnapshots":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_discoveredModelHealthSnapshots(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -98119,6 +98528,11 @@ func (ec *executionContext) unmarshalNGetChannelHealthSnapshotsInput2githubᚗco
 
 func (ec *executionContext) unmarshalNGetChannelProbeDataInput2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋbizᚐGetChannelProbeDataInput(ctx context.Context, v any) (biz.GetChannelProbeDataInput, error) {
 	res, err := ec.unmarshalInputGetChannelProbeDataInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNGetDiscoveredModelHealthSnapshotsInput2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋgqlᚐGetDiscoveredModelHealthSnapshotsInput(ctx context.Context, v any) (GetDiscoveredModelHealthSnapshotsInput, error) {
+	res, err := ec.unmarshalInputGetDiscoveredModelHealthSnapshotsInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 

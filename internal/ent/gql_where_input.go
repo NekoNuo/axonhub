@@ -3981,6 +3981,21 @@ type ModelHealthHistoryWhereInput struct {
 	ActualModelIDEqualFold    *string  `json:"actualModelIDEqualFold,omitempty"`
 	ActualModelIDContainsFold *string  `json:"actualModelIDContainsFold,omitempty"`
 
+	// "source" field predicates.
+	Source             *string  `json:"source,omitempty"`
+	SourceNEQ          *string  `json:"sourceNEQ,omitempty"`
+	SourceIn           []string `json:"sourceIn,omitempty"`
+	SourceNotIn        []string `json:"sourceNotIn,omitempty"`
+	SourceGT           *string  `json:"sourceGT,omitempty"`
+	SourceGTE          *string  `json:"sourceGTE,omitempty"`
+	SourceLT           *string  `json:"sourceLT,omitempty"`
+	SourceLTE          *string  `json:"sourceLTE,omitempty"`
+	SourceContains     *string  `json:"sourceContains,omitempty"`
+	SourceHasPrefix    *string  `json:"sourceHasPrefix,omitempty"`
+	SourceHasSuffix    *string  `json:"sourceHasSuffix,omitempty"`
+	SourceEqualFold    *string  `json:"sourceEqualFold,omitempty"`
+	SourceContainsFold *string  `json:"sourceContainsFold,omitempty"`
+
 	// "is_healthy" field predicates.
 	IsHealthy    *bool `json:"isHealthy,omitempty"`
 	IsHealthyNEQ *bool `json:"isHealthyNEQ,omitempty"`
@@ -4237,6 +4252,45 @@ func (i *ModelHealthHistoryWhereInput) P() (predicate.ModelHealthHistory, error)
 	if i.ActualModelIDContainsFold != nil {
 		predicates = append(predicates, modelhealthhistory.ActualModelIDContainsFold(*i.ActualModelIDContainsFold))
 	}
+	if i.Source != nil {
+		predicates = append(predicates, modelhealthhistory.SourceEQ(*i.Source))
+	}
+	if i.SourceNEQ != nil {
+		predicates = append(predicates, modelhealthhistory.SourceNEQ(*i.SourceNEQ))
+	}
+	if len(i.SourceIn) > 0 {
+		predicates = append(predicates, modelhealthhistory.SourceIn(i.SourceIn...))
+	}
+	if len(i.SourceNotIn) > 0 {
+		predicates = append(predicates, modelhealthhistory.SourceNotIn(i.SourceNotIn...))
+	}
+	if i.SourceGT != nil {
+		predicates = append(predicates, modelhealthhistory.SourceGT(*i.SourceGT))
+	}
+	if i.SourceGTE != nil {
+		predicates = append(predicates, modelhealthhistory.SourceGTE(*i.SourceGTE))
+	}
+	if i.SourceLT != nil {
+		predicates = append(predicates, modelhealthhistory.SourceLT(*i.SourceLT))
+	}
+	if i.SourceLTE != nil {
+		predicates = append(predicates, modelhealthhistory.SourceLTE(*i.SourceLTE))
+	}
+	if i.SourceContains != nil {
+		predicates = append(predicates, modelhealthhistory.SourceContains(*i.SourceContains))
+	}
+	if i.SourceHasPrefix != nil {
+		predicates = append(predicates, modelhealthhistory.SourceHasPrefix(*i.SourceHasPrefix))
+	}
+	if i.SourceHasSuffix != nil {
+		predicates = append(predicates, modelhealthhistory.SourceHasSuffix(*i.SourceHasSuffix))
+	}
+	if i.SourceEqualFold != nil {
+		predicates = append(predicates, modelhealthhistory.SourceEqualFold(*i.SourceEqualFold))
+	}
+	if i.SourceContainsFold != nil {
+		predicates = append(predicates, modelhealthhistory.SourceContainsFold(*i.SourceContainsFold))
+	}
 	if i.IsHealthy != nil {
 		predicates = append(predicates, modelhealthhistory.IsHealthyEQ(*i.IsHealthy))
 	}
@@ -4374,6 +4428,21 @@ type ModelHealthSnapshotWhereInput struct {
 	ActualModelIDHasSuffix    *string  `json:"actualModelIDHasSuffix,omitempty"`
 	ActualModelIDEqualFold    *string  `json:"actualModelIDEqualFold,omitempty"`
 	ActualModelIDContainsFold *string  `json:"actualModelIDContainsFold,omitempty"`
+
+	// "source" field predicates.
+	Source             *string  `json:"source,omitempty"`
+	SourceNEQ          *string  `json:"sourceNEQ,omitempty"`
+	SourceIn           []string `json:"sourceIn,omitempty"`
+	SourceNotIn        []string `json:"sourceNotIn,omitempty"`
+	SourceGT           *string  `json:"sourceGT,omitempty"`
+	SourceGTE          *string  `json:"sourceGTE,omitempty"`
+	SourceLT           *string  `json:"sourceLT,omitempty"`
+	SourceLTE          *string  `json:"sourceLTE,omitempty"`
+	SourceContains     *string  `json:"sourceContains,omitempty"`
+	SourceHasPrefix    *string  `json:"sourceHasPrefix,omitempty"`
+	SourceHasSuffix    *string  `json:"sourceHasSuffix,omitempty"`
+	SourceEqualFold    *string  `json:"sourceEqualFold,omitempty"`
+	SourceContainsFold *string  `json:"sourceContainsFold,omitempty"`
 
 	// "is_healthy" field predicates.
 	IsHealthy    *bool `json:"isHealthy,omitempty"`
@@ -4630,6 +4699,45 @@ func (i *ModelHealthSnapshotWhereInput) P() (predicate.ModelHealthSnapshot, erro
 	}
 	if i.ActualModelIDContainsFold != nil {
 		predicates = append(predicates, modelhealthsnapshot.ActualModelIDContainsFold(*i.ActualModelIDContainsFold))
+	}
+	if i.Source != nil {
+		predicates = append(predicates, modelhealthsnapshot.SourceEQ(*i.Source))
+	}
+	if i.SourceNEQ != nil {
+		predicates = append(predicates, modelhealthsnapshot.SourceNEQ(*i.SourceNEQ))
+	}
+	if len(i.SourceIn) > 0 {
+		predicates = append(predicates, modelhealthsnapshot.SourceIn(i.SourceIn...))
+	}
+	if len(i.SourceNotIn) > 0 {
+		predicates = append(predicates, modelhealthsnapshot.SourceNotIn(i.SourceNotIn...))
+	}
+	if i.SourceGT != nil {
+		predicates = append(predicates, modelhealthsnapshot.SourceGT(*i.SourceGT))
+	}
+	if i.SourceGTE != nil {
+		predicates = append(predicates, modelhealthsnapshot.SourceGTE(*i.SourceGTE))
+	}
+	if i.SourceLT != nil {
+		predicates = append(predicates, modelhealthsnapshot.SourceLT(*i.SourceLT))
+	}
+	if i.SourceLTE != nil {
+		predicates = append(predicates, modelhealthsnapshot.SourceLTE(*i.SourceLTE))
+	}
+	if i.SourceContains != nil {
+		predicates = append(predicates, modelhealthsnapshot.SourceContains(*i.SourceContains))
+	}
+	if i.SourceHasPrefix != nil {
+		predicates = append(predicates, modelhealthsnapshot.SourceHasPrefix(*i.SourceHasPrefix))
+	}
+	if i.SourceHasSuffix != nil {
+		predicates = append(predicates, modelhealthsnapshot.SourceHasSuffix(*i.SourceHasSuffix))
+	}
+	if i.SourceEqualFold != nil {
+		predicates = append(predicates, modelhealthsnapshot.SourceEqualFold(*i.SourceEqualFold))
+	}
+	if i.SourceContainsFold != nil {
+		predicates = append(predicates, modelhealthsnapshot.SourceContainsFold(*i.SourceContainsFold))
 	}
 	if i.IsHealthy != nil {
 		predicates = append(predicates, modelhealthsnapshot.IsHealthyEQ(*i.IsHealthy))

@@ -69,6 +69,20 @@ func (_c *ModelHealthHistoryCreate) SetActualModelID(v string) *ModelHealthHisto
 	return _c
 }
 
+// SetSource sets the "source" field.
+func (_c *ModelHealthHistoryCreate) SetSource(v string) *ModelHealthHistoryCreate {
+	_c.mutation.SetSource(v)
+	return _c
+}
+
+// SetNillableSource sets the "source" field if the given value is not nil.
+func (_c *ModelHealthHistoryCreate) SetNillableSource(v *string) *ModelHealthHistoryCreate {
+	if v != nil {
+		_c.SetSource(*v)
+	}
+	return _c
+}
+
 // SetIsHealthy sets the "is_healthy" field.
 func (_c *ModelHealthHistoryCreate) SetIsHealthy(v bool) *ModelHealthHistoryCreate {
 	_c.mutation.SetIsHealthy(v)
@@ -151,6 +165,10 @@ func (_c *ModelHealthHistoryCreate) defaults() {
 		v := modelhealthhistory.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.Source(); !ok {
+		v := modelhealthhistory.DefaultSource
+		_c.mutation.SetSource(v)
+	}
 	if _, ok := _c.mutation.IsHealthy(); !ok {
 		v := modelhealthhistory.DefaultIsHealthy
 		_c.mutation.SetIsHealthy(v)
@@ -171,6 +189,9 @@ func (_c *ModelHealthHistoryCreate) check() error {
 	}
 	if _, ok := _c.mutation.ActualModelID(); !ok {
 		return &ValidationError{Name: "actual_model_id", err: errors.New(`ent: missing required field "ModelHealthHistory.actual_model_id"`)}
+	}
+	if _, ok := _c.mutation.Source(); !ok {
+		return &ValidationError{Name: "source", err: errors.New(`ent: missing required field "ModelHealthHistory.source"`)}
 	}
 	if _, ok := _c.mutation.IsHealthy(); !ok {
 		return &ValidationError{Name: "is_healthy", err: errors.New(`ent: missing required field "ModelHealthHistory.is_healthy"`)}
@@ -226,6 +247,10 @@ func (_c *ModelHealthHistoryCreate) createSpec() (*ModelHealthHistory, *sqlgraph
 	if value, ok := _c.mutation.ActualModelID(); ok {
 		_spec.SetField(modelhealthhistory.FieldActualModelID, field.TypeString, value)
 		_node.ActualModelID = value
+	}
+	if value, ok := _c.mutation.Source(); ok {
+		_spec.SetField(modelhealthhistory.FieldSource, field.TypeString, value)
+		_node.Source = value
 	}
 	if value, ok := _c.mutation.IsHealthy(); ok {
 		_spec.SetField(modelhealthhistory.FieldIsHealthy, field.TypeBool, value)
@@ -353,6 +378,18 @@ func (u *ModelHealthHistoryUpsert) SetActualModelID(v string) *ModelHealthHistor
 // UpdateActualModelID sets the "actual_model_id" field to the value that was provided on create.
 func (u *ModelHealthHistoryUpsert) UpdateActualModelID() *ModelHealthHistoryUpsert {
 	u.SetExcluded(modelhealthhistory.FieldActualModelID)
+	return u
+}
+
+// SetSource sets the "source" field.
+func (u *ModelHealthHistoryUpsert) SetSource(v string) *ModelHealthHistoryUpsert {
+	u.Set(modelhealthhistory.FieldSource, v)
+	return u
+}
+
+// UpdateSource sets the "source" field to the value that was provided on create.
+func (u *ModelHealthHistoryUpsert) UpdateSource() *ModelHealthHistoryUpsert {
+	u.SetExcluded(modelhealthhistory.FieldSource)
 	return u
 }
 
@@ -496,6 +533,20 @@ func (u *ModelHealthHistoryUpsertOne) SetActualModelID(v string) *ModelHealthHis
 func (u *ModelHealthHistoryUpsertOne) UpdateActualModelID() *ModelHealthHistoryUpsertOne {
 	return u.Update(func(s *ModelHealthHistoryUpsert) {
 		s.UpdateActualModelID()
+	})
+}
+
+// SetSource sets the "source" field.
+func (u *ModelHealthHistoryUpsertOne) SetSource(v string) *ModelHealthHistoryUpsertOne {
+	return u.Update(func(s *ModelHealthHistoryUpsert) {
+		s.SetSource(v)
+	})
+}
+
+// UpdateSource sets the "source" field to the value that was provided on create.
+func (u *ModelHealthHistoryUpsertOne) UpdateSource() *ModelHealthHistoryUpsertOne {
+	return u.Update(func(s *ModelHealthHistoryUpsert) {
+		s.UpdateSource()
 	})
 }
 
@@ -812,6 +863,20 @@ func (u *ModelHealthHistoryUpsertBulk) SetActualModelID(v string) *ModelHealthHi
 func (u *ModelHealthHistoryUpsertBulk) UpdateActualModelID() *ModelHealthHistoryUpsertBulk {
 	return u.Update(func(s *ModelHealthHistoryUpsert) {
 		s.UpdateActualModelID()
+	})
+}
+
+// SetSource sets the "source" field.
+func (u *ModelHealthHistoryUpsertBulk) SetSource(v string) *ModelHealthHistoryUpsertBulk {
+	return u.Update(func(s *ModelHealthHistoryUpsert) {
+		s.SetSource(v)
+	})
+}
+
+// UpdateSource sets the "source" field to the value that was provided on create.
+func (u *ModelHealthHistoryUpsertBulk) UpdateSource() *ModelHealthHistoryUpsertBulk {
+	return u.Update(func(s *ModelHealthHistoryUpsert) {
+		s.UpdateSource()
 	})
 }
 

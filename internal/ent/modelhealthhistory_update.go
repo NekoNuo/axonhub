@@ -78,6 +78,20 @@ func (_u *ModelHealthHistoryUpdate) SetNillableActualModelID(v *string) *ModelHe
 	return _u
 }
 
+// SetSource sets the "source" field.
+func (_u *ModelHealthHistoryUpdate) SetSource(v string) *ModelHealthHistoryUpdate {
+	_u.mutation.SetSource(v)
+	return _u
+}
+
+// SetNillableSource sets the "source" field if the given value is not nil.
+func (_u *ModelHealthHistoryUpdate) SetNillableSource(v *string) *ModelHealthHistoryUpdate {
+	if v != nil {
+		_u.SetSource(*v)
+	}
+	return _u
+}
+
 // SetIsHealthy sets the "is_healthy" field.
 func (_u *ModelHealthHistoryUpdate) SetIsHealthy(v bool) *ModelHealthHistoryUpdate {
 	_u.mutation.SetIsHealthy(v)
@@ -214,6 +228,9 @@ func (_u *ModelHealthHistoryUpdate) sqlSave(ctx context.Context) (_node int, err
 	if value, ok := _u.mutation.ActualModelID(); ok {
 		_spec.SetField(modelhealthhistory.FieldActualModelID, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.Source(); ok {
+		_spec.SetField(modelhealthhistory.FieldSource, field.TypeString, value)
+	}
 	if value, ok := _u.mutation.IsHealthy(); ok {
 		_spec.SetField(modelhealthhistory.FieldIsHealthy, field.TypeBool, value)
 	}
@@ -321,6 +338,20 @@ func (_u *ModelHealthHistoryUpdateOne) SetActualModelID(v string) *ModelHealthHi
 func (_u *ModelHealthHistoryUpdateOne) SetNillableActualModelID(v *string) *ModelHealthHistoryUpdateOne {
 	if v != nil {
 		_u.SetActualModelID(*v)
+	}
+	return _u
+}
+
+// SetSource sets the "source" field.
+func (_u *ModelHealthHistoryUpdateOne) SetSource(v string) *ModelHealthHistoryUpdateOne {
+	_u.mutation.SetSource(v)
+	return _u
+}
+
+// SetNillableSource sets the "source" field if the given value is not nil.
+func (_u *ModelHealthHistoryUpdateOne) SetNillableSource(v *string) *ModelHealthHistoryUpdateOne {
+	if v != nil {
+		_u.SetSource(*v)
 	}
 	return _u
 }
@@ -490,6 +521,9 @@ func (_u *ModelHealthHistoryUpdateOne) sqlSave(ctx context.Context) (_node *Mode
 	}
 	if value, ok := _u.mutation.ActualModelID(); ok {
 		_spec.SetField(modelhealthhistory.FieldActualModelID, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Source(); ok {
+		_spec.SetField(modelhealthhistory.FieldSource, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.IsHealthy(); ok {
 		_spec.SetField(modelhealthhistory.FieldIsHealthy, field.TypeBool, value)

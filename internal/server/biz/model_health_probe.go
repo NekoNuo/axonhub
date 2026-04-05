@@ -3,6 +3,7 @@ package biz
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/samber/lo"
@@ -14,10 +15,15 @@ import (
 	"github.com/looplj/axonhub/internal/pkg/xcontext"
 )
 
+const (
+	automaticModelProbeMaxConcurrency = 2
+)
+
 type ModelHealthSnapshotView struct {
 	DisplayModel   string
 	ChannelID      int
 	ActualModelID  string
+	Source         string
 	IsHealthy      bool
 	ManualOverride bool
 	ProbedAt       int64
@@ -38,33 +44,41 @@ func (svc *ChannelProbeService) runModelHealthProbe(ctx context.Context, now tim
 		return
 	}
 
-	modelService := &ModelService{
-		AbstractService: &AbstractService{db: svc.db},
-	}
-	targetResolver := NewModelHealthTargetResolver(svc.db, modelService)
+	targetResolver := NewModelHealthTargetResolver(svc.db, nil)
 
 	targets, err := targetResolver.Resolve(ctx, recentUsage)
 	if err != nil {
 		return
 	}
 
+	sem := make(chan struct{}, automaticModelProbeMaxConcurrency)
+	var wg sync.WaitGroup
+
 	for _, target := range targets {
-		bizChannel := svc.ChannelService.GetEnabledChannel(target.ChannelID)
-		if bizChannel == nil {
-			continue
-		}
+		target := target
+		wg.Add(1)
 
-		latency, healthy, probeErr := svc.idleChannelModelProber(ctx, bizChannel.Channel, target.ActualModelID)
-		if probeErr != nil {
-			healthy = false
-		}
+		go func() {
+			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
 
-		if persistErr := svc.persistModelHealthResult(ctx, target, healthy, now.Unix(), false); persistErr != nil {
-			continue
-		}
+			bizChannel := svc.ChannelService.GetEnabledChannel(target.ChannelID)
+			if bizChannel == nil {
+				return
+			}
 
-		_ = latency
+			_, healthy, probeErr := svc.idleChannelModelProber(ctx, bizChannel.Channel, target.ActualModelID)
+			if probeErr != nil {
+				healthy = false
+			}
+
+			_ = svc.persistModelHealthResult(ctx, target, healthy, now.Unix(), false)
+		}()
 	}
+
+	wg.Wait()
+	_ = svc.cleanupExpiredDiscoveredModelHealth(ctx, now.Unix())
 }
 
 func (svc *ChannelProbeService) persistModelHealthResult(
@@ -74,6 +88,10 @@ func (svc *ChannelProbeService) persistModelHealthResult(
 	probedAt int64,
 	manualOverride bool,
 ) error {
+	if target.Source == "" {
+		target.Source = ModelHealthSourceAssociated
+	}
+
 	snapshot, err := svc.db.ModelHealthSnapshot.Query().
 		Where(
 			modelhealthsnapshot.DisplayModelEQ(target.DisplayModel),
@@ -90,12 +108,14 @@ func (svc *ChannelProbeService) persistModelHealthResult(
 			SetDisplayModel(target.DisplayModel).
 			SetChannelID(target.ChannelID).
 			SetActualModelID(target.ActualModelID).
+			SetSource(target.Source).
 			SetIsHealthy(healthy).
 			SetManualOverride(manualOverride).
 			SetProbedAt(probedAt).
 			Save(ctx)
 	} else {
 		_, err = snapshot.Update().
+			SetSource(target.Source).
 			SetIsHealthy(healthy).
 			SetManualOverride(manualOverride).
 			SetProbedAt(probedAt).
@@ -109,6 +129,7 @@ func (svc *ChannelProbeService) persistModelHealthResult(
 		SetDisplayModel(target.DisplayModel).
 		SetChannelID(target.ChannelID).
 		SetActualModelID(target.ActualModelID).
+		SetSource(target.Source).
 		SetIsHealthy(healthy).
 		SetManualOverride(manualOverride).
 		SetProbedAt(probedAt).
@@ -125,20 +146,22 @@ func (svc *ChannelProbeService) RunManualModelProbe(ctx context.Context, target 
 		return nil
 	}
 
-	bizChannel := svc.ChannelService.GetEnabledChannel(target.ChannelID)
-	if bizChannel == nil {
-		return nil
-	}
+	return svc.withManualModelProbeChannelLock(target.ChannelID, func() error {
+		bizChannel := svc.ChannelService.GetEnabledChannel(target.ChannelID)
+		if bizChannel == nil {
+			return nil
+		}
 
-	_, healthy, probeErr := svc.idleChannelModelProber(ctx, bizChannel.Channel, target.ActualModelID)
-	if probeErr != nil {
-		healthy = false
-	}
+		_, healthy, probeErr := svc.idleChannelModelProber(ctx, bizChannel.Channel, target.ActualModelID)
+		if probeErr != nil {
+			healthy = false
+		}
 
-	persistCtx, cancel := xcontext.DetachWithTimeout(ctx, 10*time.Second)
-	defer cancel()
+		persistCtx, cancel := xcontext.DetachWithTimeout(ctx, 10*time.Second)
+		defer cancel()
 
-	return svc.persistModelHealthResult(persistCtx, target, healthy, now.Unix(), true)
+		return svc.persistModelHealthResult(persistCtx, target, healthy, now.Unix(), true)
+	})
 }
 
 func (svc *ChannelProbeService) GetEffectiveModelHealth(ctx context.Context, target ModelHealthProbeTarget) (*ModelHealthSnapshotView, error) {
@@ -187,6 +210,7 @@ func getEffectiveModelHealthFromDB(
 		DisplayModel:   snapshot.DisplayModel,
 		ChannelID:      snapshot.ChannelID,
 		ActualModelID:  snapshot.ActualModelID,
+		Source:         snapshot.Source,
 		IsHealthy:      snapshot.IsHealthy,
 		ManualOverride: snapshot.ManualOverride,
 		ProbedAt:       snapshot.ProbedAt,
@@ -215,11 +239,38 @@ func getEffectiveModelHealthFromDB(
 
 	if latestAuto.ProbedAt > snapshot.ProbedAt {
 		view.IsHealthy = latestAuto.IsHealthy
+		view.Source = latestAuto.Source
 		view.ManualOverride = false
 		view.ProbedAt = latestAuto.ProbedAt
 	}
 
 	return view, nil
+}
+
+func (svc *ChannelProbeService) cleanupExpiredDiscoveredModelHealth(ctx context.Context, nowUnix int64) error {
+	expireBefore := nowUnix - modelHealthDiscoveredRetention
+
+	_, err := svc.db.ModelHealthSnapshot.Delete().
+		Where(
+			modelhealthsnapshot.SourceEQ(ModelHealthSourceDiscoveredRecentUsage),
+			modelhealthsnapshot.ProbedAtLT(expireBefore),
+		).
+		Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("delete expired discovered model health snapshots: %w", err)
+	}
+
+	_, err = svc.db.ModelHealthHistory.Delete().
+		Where(
+			modelhealthhistory.SourceEQ(ModelHealthSourceDiscoveredRecentUsage),
+			modelhealthhistory.ProbedAtLT(expireBefore),
+		).
+		Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("delete expired discovered model health history: %w", err)
+	}
+
+	return nil
 }
 
 func GetEffectiveModelHealthFromDBForResolver(

@@ -114,25 +114,20 @@ func TestModelHealthTargetResolver(t *testing.T) {
 	targets, err := resolver.Resolve(ctx, recent)
 	require.NoError(t, err)
 
-	require.Len(t, targets, 4)
+	require.Len(t, targets, 3)
 
-	require.Equal(t, "claude-sonnet", targets[0].DisplayModel)
-	require.Equal(t, "claude-3-7-sonnet", targets[0].ActualModelID)
-	require.Equal(t, channel3.ID, targets[0].ChannelID)
-	require.ElementsMatch(t, []string{ModelHealthTargetSourceManual}, targets[0].Sources)
+	require.Equal(t, "gpt-4o", targets[0].DisplayModel)
+	require.Equal(t, "gpt-4.1", targets[0].ActualModelID)
+	require.Equal(t, channel1.ID, targets[0].ChannelID)
+	require.ElementsMatch(t, []string{ModelHealthTargetSourceRecent}, targets[0].Sources)
 
 	require.Equal(t, "gpt-4o", targets[1].DisplayModel)
-	require.Equal(t, "gpt-4.1", targets[1].ActualModelID)
+	require.Equal(t, "gpt-4o-2024-11-20", targets[1].ActualModelID)
 	require.Equal(t, channel1.ID, targets[1].ChannelID)
 	require.ElementsMatch(t, []string{ModelHealthTargetSourceRecent}, targets[1].Sources)
 
 	require.Equal(t, "gpt-4o", targets[2].DisplayModel)
 	require.Equal(t, "gpt-4o-2024-11-20", targets[2].ActualModelID)
-	require.Equal(t, channel1.ID, targets[2].ChannelID)
-	require.ElementsMatch(t, []string{ModelHealthTargetSourceManual, ModelHealthTargetSourceRecent}, targets[2].Sources)
-
-	require.Equal(t, "gpt-4o", targets[3].DisplayModel)
-	require.Equal(t, "gpt-4o-2024-11-20", targets[3].ActualModelID)
-	require.Equal(t, channel2.ID, targets[3].ChannelID)
-	require.ElementsMatch(t, []string{ModelHealthTargetSourceRecent}, targets[3].Sources)
+	require.Equal(t, channel2.ID, targets[2].ChannelID)
+	require.ElementsMatch(t, []string{ModelHealthTargetSourceRecent}, targets[2].Sources)
 }

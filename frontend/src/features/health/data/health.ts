@@ -22,6 +22,20 @@ export const MODEL_HEALTH_SNAPSHOTS_QUERY = `
   }
 `;
 
+export const DISCOVERED_MODEL_HEALTH_SNAPSHOTS_QUERY = `
+  query DiscoveredModelHealthSnapshots($input: GetDiscoveredModelHealthSnapshotsInput!) {
+    discoveredModelHealthSnapshots(input: $input) {
+      id
+      displayModel
+      channelID
+      actualModelID
+      isHealthy
+      manualOverride
+      probedAt
+    }
+  }
+`;
+
 export const MODEL_HEALTH_HISTORY_QUERY = `
   query ModelHealthHistory($input: GetModelHealthHistoryInput!) {
     modelHealthHistory(input: $input) {
@@ -46,6 +60,10 @@ export function parseModelHealthSnapshots(data: unknown[]): ModelHealthSnapshot[
   return modelHealthSnapshotSchema.array().parse(data);
 }
 
+export function parseDiscoveredModelHealthSnapshots(data: unknown[]): ModelHealthSnapshot[] {
+  return modelHealthSnapshotSchema.array().parse(data);
+}
+
 export function parseModelHealthHistory(data: unknown[]): ModelHealthHistory[] {
   return modelHealthHistorySchema.array().parse(data);
 }
@@ -59,6 +77,11 @@ export function buildManualModelProbeVariables(input: ManualModelProbeInput) {
 export async function fetchModelHealthSnapshots(variables: { input: { displayModels?: string[] } }) {
   const data = await graphqlRequest<{ modelHealthSnapshots: unknown[] }>(MODEL_HEALTH_SNAPSHOTS_QUERY, variables);
   return parseModelHealthSnapshots(data.modelHealthSnapshots || []);
+}
+
+export async function fetchDiscoveredModelHealthSnapshots(variables: { input: { displayModels?: string[] } }) {
+  const data = await graphqlRequest<{ discoveredModelHealthSnapshots: unknown[] }>(DISCOVERED_MODEL_HEALTH_SNAPSHOTS_QUERY, variables);
+  return parseDiscoveredModelHealthSnapshots(data.discoveredModelHealthSnapshots || []);
 }
 
 export async function fetchModelHealthHistory(variables: {

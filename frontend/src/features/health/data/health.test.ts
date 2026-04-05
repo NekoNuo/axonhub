@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { parseModelHealthHistory, parseModelHealthSnapshots, buildManualModelProbeVariables } from './health';
+import {
+  parseDiscoveredModelHealthSnapshots,
+  parseModelHealthHistory,
+  parseModelHealthSnapshots,
+  buildManualModelProbeVariables,
+} from './health';
 import { modelHealthHistorySchema, modelHealthSnapshotSchema } from './schema';
 
 describe('Task 8 Model Health Data', () => {
@@ -54,5 +59,20 @@ describe('Task 8 Model Health Data', () => {
         channelID: 'Q2hhbm5lbDox',
       },
     });
+  });
+
+  it('parses discovered model health rows', () => {
+    const snapshots = parseDiscoveredModelHealthSnapshots([
+      {
+        displayModel: 'gpt-5-2',
+        channelID: 'Q2hhbm5lbDox',
+        actualModelID: 'gpt-5-2',
+        isHealthy: true,
+        manualOverride: false,
+        probedAt: 1712310000,
+      },
+    ]);
+
+    expect(modelHealthSnapshotSchema.array().parse(snapshots)[0].displayModel).toBe('gpt-5-2');
   });
 });

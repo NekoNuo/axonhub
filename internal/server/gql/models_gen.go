@@ -216,6 +216,10 @@ type FetchModelsPayload struct {
 	Error  *string              `json:"error,omitempty"`
 }
 
+type GetDiscoveredModelHealthSnapshotsInput struct {
+	DisplayModels []string `json:"displayModels,omitempty"`
+}
+
 type GetModelHealthHistoryInput struct {
 	DisplayModel  *string         `json:"displayModel,omitempty"`
 	ActualModelID *string         `json:"actualModelID,omitempty"`

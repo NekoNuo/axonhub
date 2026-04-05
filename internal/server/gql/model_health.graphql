@@ -2,6 +2,10 @@ input GetModelHealthSnapshotsInput {
   displayModels: [String!]
 }
 
+input GetDiscoveredModelHealthSnapshotsInput {
+  displayModels: [String!]
+}
+
 input GetModelHealthHistoryInput {
   displayModel: String
   actualModelID: String
@@ -16,6 +20,7 @@ input ManualModelProbeInput {
 
 extend type Query {
   modelHealthSnapshots(input: GetModelHealthSnapshotsInput!): [ModelHealthSnapshot!]!
+  discoveredModelHealthSnapshots(input: GetDiscoveredModelHealthSnapshotsInput!): [ModelHealthSnapshot!]!
   modelHealthHistory(input: GetModelHealthHistoryInput!): [ModelHealthHistory!]!
 }
 

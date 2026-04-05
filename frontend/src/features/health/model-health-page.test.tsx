@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildModelHealthTree,
+  buildDiscoveredModelHealthRows,
+  runProbeTargetsWithLimit,
   getActualModelHistory,
   getChannelProbeTargets,
   getDisplayModelHistory,
@@ -264,5 +266,62 @@ describe('Task 12 Model Health Page', () => {
       channelID: 'Q2hhbm5lbDox',
       actualModelID: 'gpt-4o-2024-11-20',
     });
+  });
+
+  it('limits manual probe concurrency', async () => {
+    const targets = [
+      { displayModel: 'gpt-4o', channelID: 'Q2hhbm5lbDox', actualModelID: 'm1' },
+      { displayModel: 'gpt-4o', channelID: 'Q2hhbm5lbDox', actualModelID: 'm2' },
+      { displayModel: 'gpt-4o', channelID: 'Q2hhbm5lbDox', actualModelID: 'm3' },
+      { displayModel: 'gpt-4o', channelID: 'Q2hhbm5lbDox', actualModelID: 'm4' },
+    ];
+    let active = 0;
+    let maxActive = 0;
+    const started: string[] = [];
+
+    await runProbeTargetsWithLimit(targets, 2, async (target) => {
+      started.push(target.actualModelID);
+      active++;
+      maxActive = Math.max(maxActive, active);
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      active--;
+    });
+
+    expect(maxActive).toBe(2);
+    expect(started).toHaveLength(4);
+  });
+
+  it('builds discovered rows directly from snapshots without model associations', () => {
+    const rows = buildDiscoveredModelHealthRows(
+      [
+        {
+          displayModel: 'gpt-5-2',
+          channelID: 'Q2hhbm5lbDox',
+          actualModelID: 'gpt-5-2',
+          isHealthy: true,
+          manualOverride: false,
+          probedAt: 1712310000,
+        },
+      ],
+      new Map([
+        [
+          'Q2hhbm5lbDox',
+          {
+            name: 'Channel A',
+            status: 'enabled',
+            type: 'openai',
+            orderingWeight: 100,
+          },
+        ],
+      ])
+    );
+
+    expect(rows).toEqual([
+      expect.objectContaining({
+        displayModel: 'gpt-5-2',
+        channelName: 'Channel A',
+        actualModelID: 'gpt-5-2',
+      }),
+    ]);
   });
 });

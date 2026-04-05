@@ -154,6 +154,8 @@
   "models.probe.disabled": "已禁用",
   "models.healthPage.title": "模型健康",
   "models.healthPage.description": "按展示模型、实际模型和渠道查看模型健康状态。",
+  "models.healthPage.discoveredTitle": "自动发现模型健康",
+  "models.healthPage.discoveredDescription": "展示最近请求但未配置到模型关联中的模型，以及高可用回退探测得到的健康状态。",
   "models.healthPage.loading": "正在加载模型健康数据...",
   "models.healthPage.manualProbe": "立即探测",
   "models.healthPage.probing": "探测中...",

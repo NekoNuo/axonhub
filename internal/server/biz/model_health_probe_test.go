@@ -2,6 +2,8 @@ package biz
 
 import (
 	"context"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -41,6 +43,44 @@ func TestModelHealthProbe(t *testing.T) {
 		SetCredentials(objects.ChannelCredentials{APIKeys: []string{"test-key"}}).
 		SetSupportedModels([]string{"gpt-4o-2024-11-20"}).
 		SetDefaultTestModel("gpt-4o-2024-11-20").
+		Save(ctx)
+	require.NoError(t, err)
+
+	_, err = client.Project.Create().
+		SetName("default").
+		SetDescription("default project").
+		SetStatus("active").
+		Save(ctx)
+	require.NoError(t, err)
+
+	now := time.Date(2026, 4, 5, 11, 0, 0, 0, time.UTC)
+
+	req, err := client.Request.Create().
+		SetProjectID(1).
+		SetSource("api").
+		SetModelID("gpt-4o").
+		SetFormat("openai/chat_completions").
+		SetRequestBody([]byte(`{}`)).
+		SetStatus("completed").
+		SetStream(false).
+		SetClientIP("127.0.0.1").
+		SetCreatedAt(now.Add(-10 * time.Minute)).
+		SetUpdatedAt(now.Add(-10 * time.Minute)).
+		Save(ctx)
+	require.NoError(t, err)
+
+	_, err = client.UsageLog.Create().
+		SetRequestID(req.ID).
+		SetProjectID(1).
+		SetChannelID(channelEntity.ID).
+		SetModelID("gpt-4o-2024-11-20").
+		SetPromptTokens(1).
+		SetCompletionTokens(1).
+		SetTotalTokens(2).
+		SetSource("api").
+		SetFormat("openai/chat_completions").
+		SetCreatedAt(now.Add(-10 * time.Minute)).
+		SetUpdatedAt(now.Add(-10 * time.Minute)).
 		Save(ctx)
 	require.NoError(t, err)
 
@@ -87,7 +127,6 @@ func TestModelHealthProbe(t *testing.T) {
 		return 120 * time.Millisecond, true, nil
 	}
 
-	now := time.Date(2026, 4, 5, 11, 0, 0, 0, time.UTC)
 	probeService.runModelHealthProbe(ctx, now)
 
 	require.Equal(t, 1, modelProbeCalls)
@@ -137,4 +176,243 @@ func TestModelHealthProbe(t *testing.T) {
 	require.Len(t, history, 2)
 	assert.Equal(t, []bool{false, false}, []bool{history[0].ManualOverride, history[1].ManualOverride})
 	assert.Equal(t, []int64{now.Unix(), next.Unix()}, []int64{history[0].ProbedAt, history[1].ProbedAt})
+}
+
+func TestModelHealthProbe_LimitsConcurrency(t *testing.T) {
+	client := enttest.Open(t, dialect.SQLite, "file:ent?mode=memory&_fk=0")
+	defer client.Close()
+
+	ctx := authz.WithTestBypass(ent.NewContext(context.Background(), client))
+
+	systemService := NewSystemService(SystemServiceParams{Ent: client, CacheConfig: xcache.Config{Mode: xcache.ModeMemory}})
+	err := systemService.SetModelSettings(ctx, SystemModelSettings{
+		EnableModelProbe:                  true,
+		FallbackToChannelsOnModelNotFound: true,
+		QueryAllChannelModels:             true,
+	})
+	require.NoError(t, err)
+
+	channelEntities := make([]*ent.Channel, 0, 4)
+	enabledChannels := make([]*Channel, 0, 4)
+	for i := 0; i < 4; i++ {
+		channelEntity, createErr := client.Channel.Create().
+			SetType("openai").
+			SetBaseURL("https://api.openai.com/v1").
+			SetName("OpenAI Channel " + string(rune('A'+i))).
+			SetStatus("enabled").
+			SetCredentials(objects.ChannelCredentials{APIKeys: []string{"test-key"}}).
+			SetSupportedModels([]string{"gpt-4o-2024-11-20"}).
+			SetDefaultTestModel("gpt-4o-2024-11-20").
+			Save(ctx)
+		require.NoError(t, createErr)
+		channelEntities = append(channelEntities, channelEntity)
+	}
+
+	channelService := NewChannelServiceForTest(client)
+	for _, channelEntity := range channelEntities {
+		enabledChannel, buildErr := channelService.buildChannelWithTransformer(channelEntity)
+		require.NoError(t, buildErr)
+		enabledChannels = append(enabledChannels, enabledChannel)
+	}
+	channelService.SetEnabledChannelsForTest(enabledChannels)
+
+	_, err = client.Project.Create().
+		SetName("default").
+		SetDescription("default project").
+		SetStatus("active").
+		Save(ctx)
+	require.NoError(t, err)
+
+	for i, channelEntity := range channelEntities {
+		modelID := "gpt-4o-" + string(rune('a'+i))
+		_, createErr := client.Model.Create().
+			SetDeveloper("openai").
+			SetModelID(modelID).
+			SetType(model.TypeChat).
+			SetName("GPT-4o " + string(rune('A'+i))).
+			SetIcon("openai").
+			SetGroup("openai").
+			SetStatus(model.StatusEnabled).
+			SetModelCard(&objects.ModelCard{}).
+			SetSettings(&objects.ModelSettings{
+				ProbeEnabled: true,
+				Associations: []*objects.ModelAssociation{
+					{
+						Type: "channel_model",
+						ChannelModel: &objects.ChannelModelAssociation{
+							ChannelID: channelEntity.ID,
+							ModelID:   "gpt-4o-2024-11-20",
+						},
+					},
+				},
+			}).
+			Save(ctx)
+		require.NoError(t, createErr)
+
+		req, createErr := client.Request.Create().
+			SetProjectID(1).
+			SetSource("api").
+			SetModelID(modelID).
+			SetFormat("openai/chat_completions").
+			SetRequestBody([]byte(`{}`)).
+			SetStatus("completed").
+			SetStream(false).
+			SetClientIP("127.0.0.1").
+			SetCreatedAt(time.Date(2026, 4, 5, 10, 50, 0, 0, time.UTC)).
+			SetUpdatedAt(time.Date(2026, 4, 5, 10, 50, 0, 0, time.UTC)).
+			Save(ctx)
+		require.NoError(t, createErr)
+
+		_, createErr = client.UsageLog.Create().
+			SetRequestID(req.ID).
+			SetProjectID(1).
+			SetChannelID(channelEntity.ID).
+			SetModelID("gpt-4o-2024-11-20").
+			SetPromptTokens(1).
+			SetCompletionTokens(1).
+			SetTotalTokens(2).
+			SetSource("api").
+			SetFormat("openai/chat_completions").
+			SetCreatedAt(time.Date(2026, 4, 5, 10, 50, 0, 0, time.UTC)).
+			SetUpdatedAt(time.Date(2026, 4, 5, 10, 50, 0, 0, time.UTC)).
+			Save(ctx)
+		require.NoError(t, createErr)
+	}
+
+	probeService := &ChannelProbeService{
+		AbstractService: &AbstractService{db: client},
+		SystemService:   systemService,
+		ChannelService:  channelService,
+	}
+
+	var active int32
+	var maxActive int32
+	var mu sync.Mutex
+	release := make(chan struct{})
+	calls := 0
+	probeService.idleChannelModelProber = func(_ context.Context, _ *ent.Channel, _ string) (time.Duration, bool, error) {
+		current := atomic.AddInt32(&active, 1)
+		for {
+			observed := atomic.LoadInt32(&maxActive)
+			if current <= observed || atomic.CompareAndSwapInt32(&maxActive, observed, current) {
+				break
+			}
+		}
+		mu.Lock()
+		calls++
+		mu.Unlock()
+		<-release
+		atomic.AddInt32(&active, -1)
+		return 50 * time.Millisecond, true, nil
+	}
+
+	done := make(chan struct{})
+	go func() {
+		probeService.runModelHealthProbe(ctx, time.Date(2026, 4, 5, 11, 0, 0, 0, time.UTC))
+		close(done)
+	}()
+
+	require.Eventually(t, func() bool {
+		return atomic.LoadInt32(&maxActive) >= 2
+	}, time.Second, 10*time.Millisecond)
+	assert.Equal(t, int32(2), atomic.LoadInt32(&maxActive))
+
+	close(release)
+	<-done
+
+	mu.Lock()
+	assert.Equal(t, 4, calls)
+	mu.Unlock()
+}
+
+func TestModelHealthProbe_ProbesRecentlyRequestedUnassociatedModel(t *testing.T) {
+	client := enttest.Open(t, dialect.SQLite, "file:ent?mode=memory&_fk=0")
+	defer client.Close()
+
+	ctx := authz.WithTestBypass(ent.NewContext(context.Background(), client))
+
+	systemService := NewSystemService(SystemServiceParams{Ent: client, CacheConfig: xcache.Config{Mode: xcache.ModeMemory}})
+	err := systemService.SetModelSettings(ctx, SystemModelSettings{
+		EnableModelProbe:                  true,
+		FallbackToChannelsOnModelNotFound: true,
+		QueryAllChannelModels:             true,
+	})
+	require.NoError(t, err)
+
+	channelEntity, err := client.Channel.Create().
+		SetType("openai").
+		SetBaseURL("https://api.openai.com/v1").
+		SetName("OpenAI Channel").
+		SetStatus("enabled").
+		SetCredentials(objects.ChannelCredentials{APIKeys: []string{"test-key"}}).
+		SetSupportedModels([]string{"gpt-5-2"}).
+		SetDefaultTestModel("gpt-5-2").
+		Save(ctx)
+	require.NoError(t, err)
+
+	channelService := NewChannelServiceForTest(client)
+	enabledChannel, err := channelService.buildChannelWithTransformer(channelEntity)
+	require.NoError(t, err)
+	channelService.SetEnabledChannelsForTest([]*Channel{enabledChannel})
+
+	_, err = client.Project.Create().
+		SetName("default").
+		SetDescription("default project").
+		SetStatus("active").
+		Save(ctx)
+	require.NoError(t, err)
+
+	now := time.Date(2026, 4, 5, 11, 0, 0, 0, time.UTC)
+	req, err := client.Request.Create().
+		SetProjectID(1).
+		SetSource("api").
+		SetModelID("gpt-5-2").
+		SetFormat("openai/chat_completions").
+		SetRequestBody([]byte(`{}`)).
+		SetStatus("completed").
+		SetStream(false).
+		SetClientIP("127.0.0.1").
+		SetCreatedAt(now.Add(-10 * time.Minute)).
+		SetUpdatedAt(now.Add(-10 * time.Minute)).
+		Save(ctx)
+	require.NoError(t, err)
+
+	_, err = client.UsageLog.Create().
+		SetRequestID(req.ID).
+		SetProjectID(1).
+		SetChannelID(channelEntity.ID).
+		SetModelID("gpt-5-2").
+		SetPromptTokens(1).
+		SetCompletionTokens(1).
+		SetTotalTokens(2).
+		SetSource("api").
+		SetFormat("openai/chat_completions").
+		SetCreatedAt(now.Add(-10 * time.Minute)).
+		SetUpdatedAt(now.Add(-10 * time.Minute)).
+		Save(ctx)
+	require.NoError(t, err)
+
+	probeService := &ChannelProbeService{
+		AbstractService: &AbstractService{db: client},
+		SystemService:   systemService,
+		ChannelService:  channelService,
+	}
+
+	probeCalls := 0
+	probeService.idleChannelModelProber = func(_ context.Context, ch *ent.Channel, modelID string) (time.Duration, bool, error) {
+		probeCalls++
+		require.Equal(t, channelEntity.ID, ch.ID)
+		require.Equal(t, "gpt-5-2", modelID)
+		return 10 * time.Millisecond, true, nil
+	}
+
+	probeService.runModelHealthProbe(ctx, now)
+
+	require.Equal(t, 1, probeCalls)
+
+	snapshot, err := client.ModelHealthSnapshot.Query().Only(ctx)
+	require.NoError(t, err)
+	require.Equal(t, "gpt-5-2", snapshot.DisplayModel)
+	require.Equal(t, "gpt-5-2", snapshot.ActualModelID)
+	require.Equal(t, "discovered_recent_usage", snapshot.Source)
 }

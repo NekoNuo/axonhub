@@ -28,6 +28,8 @@ type ModelHealthHistory struct {
 	ChannelID int `json:"channel_id,omitempty"`
 	// ActualModelID holds the value of the "actual_model_id" field.
 	ActualModelID string `json:"actual_model_id,omitempty"`
+	// Source holds the value of the "source" field.
+	Source string `json:"source,omitempty"`
 	// IsHealthy holds the value of the "is_healthy" field.
 	IsHealthy bool `json:"is_healthy,omitempty"`
 	// ManualOverride holds the value of the "manual_override" field.
@@ -71,7 +73,7 @@ func (*ModelHealthHistory) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case modelhealthhistory.FieldID, modelhealthhistory.FieldChannelID, modelhealthhistory.FieldProbedAt:
 			values[i] = new(sql.NullInt64)
-		case modelhealthhistory.FieldDisplayModel, modelhealthhistory.FieldActualModelID:
+		case modelhealthhistory.FieldDisplayModel, modelhealthhistory.FieldActualModelID, modelhealthhistory.FieldSource:
 			values[i] = new(sql.NullString)
 		case modelhealthhistory.FieldCreatedAt, modelhealthhistory.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -125,6 +127,12 @@ func (_m *ModelHealthHistory) assignValues(columns []string, values []any) error
 				return fmt.Errorf("unexpected type %T for field actual_model_id", values[i])
 			} else if value.Valid {
 				_m.ActualModelID = value.String
+			}
+		case modelhealthhistory.FieldSource:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field source", values[i])
+			} else if value.Valid {
+				_m.Source = value.String
 			}
 		case modelhealthhistory.FieldIsHealthy:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -199,6 +207,9 @@ func (_m *ModelHealthHistory) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("actual_model_id=")
 	builder.WriteString(_m.ActualModelID)
+	builder.WriteString(", ")
+	builder.WriteString("source=")
+	builder.WriteString(_m.Source)
 	builder.WriteString(", ")
 	builder.WriteString("is_healthy=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsHealthy))

@@ -1847,6 +1847,11 @@ func (_q *ModelHealthHistoryQuery) collectField(ctx context.Context, oneNode boo
 				selectedFields = append(selectedFields, modelhealthhistory.FieldActualModelID)
 				fieldSeen[modelhealthhistory.FieldActualModelID] = struct{}{}
 			}
+		case "source":
+			if _, ok := fieldSeen[modelhealthhistory.FieldSource]; !ok {
+				selectedFields = append(selectedFields, modelhealthhistory.FieldSource)
+				fieldSeen[modelhealthhistory.FieldSource] = struct{}{}
+			}
 		case "isHealthy":
 			if _, ok := fieldSeen[modelhealthhistory.FieldIsHealthy]; !ok {
 				selectedFields = append(selectedFields, modelhealthhistory.FieldIsHealthy)
@@ -1985,6 +1990,11 @@ func (_q *ModelHealthSnapshotQuery) collectField(ctx context.Context, oneNode bo
 			if _, ok := fieldSeen[modelhealthsnapshot.FieldActualModelID]; !ok {
 				selectedFields = append(selectedFields, modelhealthsnapshot.FieldActualModelID)
 				fieldSeen[modelhealthsnapshot.FieldActualModelID] = struct{}{}
+			}
+		case "source":
+			if _, ok := fieldSeen[modelhealthsnapshot.FieldSource]; !ok {
+				selectedFields = append(selectedFields, modelhealthsnapshot.FieldSource)
+				fieldSeen[modelhealthsnapshot.FieldSource] = struct{}{}
 			}
 		case "isHealthy":
 			if _, ok := fieldSeen[modelhealthsnapshot.FieldIsHealthy]; !ok {

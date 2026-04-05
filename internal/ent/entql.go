@@ -246,6 +246,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			modelhealthhistory.FieldDisplayModel:   {Type: field.TypeString, Column: modelhealthhistory.FieldDisplayModel},
 			modelhealthhistory.FieldChannelID:      {Type: field.TypeInt, Column: modelhealthhistory.FieldChannelID},
 			modelhealthhistory.FieldActualModelID:  {Type: field.TypeString, Column: modelhealthhistory.FieldActualModelID},
+			modelhealthhistory.FieldSource:         {Type: field.TypeString, Column: modelhealthhistory.FieldSource},
 			modelhealthhistory.FieldIsHealthy:      {Type: field.TypeBool, Column: modelhealthhistory.FieldIsHealthy},
 			modelhealthhistory.FieldManualOverride: {Type: field.TypeBool, Column: modelhealthhistory.FieldManualOverride},
 			modelhealthhistory.FieldProbedAt:       {Type: field.TypeInt64, Column: modelhealthhistory.FieldProbedAt},
@@ -267,6 +268,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			modelhealthsnapshot.FieldDisplayModel:   {Type: field.TypeString, Column: modelhealthsnapshot.FieldDisplayModel},
 			modelhealthsnapshot.FieldChannelID:      {Type: field.TypeInt, Column: modelhealthsnapshot.FieldChannelID},
 			modelhealthsnapshot.FieldActualModelID:  {Type: field.TypeString, Column: modelhealthsnapshot.FieldActualModelID},
+			modelhealthsnapshot.FieldSource:         {Type: field.TypeString, Column: modelhealthsnapshot.FieldSource},
 			modelhealthsnapshot.FieldIsHealthy:      {Type: field.TypeBool, Column: modelhealthsnapshot.FieldIsHealthy},
 			modelhealthsnapshot.FieldManualOverride: {Type: field.TypeBool, Column: modelhealthsnapshot.FieldManualOverride},
 			modelhealthsnapshot.FieldProbedAt:       {Type: field.TypeInt64, Column: modelhealthsnapshot.FieldProbedAt},
@@ -2430,6 +2432,11 @@ func (f *ModelHealthHistoryFilter) WhereActualModelID(p entql.StringP) {
 	f.Where(p.Field(modelhealthhistory.FieldActualModelID))
 }
 
+// WhereSource applies the entql string predicate on the source field.
+func (f *ModelHealthHistoryFilter) WhereSource(p entql.StringP) {
+	f.Where(p.Field(modelhealthhistory.FieldSource))
+}
+
 // WhereIsHealthy applies the entql bool predicate on the is_healthy field.
 func (f *ModelHealthHistoryFilter) WhereIsHealthy(p entql.BoolP) {
 	f.Where(p.Field(modelhealthhistory.FieldIsHealthy))
@@ -2522,6 +2529,11 @@ func (f *ModelHealthSnapshotFilter) WhereChannelID(p entql.IntP) {
 // WhereActualModelID applies the entql string predicate on the actual_model_id field.
 func (f *ModelHealthSnapshotFilter) WhereActualModelID(p entql.StringP) {
 	f.Where(p.Field(modelhealthsnapshot.FieldActualModelID))
+}
+
+// WhereSource applies the entql string predicate on the source field.
+func (f *ModelHealthSnapshotFilter) WhereSource(p entql.StringP) {
+	f.Where(p.Field(modelhealthsnapshot.FieldSource))
 }
 
 // WhereIsHealthy applies the entql bool predicate on the is_healthy field.

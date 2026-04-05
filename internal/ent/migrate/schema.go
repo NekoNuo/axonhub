@@ -293,6 +293,7 @@ var (
 		{Name: "updated_at", Type: field.TypeTime, Default: schema.Expr("CURRENT_TIMESTAMP")},
 		{Name: "display_model", Type: field.TypeString},
 		{Name: "actual_model_id", Type: field.TypeString},
+		{Name: "source", Type: field.TypeString, Default: "associated"},
 		{Name: "is_healthy", Type: field.TypeBool, Default: false},
 		{Name: "manual_override", Type: field.TypeBool, Default: false},
 		{Name: "probed_at", Type: field.TypeInt64},
@@ -306,7 +307,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "model_health_histories_channels_model_health_histories",
-				Columns:    []*schema.Column{ModelHealthHistoriesColumns[8]},
+				Columns:    []*schema.Column{ModelHealthHistoriesColumns[9]},
 				RefColumns: []*schema.Column{ChannelsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -315,7 +316,7 @@ var (
 			{
 				Name:    "modelhealthhistory_display_model_channel_id_actual_model_id_probed_at",
 				Unique:  false,
-				Columns: []*schema.Column{ModelHealthHistoriesColumns[3], ModelHealthHistoriesColumns[8], ModelHealthHistoriesColumns[4], ModelHealthHistoriesColumns[7]},
+				Columns: []*schema.Column{ModelHealthHistoriesColumns[3], ModelHealthHistoriesColumns[9], ModelHealthHistoriesColumns[4], ModelHealthHistoriesColumns[8]},
 			},
 		},
 	}
@@ -326,6 +327,7 @@ var (
 		{Name: "updated_at", Type: field.TypeTime, Default: schema.Expr("CURRENT_TIMESTAMP")},
 		{Name: "display_model", Type: field.TypeString},
 		{Name: "actual_model_id", Type: field.TypeString},
+		{Name: "source", Type: field.TypeString, Default: "associated"},
 		{Name: "is_healthy", Type: field.TypeBool, Default: false},
 		{Name: "manual_override", Type: field.TypeBool, Default: false},
 		{Name: "probed_at", Type: field.TypeInt64},
@@ -339,7 +341,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "model_health_snapshots_channels_model_health_snapshots",
-				Columns:    []*schema.Column{ModelHealthSnapshotsColumns[8]},
+				Columns:    []*schema.Column{ModelHealthSnapshotsColumns[9]},
 				RefColumns: []*schema.Column{ChannelsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -348,7 +350,7 @@ var (
 			{
 				Name:    "modelhealthsnapshot_display_model_channel_id_actual_model_id",
 				Unique:  true,
-				Columns: []*schema.Column{ModelHealthSnapshotsColumns[3], ModelHealthSnapshotsColumns[8], ModelHealthSnapshotsColumns[4]},
+				Columns: []*schema.Column{ModelHealthSnapshotsColumns[3], ModelHealthSnapshotsColumns[9], ModelHealthSnapshotsColumns[4]},
 			},
 		},
 	}

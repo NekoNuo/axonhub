@@ -14,90 +14,110 @@ import (
 const (
 	ModelHealthTargetSourceRecent = "recent"
 	ModelHealthTargetSourceManual = "manual"
+
+	ModelHealthSourceAssociated            = "associated"
+	ModelHealthSourceDiscoveredRecentUsage = "discovered_recent_usage"
+	modelHealthDiscoveredRetention         = 24 * 60 * 60
 )
 
 type ModelHealthProbeTarget struct {
-	DisplayModel string
+	DisplayModel  string
 	ActualModelID string
-	ChannelID    int
-	Sources      []string
+	ChannelID     int
+	Sources       []string
+	Source        string
 }
 
 type ModelHealthTargetResolver struct {
-	client       *ent.Client
-	modelService *ModelService
+	client *ent.Client
 }
 
-func NewModelHealthTargetResolver(client *ent.Client, modelService *ModelService) *ModelHealthTargetResolver {
-	return &ModelHealthTargetResolver{
-		client:       client,
-		modelService: modelService,
-	}
+func ModelHealthDiscoveredRetentionForResolver() int64 {
+	return modelHealthDiscoveredRetention
+}
+
+func NewModelHealthTargetResolver(client *ent.Client, _ any) *ModelHealthTargetResolver {
+	return &ModelHealthTargetResolver{client: client}
 }
 
 func (r *ModelHealthTargetResolver) Resolve(ctx context.Context, recent []ModelHealthRecentUsage) ([]ModelHealthProbeTarget, error) {
-	targets := make(map[ChannelModelKey]*ModelHealthProbeTarget)
-
-	for _, usage := range recent {
-		for _, actual := range usage.ActualModels {
-			for _, channelID := range actual.ChannelIDs {
-				key := ChannelModelKey{ChannelID: channelID, ModelID: actual.ActualModelID}
-				targets[key] = mergeModelHealthTarget(targets[key], ModelHealthProbeTarget{
-					DisplayModel: usage.DisplayModel,
-					ActualModelID: actual.ActualModelID,
-					ChannelID:    channelID,
-					Sources:      []string{ModelHealthTargetSourceRecent},
-				})
-			}
-		}
-	}
-
-	manualModels, err := r.client.Model.Query().
+	models, err := r.client.Model.Query().
 		Where(model.StatusEQ(model.StatusEnabled)).
 		All(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("query manual probe-enabled models: %w", err)
+		return nil, err
 	}
 
-	for _, m := range manualModels {
-		if m.Settings == nil || !m.Settings.ProbeEnabled {
+	associatedByDisplayModel := make(map[string]*ent.Model, len(models))
+	for _, item := range models {
+		associatedByDisplayModel[item.ModelID] = item
+	}
+
+	channelMap := make(map[int]*ent.Channel)
+	channels, err := r.client.Channel.Query().All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, ch := range channels {
+		channelMap[ch.ID] = ch
+	}
+
+	targets := make([]ModelHealthProbeTarget, 0)
+	seen := make(map[string]struct{})
+
+	for _, usage := range recent {
+		if modelEntry, ok := associatedByDisplayModel[usage.DisplayModel]; ok && modelEntry.Settings != nil && modelEntry.Settings.ProbeEnabled {
+			assocTargets := resolveAssociatedModelHealthTargets(modelEntry, channels)
+			for _, target := range assocTargets {
+				key := modelHealthTargetKey(target)
+				if _, exists := seen[key]; exists {
+					continue
+				}
+				seen[key] = struct{}{}
+				targets = append(targets, target)
+			}
 			continue
 		}
 
-		connections, connErr := r.modelService.QueryModelChannelConnections(ctx, m.Settings.Associations)
-		if connErr != nil {
-			return nil, fmt.Errorf("resolve model associations for %s: %w", m.ModelID, connErr)
-		}
+		for _, actual := range usage.ActualModels {
+			for _, channelID := range actual.ChannelIDs {
+				ch := channelMap[channelID]
+				if ch == nil {
+					continue
+				}
+				if !lo.Contains(ch.SupportedModels, usage.DisplayModel) && !lo.Contains(ch.SupportedModels, actual.ActualModelID) {
+					continue
+				}
 
-		for _, conn := range connections {
-			for _, modelEntry := range conn.Models {
-				key := ChannelModelKey{ChannelID: conn.Channel.ID, ModelID: modelEntry.ActualModel}
-				targets[key] = mergeModelHealthTarget(targets[key], ModelHealthProbeTarget{
-					DisplayModel: m.ModelID,
-					ActualModelID: modelEntry.ActualModel,
-					ChannelID:    conn.Channel.ID,
-					Sources:      []string{ModelHealthTargetSourceManual},
-				})
+				target := ModelHealthProbeTarget{
+					DisplayModel:  usage.DisplayModel,
+					ActualModelID: actual.ActualModelID,
+					ChannelID:     channelID,
+					Sources:       []string{ModelHealthTargetSourceRecent},
+					Source:        ModelHealthSourceDiscoveredRecentUsage,
+				}
+
+				key := modelHealthTargetKey(target)
+				if _, exists := seen[key]; exists {
+					continue
+				}
+				seen[key] = struct{}{}
+				targets = append(targets, target)
 			}
 		}
 	}
 
-	resultPtrs := lo.Values(targets)
-	sort.Slice(resultPtrs, func(i, j int) bool {
-		if resultPtrs[i].DisplayModel != resultPtrs[j].DisplayModel {
-			return resultPtrs[i].DisplayModel < resultPtrs[j].DisplayModel
+	sort.Slice(targets, func(i, j int) bool {
+		if targets[i].DisplayModel != targets[j].DisplayModel {
+			return targets[i].DisplayModel < targets[j].DisplayModel
 		}
-		if resultPtrs[i].ActualModelID != resultPtrs[j].ActualModelID {
-			return resultPtrs[i].ActualModelID < resultPtrs[j].ActualModelID
+		if targets[i].ActualModelID != targets[j].ActualModelID {
+			return targets[i].ActualModelID < targets[j].ActualModelID
 		}
-		return resultPtrs[i].ChannelID < resultPtrs[j].ChannelID
+		return targets[i].ChannelID < targets[j].ChannelID
 	})
 
-	result := lo.Map(resultPtrs, func(item *ModelHealthProbeTarget, _ int) ModelHealthProbeTarget {
-		return *item
-	})
-
-	return result, nil
+	return targets, nil
 }
 
 func mergeModelHealthTarget(existing *ModelHealthProbeTarget, incoming ModelHealthProbeTarget) *ModelHealthProbeTarget {
@@ -114,8 +134,44 @@ func mergeModelHealthTarget(existing *ModelHealthProbeTarget, incoming ModelHeal
 	return existing
 }
 
+func resolveAssociatedModelHealthTargets(item *ent.Model, channelEntities []*ent.Channel) []ModelHealthProbeTarget {
+	channels := make([]*Channel, 0, len(channelEntities))
+	for _, channelEntity := range channelEntities {
+		channels = append(channels, &Channel{Channel: channelEntity})
+	}
+
+	connections := MatchAssociations(item.Settings.Associations, channels)
+	targets := make([]ModelHealthProbeTarget, 0)
+
+	for _, connection := range connections {
+		for _, matchedModel := range connection.Models {
+			targets = append(targets, ModelHealthProbeTarget{
+				DisplayModel:  item.ModelID,
+				ActualModelID: matchedModel.ActualModel,
+				ChannelID:     connection.Channel.ID,
+				Sources:       []string{ModelHealthTargetSourceRecent},
+				Source:        ModelHealthSourceAssociated,
+			})
+		}
+	}
+
+	return targets
+}
+
+func modelHealthTargetKey(target ModelHealthProbeTarget) string {
+	return fmt.Sprintf("%s:%s:%d:%s", target.Source, target.DisplayModel, target.ChannelID, target.ActualModelID)
+}
+
 func sortUniqueStrings(values []string) []string {
-	unique := lo.Uniq(values)
+	seen := make(map[string]struct{}, len(values))
+	unique := make([]string, 0, len(values))
+	for _, value := range values {
+		if _, ok := seen[value]; ok {
+			continue
+		}
+		seen[value] = struct{}{}
+		unique = append(unique, value)
+	}
 	sort.Strings(unique)
 	return unique
 }

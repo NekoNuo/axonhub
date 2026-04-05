@@ -69,6 +69,20 @@ func (_c *ModelHealthSnapshotCreate) SetActualModelID(v string) *ModelHealthSnap
 	return _c
 }
 
+// SetSource sets the "source" field.
+func (_c *ModelHealthSnapshotCreate) SetSource(v string) *ModelHealthSnapshotCreate {
+	_c.mutation.SetSource(v)
+	return _c
+}
+
+// SetNillableSource sets the "source" field if the given value is not nil.
+func (_c *ModelHealthSnapshotCreate) SetNillableSource(v *string) *ModelHealthSnapshotCreate {
+	if v != nil {
+		_c.SetSource(*v)
+	}
+	return _c
+}
+
 // SetIsHealthy sets the "is_healthy" field.
 func (_c *ModelHealthSnapshotCreate) SetIsHealthy(v bool) *ModelHealthSnapshotCreate {
 	_c.mutation.SetIsHealthy(v)
@@ -151,6 +165,10 @@ func (_c *ModelHealthSnapshotCreate) defaults() {
 		v := modelhealthsnapshot.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.Source(); !ok {
+		v := modelhealthsnapshot.DefaultSource
+		_c.mutation.SetSource(v)
+	}
 	if _, ok := _c.mutation.IsHealthy(); !ok {
 		v := modelhealthsnapshot.DefaultIsHealthy
 		_c.mutation.SetIsHealthy(v)
@@ -171,6 +189,9 @@ func (_c *ModelHealthSnapshotCreate) check() error {
 	}
 	if _, ok := _c.mutation.ActualModelID(); !ok {
 		return &ValidationError{Name: "actual_model_id", err: errors.New(`ent: missing required field "ModelHealthSnapshot.actual_model_id"`)}
+	}
+	if _, ok := _c.mutation.Source(); !ok {
+		return &ValidationError{Name: "source", err: errors.New(`ent: missing required field "ModelHealthSnapshot.source"`)}
 	}
 	if _, ok := _c.mutation.IsHealthy(); !ok {
 		return &ValidationError{Name: "is_healthy", err: errors.New(`ent: missing required field "ModelHealthSnapshot.is_healthy"`)}
@@ -226,6 +247,10 @@ func (_c *ModelHealthSnapshotCreate) createSpec() (*ModelHealthSnapshot, *sqlgra
 	if value, ok := _c.mutation.ActualModelID(); ok {
 		_spec.SetField(modelhealthsnapshot.FieldActualModelID, field.TypeString, value)
 		_node.ActualModelID = value
+	}
+	if value, ok := _c.mutation.Source(); ok {
+		_spec.SetField(modelhealthsnapshot.FieldSource, field.TypeString, value)
+		_node.Source = value
 	}
 	if value, ok := _c.mutation.IsHealthy(); ok {
 		_spec.SetField(modelhealthsnapshot.FieldIsHealthy, field.TypeBool, value)
@@ -353,6 +378,18 @@ func (u *ModelHealthSnapshotUpsert) SetActualModelID(v string) *ModelHealthSnaps
 // UpdateActualModelID sets the "actual_model_id" field to the value that was provided on create.
 func (u *ModelHealthSnapshotUpsert) UpdateActualModelID() *ModelHealthSnapshotUpsert {
 	u.SetExcluded(modelhealthsnapshot.FieldActualModelID)
+	return u
+}
+
+// SetSource sets the "source" field.
+func (u *ModelHealthSnapshotUpsert) SetSource(v string) *ModelHealthSnapshotUpsert {
+	u.Set(modelhealthsnapshot.FieldSource, v)
+	return u
+}
+
+// UpdateSource sets the "source" field to the value that was provided on create.
+func (u *ModelHealthSnapshotUpsert) UpdateSource() *ModelHealthSnapshotUpsert {
+	u.SetExcluded(modelhealthsnapshot.FieldSource)
 	return u
 }
 
@@ -496,6 +533,20 @@ func (u *ModelHealthSnapshotUpsertOne) SetActualModelID(v string) *ModelHealthSn
 func (u *ModelHealthSnapshotUpsertOne) UpdateActualModelID() *ModelHealthSnapshotUpsertOne {
 	return u.Update(func(s *ModelHealthSnapshotUpsert) {
 		s.UpdateActualModelID()
+	})
+}
+
+// SetSource sets the "source" field.
+func (u *ModelHealthSnapshotUpsertOne) SetSource(v string) *ModelHealthSnapshotUpsertOne {
+	return u.Update(func(s *ModelHealthSnapshotUpsert) {
+		s.SetSource(v)
+	})
+}
+
+// UpdateSource sets the "source" field to the value that was provided on create.
+func (u *ModelHealthSnapshotUpsertOne) UpdateSource() *ModelHealthSnapshotUpsertOne {
+	return u.Update(func(s *ModelHealthSnapshotUpsert) {
+		s.UpdateSource()
 	})
 }
 
@@ -812,6 +863,20 @@ func (u *ModelHealthSnapshotUpsertBulk) SetActualModelID(v string) *ModelHealthS
 func (u *ModelHealthSnapshotUpsertBulk) UpdateActualModelID() *ModelHealthSnapshotUpsertBulk {
 	return u.Update(func(s *ModelHealthSnapshotUpsert) {
 		s.UpdateActualModelID()
+	})
+}
+
+// SetSource sets the "source" field.
+func (u *ModelHealthSnapshotUpsertBulk) SetSource(v string) *ModelHealthSnapshotUpsertBulk {
+	return u.Update(func(s *ModelHealthSnapshotUpsert) {
+		s.SetSource(v)
+	})
+}
+
+// UpdateSource sets the "source" field to the value that was provided on create.
+func (u *ModelHealthSnapshotUpsertBulk) UpdateSource() *ModelHealthSnapshotUpsertBulk {
+	return u.Update(func(s *ModelHealthSnapshotUpsert) {
+		s.UpdateSource()
 	})
 }
 

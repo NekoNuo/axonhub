@@ -2130,6 +2130,7 @@ type ModelHealthHistory implements Node {
   displayModel: String!
   channelID: ID!
   actualModelID: String!
+  source: String!
   isHealthy: Boolean!
   manualOverride: Boolean!
   probedAt: Int!
@@ -2236,6 +2237,22 @@ input ModelHealthHistoryWhereInput {
   actualModelIDEqualFold: String
   actualModelIDContainsFold: String
   """
+  source field predicates
+  """
+  source: String
+  sourceNEQ: String
+  sourceIn: [String!]
+  sourceNotIn: [String!]
+  sourceGT: String
+  sourceGTE: String
+  sourceLT: String
+  sourceLTE: String
+  sourceContains: String
+  sourceHasPrefix: String
+  sourceHasSuffix: String
+  sourceEqualFold: String
+  sourceContainsFold: String
+  """
   is_healthy field predicates
   """
   isHealthy: Boolean
@@ -2269,6 +2286,7 @@ type ModelHealthSnapshot implements Node {
   displayModel: String!
   channelID: ID!
   actualModelID: String!
+  source: String!
   isHealthy: Boolean!
   manualOverride: Boolean!
   probedAt: Int!
@@ -2374,6 +2392,22 @@ input ModelHealthSnapshotWhereInput {
   actualModelIDHasSuffix: String
   actualModelIDEqualFold: String
   actualModelIDContainsFold: String
+  """
+  source field predicates
+  """
+  source: String
+  sourceNEQ: String
+  sourceIn: [String!]
+  sourceNotIn: [String!]
+  sourceGT: String
+  sourceGTE: String
+  sourceLT: String
+  sourceLTE: String
+  sourceContains: String
+  sourceHasPrefix: String
+  sourceHasSuffix: String
+  sourceEqualFold: String
+  sourceContainsFold: String
   """
   is_healthy field predicates
   """
