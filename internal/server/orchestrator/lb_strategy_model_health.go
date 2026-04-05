@@ -65,6 +65,25 @@ func (s *ModelHealthStrategy) ScoreWithDebug(ctx context.Context, channel *biz.C
 	}
 }
 
+func (s *ModelHealthStrategy) IsCandidateEligible(ctx context.Context, channel *biz.Channel) bool {
+	if channel == nil || s.modelProvider == nil {
+		return true
+	}
+
+	displayModel := requestedModelFromContext(ctx)
+	actualModel := candidateActualModelFromContext(ctx)
+	if displayModel == "" || actualModel == "" {
+		return true
+	}
+
+	view, ok, err := s.modelProvider.GetEffectiveModelHealth(ctx, displayModel, channel.ID, actualModel)
+	if err != nil || !ok || view == nil {
+		return true
+	}
+
+	return view.IsHealthy
+}
+
 func (s *ModelHealthStrategy) score(ctx context.Context, channel *biz.Channel) (float64, map[string]any) {
 	if s.modelProvider == nil {
 		score := s.fallback.Score(ctx, channel)

@@ -389,3 +389,151 @@ func TestBuildLoadBalancerPreviewIncludesCandidateDiagnostics(t *testing.T) {
 	require.Equal(t, int64(1), lowLatencyPreview.Candidates[1].RecentFailures)
 	require.NotContains(t, lowLatencyPreview.Candidates[0].Reason, "zero_requests")
 }
+
+func TestBuildLoadBalancerPreviewHighAvailabilityUsesModelHealthAndFiltersUnhealthyChannels(t *testing.T) {
+	ctx := authz.WithTestBypass(context.Background())
+	client := enttest.NewEntClient(t, "sqlite3", "file:ent?mode=memory&_fk=0")
+	t.Cleanup(func() { client.Close() })
+	ctx = ent.NewContext(ctx, client)
+
+	systemService := biz.NewSystemService(biz.SystemServiceParams{
+		CacheConfig: xcache.Config{Mode: xcache.ModeMemory},
+		Ent:         client,
+	})
+	err := systemService.SetRetryPolicy(ctx, &biz.RetryPolicy{
+		Enabled:              true,
+		MaxChannelRetries:    2,
+		RetryDelayMs:         500,
+		LoadBalancerStrategy: biz.LoadBalancerStrategyHighAvailability,
+	})
+	require.NoError(t, err)
+
+	channelService := biz.NewChannelService(biz.ChannelServiceParams{
+		CacheConfig:   xcache.Config{Mode: xcache.ModeMemory},
+		Executor:      executors.NewPoolScheduleExecutor(),
+		Ent:           client,
+		SystemService: systemService,
+	})
+	t.Cleanup(channelService.Stop)
+
+	modelService := biz.NewModelService(biz.ModelServiceParams{Ent: client})
+
+	ch1, err := client.Channel.Create().
+		SetType(channel.TypeOpenai).
+		SetName("Healthy High Weight").
+		SetBaseURL("https://example.com/ha-1").
+		SetCredentials(objects.ChannelCredentials{APIKey: "ha-1"}).
+		SetSupportedModels([]string{"gpt-5.4"}).
+		SetDefaultTestModel("gpt-5.4").
+		SetOrderingWeight(100).
+		SetStatus(channel.StatusEnabled).
+		Save(ctx)
+	require.NoError(t, err)
+
+	ch2, err := client.Channel.Create().
+		SetType(channel.TypeOpenai).
+		SetName("Unhealthy Highest Weight").
+		SetBaseURL("https://example.com/ha-2").
+		SetCredentials(objects.ChannelCredentials{APIKey: "ha-2"}).
+		SetSupportedModels([]string{"gpt-5.4"}).
+		SetDefaultTestModel("gpt-5.4").
+		SetOrderingWeight(200).
+		SetStatus(channel.StatusEnabled).
+		Save(ctx)
+	require.NoError(t, err)
+
+	ch3, err := client.Channel.Create().
+		SetType(channel.TypeOpenai).
+		SetName("Healthy Lower Weight").
+		SetBaseURL("https://example.com/ha-3").
+		SetCredentials(objects.ChannelCredentials{APIKey: "ha-3"}).
+		SetSupportedModels([]string{"gpt-5.4"}).
+		SetDefaultTestModel("gpt-5.4").
+		SetOrderingWeight(80).
+		SetStatus(channel.StatusEnabled).
+		Save(ctx)
+	require.NoError(t, err)
+
+	channelService.SetEnabledChannelsForTest([]*biz.Channel{
+		{Channel: ch1},
+		{Channel: ch2},
+		{Channel: ch3},
+	})
+
+	_, err = client.Model.Create().
+		SetDeveloper("openai").
+		SetModelID("gpt-5.4").
+		SetType(model.TypeChat).
+		SetName("GPT-5.4").
+		SetIcon("openai").
+		SetGroup("openai").
+		SetModelCard(&objects.ModelCard{}).
+		SetSettings(&objects.ModelSettings{ProbeEnabled: true}).
+		SetStatus(model.StatusEnabled).
+		Save(ctx)
+	require.NoError(t, err)
+
+	_, err = client.UsageLog.Create().
+		SetRequestID(501).
+		SetProjectID(1).
+		SetChannelID(ch1.ID).
+		SetModelID("gpt-5.4").
+		SetCreatedAt(time.Now()).
+		Save(ctx)
+	require.NoError(t, err)
+
+	now := time.Now().Unix()
+	channelService.UpdateChannelProbeHealth(ch1.ID, &biz.ChannelProbeHealth{ProbeHealthRecorded: true, Alive: true, ModelsAlive: true, ProbeModelAlive: true, ProbeModelLatencyMs: lo.ToPtr(100.0), Timestamp: now})
+	channelService.UpdateChannelProbeHealth(ch2.ID, &biz.ChannelProbeHealth{ProbeHealthRecorded: true, Alive: true, ModelsAlive: true, ProbeModelAlive: true, ProbeModelLatencyMs: lo.ToPtr(90.0), Timestamp: now})
+	channelService.UpdateChannelProbeHealth(ch3.ID, &biz.ChannelProbeHealth{ProbeHealthRecorded: true, Alive: true, ModelsAlive: true, ProbeModelAlive: true, ProbeModelLatencyMs: lo.ToPtr(130.0), Timestamp: now})
+
+	_, err = client.ModelHealthSnapshot.Create().
+		SetDisplayModel("gpt-5.4").
+		SetChannelID(ch1.ID).
+		SetActualModelID("gpt-5.4").
+		SetIsHealthy(true).
+		SetManualOverride(false).
+		SetProbedAt(now).
+		Save(ctx)
+	require.NoError(t, err)
+
+	_, err = client.ModelHealthSnapshot.Create().
+		SetDisplayModel("gpt-5.4").
+		SetChannelID(ch2.ID).
+		SetActualModelID("gpt-5.4").
+		SetIsHealthy(false).
+		SetManualOverride(false).
+		SetProbedAt(now).
+		Save(ctx)
+	require.NoError(t, err)
+
+	_, err = client.ModelHealthSnapshot.Create().
+		SetDisplayModel("gpt-5.4").
+		SetChannelID(ch3.ID).
+		SetActualModelID("gpt-5.4").
+		SetIsHealthy(true).
+		SetManualOverride(false).
+		SetProbedAt(now).
+		Save(ctx)
+	require.NoError(t, err)
+
+	preview, err := buildLoadBalancerPreview(ctx, &Resolver{
+		client:         client,
+		systemService:  systemService,
+		channelService: channelService,
+		modelService:   modelService,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, preview)
+
+	haPreview := lo.FindOrElse(preview.Strategies, nil, func(item *loadBalancerPreviewStrategy) bool {
+		return item.Strategy == biz.LoadBalancerStrategyHighAvailability
+	})
+	require.NotNil(t, haPreview)
+	require.Equal(t, []string{"Healthy High Weight", "Healthy Lower Weight"}, lo.Map(haPreview.Candidates, func(item *loadBalancerPreviewCandidate, _ int) string {
+		return item.ChannelName
+	}))
+	require.Equal(t, "Healthy High Weight", haPreview.Summary.PrimaryChannelName)
+	require.Equal(t, "Healthy Lower Weight", haPreview.Summary.FirstRetryChannelName)
+	require.Equal(t, "Healthy Lower Weight", haPreview.Summary.FallbackChannelName)
+}

@@ -402,13 +402,13 @@ func newPreviewLoadBalancer(r *Resolver, strategy string) (*orchestrator.LoadBal
 		return orchestrator.NewLoadBalancer(r.systemService, nil, scorers...), scorers
 	case biz.LoadBalancerStrategyHighAvailability:
 		scorers := []orchestrator.LoadBalanceStrategy{
-			orchestrator.NewProbeHealthStrategy(r.channelService, nil, orchestrator.ProbeHealthModeAvailability),
+			orchestrator.NewModelHealthStrategy(r.channelService, r.channelService, nil, orchestrator.ProbeHealthModeAvailability),
 			orchestrator.NewWeightStrategy(),
 		}
 		return orchestrator.NewLoadBalancer(r.systemService, nil, scorers...), scorers
 	case biz.LoadBalancerStrategyLowLatency:
 		scorers := []orchestrator.LoadBalanceStrategy{
-			orchestrator.NewProbeHealthStrategy(r.channelService, nil, orchestrator.ProbeHealthModeLowLatency),
+			orchestrator.NewModelHealthStrategy(r.channelService, r.channelService, nil, orchestrator.ProbeHealthModeLowLatency),
 			orchestrator.NewWeightStrategy(),
 		}
 		return orchestrator.NewLoadBalancer(r.systemService, nil, scorers...), scorers

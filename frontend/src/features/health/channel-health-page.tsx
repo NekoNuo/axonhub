@@ -139,7 +139,10 @@ export function ChannelHealthPage() {
                 <div className='mb-3 flex items-center justify-between gap-4'>
                   <div>
                     <div className='font-medium'>{row.name}</div>
-                    <div className='text-muted-foreground text-xs'>{row.id}</div>
+                    <div className='text-muted-foreground flex flex-wrap gap-3 text-xs'>
+                      <span>{row.id}</span>
+                      <span>{t('channels.healthPage.summary.orderingWeight', { weight: row.orderingWeight })}</span>
+                    </div>
                   </div>
                   <ChannelHealthCell points={row.points} snapshot={row.snapshot} />
                 </div>

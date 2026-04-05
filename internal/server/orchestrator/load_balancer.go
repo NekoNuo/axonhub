@@ -42,6 +42,13 @@ type LoadBalanceStrategy interface {
 	Name() string
 }
 
+// CandidateEligibilityStrategy allows a strategy to exclude a candidate entirely
+// before ranking. This is used by high-availability strategies to remove channels
+// that are explicitly known to be unavailable for the requested model.
+type CandidateEligibilityStrategy interface {
+	IsCandidateEligible(ctx context.Context, channel *biz.Channel) bool
+}
+
 // StrategyScore holds the detailed scoring information from a single strategy.
 type StrategyScore struct {
 	// StrategyName is the name of the strategy
@@ -166,22 +173,43 @@ func (lb *LoadBalancer) Sort(ctx context.Context, candidates []*ChannelModelsCan
 // sortProduction is the fast path without debug overhead.
 // Uses partial sorting to efficiently get only the top k candidates.
 func (lb *LoadBalancer) sortProduction(ctx context.Context, candidates []*ChannelModelsCandidate, topK int) []*ChannelModelsCandidate {
-	scored := make([]candidateScore, len(candidates))
-	for i, c := range candidates {
+	scored := make([]candidateScore, 0, len(candidates))
+	for _, c := range candidates {
 		totalScore := 0.0
 		strategyCtx := ctx
 		if c != nil && len(c.Models) > 0 {
 			strategyCtx = contextWithCandidateActualModel(strategyCtx, c.Models[0].ActualModel)
 		}
+
+		eligible := true
+		for _, strategy := range lb.strategies {
+			filter, ok := strategy.(CandidateEligibilityStrategy)
+			if ok && !filter.IsCandidateEligible(strategyCtx, c.Channel) {
+				eligible = false
+				break
+			}
+		}
+		if !eligible {
+			continue
+		}
+
 		// Apply all strategies
 		for _, strategy := range lb.strategies {
 			totalScore += strategy.Score(strategyCtx, c.Channel)
 		}
 
-		scored[i] = candidateScore{
+		scored = append(scored, candidateScore{
 			candidate: c,
 			score:     totalScore,
-		}
+		})
+	}
+
+	if len(scored) == 0 {
+		return []*ChannelModelsCandidate{}
+	}
+
+	if topK > len(scored) {
+		topK = len(scored)
 	}
 
 	// Use partial sort to efficiently get top k candidates
@@ -225,13 +253,25 @@ func (lb *LoadBalancer) sortWithDebug(ctx context.Context, candidates []*Channel
 	startTime := time.Now()
 
 	// Calculate detailed scores for each candidate
-	decisions := make([]ChannelDecision, len(candidates))
-	for i, c := range candidates {
+	decisions := make([]ChannelDecision, 0, len(candidates))
+	for _, c := range candidates {
 		totalScore := 0.0
 		strategyScores := make([]StrategyScore, 0, len(lb.strategies))
 		strategyCtx := ctx
 		if c != nil && len(c.Models) > 0 {
 			strategyCtx = contextWithCandidateActualModel(strategyCtx, c.Models[0].ActualModel)
+		}
+
+		eligible := true
+		for _, strategy := range lb.strategies {
+			filter, ok := strategy.(CandidateEligibilityStrategy)
+			if ok && !filter.IsCandidateEligible(strategyCtx, c.Channel) {
+				eligible = false
+				break
+			}
+		}
+		if !eligible {
+			continue
 		}
 
 		// Apply all strategies and collect detailed scores
@@ -243,12 +283,20 @@ func (lb *LoadBalancer) sortWithDebug(ctx context.Context, candidates []*Channel
 			totalScore += score
 		}
 
-		decisions[i] = ChannelDecision{
+		decisions = append(decisions, ChannelDecision{
 			Channel:        c.Channel,
 			TotalScore:     totalScore,
 			StrategyScores: strategyScores,
 			FinalRank:      0, // Will be set after sorting
-		}
+		})
+	}
+
+	if len(decisions) == 0 {
+		return []*ChannelModelsCandidate{}
+	}
+
+	if topK > len(decisions) {
+		topK = len(decisions)
 	}
 
 	// Use partial sort to efficiently get top k candidates

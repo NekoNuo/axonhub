@@ -193,6 +193,7 @@
   "channels.dialogs.systemSettings.autoSync.frequencyDescription": "How often to sync supported models from provider APIs (system-wide)",
   "channels.healthPage.title": "Channel Health",
   "channels.healthPage.description": "Review recent probe bars and the latest channel snapshot details.",
+  "channels.healthPage.summary.orderingWeight": "Weight: {{weight}}",
   "channels.healthPage.summary.probeTime": "Probe: {{val}}",
   "channels.healthPage.summary.activeProbeLatency": "Active probe: {{val}}",
   "channels.healthPage.summary.probeModelLatency": "Model probe: {{val}}",

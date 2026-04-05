@@ -190,6 +190,7 @@
   "channels.dialogs.systemSettings.autoSync.frequencyDescription": "按系统配置的频率同步服务商 API 的支持模型列表",
   "channels.healthPage.title": "渠道健康",
   "channels.healthPage.description": "查看最近探测柱状条和最新渠道健康快照详情。",
+  "channels.healthPage.summary.orderingWeight": "权重：{{weight}}",
   "channels.healthPage.summary.probeTime": "探测：{{val}}",
   "channels.healthPage.summary.activeProbeLatency": "主动探活：{{val}}",
   "channels.healthPage.summary.probeModelLatency": "模型探活：{{val}}",

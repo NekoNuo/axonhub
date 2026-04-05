@@ -38,6 +38,7 @@ describe('Task 11 Channel Health Page', () => {
 
     expect(rows).toHaveLength(2);
     expect(rows.map((row) => row.name)).toEqual(['Backup OpenAI', 'Primary OpenAI']);
+    expect(rows.map((row) => row.orderingWeight)).toEqual([30, 10]);
     expect(rows.find((row) => row.name === 'Primary OpenAI')?.points).toHaveLength(1);
   });
 

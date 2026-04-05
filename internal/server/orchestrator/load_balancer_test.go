@@ -244,6 +244,65 @@ func TestLoadBalancer_Sort_NegativeScores(t *testing.T) {
 	assert.Equal(t, 1, result[2].Channel.ID)
 }
 
+type eligibilityStrategy struct {
+	name     string
+	eligible map[int]bool
+	score    float64
+}
+
+func (e *eligibilityStrategy) Score(context.Context, *biz.Channel) float64 {
+	return e.score
+}
+
+func (e *eligibilityStrategy) ScoreWithDebug(ctx context.Context, channel *biz.Channel) (float64, StrategyScore) {
+	return e.Score(ctx, channel), StrategyScore{
+		StrategyName: e.name,
+		Score:        e.score,
+	}
+}
+
+func (e *eligibilityStrategy) Name() string {
+	return e.name
+}
+
+func (e *eligibilityStrategy) IsCandidateEligible(_ context.Context, channel *biz.Channel) bool {
+	if e == nil || channel == nil || e.eligible == nil {
+		return true
+	}
+
+	allowed, ok := e.eligible[channel.ID]
+	if !ok {
+		return true
+	}
+
+	return allowed
+}
+
+func TestLoadBalancer_Sort_FiltersIneligibleCandidates(t *testing.T) {
+	ctx := context.Background()
+	filter := &eligibilityStrategy{
+		name: "eligibility",
+		eligible: map[int]bool{
+			1: true,
+			2: false,
+			3: true,
+		},
+		score: 100,
+	}
+	lb := newTestLoadBalancer(t, &biz.RetryPolicy{Enabled: true, MaxChannelRetries: 3}, filter)
+
+	candidates := []*ChannelModelsCandidate{
+		{Channel: &biz.Channel{Channel: &ent.Channel{ID: 1, Name: "ch1", OrderingWeight: 10}}},
+		{Channel: &biz.Channel{Channel: &ent.Channel{ID: 2, Name: "ch2", OrderingWeight: 100}}},
+		{Channel: &biz.Channel{Channel: &ent.Channel{ID: 3, Name: "ch3", OrderingWeight: 20}}},
+	}
+
+	result := lb.Sort(ctx, candidates, "")
+	require.Len(t, result, 2)
+	assert.Equal(t, 3, result[0].Channel.ID)
+	assert.Equal(t, 1, result[1].Channel.ID)
+}
+
 // TestLoadBalancer_ErrorAware_ChannelWithErrorsRankedLower tests that channels
 // with recent errors are ranked lower in the load balancer.
 func TestLoadBalancer_ErrorAware_ChannelWithErrorsRankedLower(t *testing.T) {
