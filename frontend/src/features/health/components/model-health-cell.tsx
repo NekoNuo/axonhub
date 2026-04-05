@@ -1,16 +1,26 @@
 import { memo } from 'react';
-import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { InteractiveTooltip } from '@/components/ui/interactive-tooltip';
 import { cn } from '@/lib/utils';
+import { formatHealthTimestamp } from '../channel-health-format';
 import type { ModelHealthHistory, ModelHealthSnapshot } from '../data/schema';
 
 interface ModelHealthCellProps {
   snapshot: ModelHealthSnapshot;
   history?: ModelHealthHistory[];
+  locale: string;
 }
 
-export const ModelHealthCell = memo(({ snapshot, history = [] }: ModelHealthCellProps) => {
+export function getModelHealthPointDetails(point: ModelHealthHistory, locale: string, t: (key: string) => string) {
+  return {
+    timestamp: formatHealthTimestamp(point.probedAt, locale),
+    status: point.isHealthy ? t('models.healthPage.healthy') : t('models.healthPage.unhealthy'),
+    source: point.manualOverride ? t('models.healthPage.manualTag') : t('models.healthPage.autoTag'),
+    actualModelID: point.actualModelID,
+  };
+}
+
+export const ModelHealthCell = memo(({ snapshot, history = [], locale }: ModelHealthCellProps) => {
   const { t } = useTranslation();
   const displayPoints = history.slice(0, 15).reverse();
 
@@ -23,13 +33,17 @@ export const ModelHealthCell = memo(({ snapshot, history = [] }: ModelHealthCell
       {displayPoints.map((point) => (
         <InteractiveTooltip
           key={point.id ?? `${point.channelID}-${point.actualModelID}-${point.probedAt}`}
-          content={
-            <div className='space-y-1 text-xs'>
-              <div>{format(new Date(point.probedAt * 1000), 'MM-dd HH:mm')}</div>
-              <div>{point.isHealthy ? 'Healthy' : 'Unhealthy'}</div>
-              <div>{point.manualOverride ? t('models.healthPage.manualTag') : t('models.healthPage.autoTag')}</div>
-            </div>
-          }
+          content={(() => {
+            const details = getModelHealthPointDetails(point, locale, t);
+            return (
+              <div className='space-y-1 text-xs'>
+                <div>{details.timestamp}</div>
+                <div>{details.status}</div>
+                <div>{details.source}</div>
+                <div className='max-w-72 break-all'>{details.actualModelID}</div>
+              </div>
+            );
+          })()}
         >
           <div className={cn('h-8 w-1.5 rounded-sm', point.isHealthy ? 'bg-green-500' : 'bg-red-500')} />
         </InteractiveTooltip>

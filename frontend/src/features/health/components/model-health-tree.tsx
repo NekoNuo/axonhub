@@ -99,7 +99,11 @@ export function ModelHealthTree({ groups, histories, probingKeys, locale, onProb
                           </button>
                         </CollapsibleTrigger>
                         <div className='flex items-center gap-3'>
-                          <ModelHealthCell snapshot={channel.rows[0]} history={channel.rows.flatMap((row) => histories[getConnectionKey(row.displayModel, row.channelID, row.actualModelID)] || [])} />
+                          <ModelHealthCell
+                            snapshot={channel.rows[0]}
+                            history={channel.rows.flatMap((row) => histories[getConnectionKey(row.displayModel, row.channelID, row.actualModelID)] || [])}
+                            locale={locale}
+                          />
                           <Button
                             size='icon'
                             variant='ghost'
@@ -128,7 +132,7 @@ export function ModelHealthTree({ groups, histories, probingKeys, locale, onProb
                                 <div className='text-muted-foreground text-xs'>{t('models.healthPage.lastProbe', { val: formatHealthTimestamp(row.probedAt, locale) })}</div>
                               </div>
                               <div className='flex items-center gap-2'>
-                                <ModelHealthCell snapshot={row} history={histories[rowKey]} />
+                                <ModelHealthCell snapshot={row} history={histories[rowKey]} locale={locale} />
                                 <Button
                                   size='icon'
                                   variant='ghost'

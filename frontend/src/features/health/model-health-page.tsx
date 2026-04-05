@@ -1,4 +1,5 @@
 import { startTransition, useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 import { Main } from '@/components/layout/main';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -84,19 +85,6 @@ export function buildModelHealthTree(rows: ModelHealthRow[]): ModelHealthGroup[]
     }));
 }
 
-export function applyManualProbeResult(rows: ModelHealthSnapshot[], input: ManualModelProbeInput): ModelHealthSnapshot[] {
-  return rows.map((row) =>
-    row.displayModel === input.displayModel && row.actualModelID === input.actualModelID && row.channelID === input.channelID
-      ? {
-          ...row,
-          isHealthy: true,
-          manualOverride: true,
-          probedAt: Math.max(row.probedAt, Math.floor(Date.now() / 1000)),
-        }
-      : row
-  );
-}
-
 export function getModelsPendingConnectionQuery(
   modelEntries: ConnectionQueryModelEntry[],
   search: string,
@@ -135,6 +123,30 @@ export function getGroupProbeTargets(group: ModelHealthGroup): ManualModelProbeI
 
 function getConnectionKey(displayModel: string, channelID: string, actualModelID: string) {
   return `${displayModel}:${channelID}:${actualModelID}`;
+}
+
+async function refreshModelHealthTarget(input: ManualModelProbeInput) {
+  const [snapshots, history] = await Promise.all([
+    fetchModelHealthSnapshots({ input: { displayModels: [input.displayModel] } }),
+    fetchModelHealthHistory({
+      input: {
+        displayModel: input.displayModel,
+        actualModelID: input.actualModelID,
+        channelIDs: [input.channelID],
+      },
+    }),
+  ]);
+
+  const key = getConnectionKey(input.displayModel, input.channelID, input.actualModelID);
+  const snapshot = snapshots.find(
+    (item) => item.displayModel === input.displayModel && item.channelID === input.channelID && item.actualModelID === input.actualModelID
+  );
+
+  return {
+    key,
+    snapshot,
+    history,
+  };
 }
 
 export function ModelHealthPage() {
@@ -310,24 +322,35 @@ export function ModelHealthPage() {
       await Promise.all(
         targets.map(async (input) => {
           await manualModelProbe(input);
-          setSnapshots((current) => applyManualProbeResult(current, input));
-          const historyKey = getConnectionKey(input.displayModel, input.channelID, input.actualModelID);
+          const refreshed = await refreshModelHealthTarget(input);
+          if (refreshed.snapshot) {
+            setSnapshots((current) => {
+              const next = current.filter(
+                (item) => !(item.displayModel === input.displayModel && item.channelID === input.channelID && item.actualModelID === input.actualModelID)
+              );
+              return [refreshed.snapshot!, ...next];
+            });
+          }
           setHistories((current) => ({
             ...current,
-            [historyKey]: [
-              {
-                displayModel: input.displayModel,
-                channelID: input.channelID,
-                actualModelID: input.actualModelID,
-                isHealthy: true,
-                manualOverride: true,
-                probedAt: Math.floor(Date.now() / 1000),
-              },
-              ...(current[historyKey] || []),
-            ].slice(0, 15),
+            [refreshed.key]: refreshed.history,
           }));
+
+          const latest = refreshed.history[0] ?? refreshed.snapshot;
+          if (latest) {
+            toast.success(
+              latest.isHealthy ? t('models.healthPage.probeSuccessHealthy') : t('models.healthPage.probeSuccessUnhealthy'),
+              {
+                description: `${latest.actualModelID} · ${latest.manualOverride ? t('models.healthPage.manualTag') : t('models.healthPage.autoTag')}`,
+              }
+            );
+          } else {
+            toast.success(t('common.messages.success'));
+          }
         })
       );
+    } catch (error) {
+      toast.error(t('models.healthPage.probeError', { error: error instanceof Error ? error.message : String(error) }));
     } finally {
       setProbingKeys((current) => {
         const next = { ...current };

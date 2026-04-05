@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  applyManualProbeResult,
   buildModelHealthTree,
   getChannelProbeTargets,
   getModelsPendingConnectionQuery,
@@ -80,31 +79,6 @@ describe('Task 12 Model Health Page', () => {
 
     expect(groups[0].channels[0].rows[0].actualModelID).toBe('gpt-4o-2024-11-20');
     expect(groups[0].channels[0].rows[0].channelID).toBe('Q2hhbm5lbDox');
-  });
-
-  it('manual probe action updates visible status', () => {
-    const result = applyManualProbeResult(
-      [
-        {
-          displayModel: 'gpt-4o',
-          channelID: 'Q2hhbm5lbDox',
-          actualModelID: 'gpt-4o-2024-11-20',
-          isHealthy: false,
-          manualOverride: false,
-          probedAt: 1712310000,
-        },
-      ],
-      {
-        displayModel: 'gpt-4o',
-        channelID: 'Q2hhbm5lbDox',
-        actualModelID: 'gpt-4o-2024-11-20',
-      }
-    );
-
-    expect(result[0]).toMatchObject({
-      isHealthy: true,
-      manualOverride: true,
-    });
   });
 
   it('skips connection queries for models already cached or in flight', () => {
