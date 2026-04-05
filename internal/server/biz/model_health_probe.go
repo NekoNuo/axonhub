@@ -205,6 +205,11 @@ func (svc *ChannelProbeService) RefreshModelHealthFromUsage(
 		Sources:       []string{ModelHealthTargetSourceRecent},
 	}
 
+	existing, err := svc.GetEffectiveModelHealth(ctx, currentTarget)
+	if err == nil && existing != nil {
+		return
+	}
+
 	_ = svc.persistModelHealthResult(ctx, currentTarget, true, now.Unix(), false)
 
 	if svc.idleChannelModelProber == nil {

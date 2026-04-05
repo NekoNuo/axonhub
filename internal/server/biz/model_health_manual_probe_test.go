@@ -330,3 +330,93 @@ func TestRefreshModelHealthFromRecentUsage_PersistsCurrentChannelImmediatelyAndP
 	require.Equal(t, 1, called[channelB.ID])
 	mu.Unlock()
 }
+
+func TestRefreshModelHealthFromUsage_SkipsWhenHealthAlreadyExists(t *testing.T) {
+	client := enttest.Open(t, dialect.SQLite, "file:ent?mode=memory&_fk=0")
+	defer client.Close()
+
+	ctx := authz.WithTestBypass(ent.NewContext(context.Background(), client))
+
+	systemService := NewSystemService(SystemServiceParams{Ent: client, CacheConfig: xcache.Config{Mode: xcache.ModeMemory}})
+	err := systemService.SetModelSettings(ctx, SystemModelSettings{
+		EnableModelProbe:                  true,
+		FallbackToChannelsOnModelNotFound: true,
+		QueryAllChannelModels:             true,
+	})
+	require.NoError(t, err)
+
+	channelEntity, err := client.Channel.Create().
+		SetType("openai").
+		SetBaseURL("https://api.openai.com/v1").
+		SetName("OpenAI Channel").
+		SetStatus("enabled").
+		SetCredentials(objects.ChannelCredentials{APIKeys: []string{"test-key"}}).
+		SetSupportedModels([]string{"gpt-4.1-mini"}).
+		SetDefaultTestModel("gpt-4.1-mini").
+		Save(ctx)
+	require.NoError(t, err)
+
+	channelService := NewChannelServiceForTest(client)
+	enabledChannel, err := channelService.buildChannelWithTransformer(channelEntity)
+	require.NoError(t, err)
+	channelService.SetEnabledChannelsForTest([]*Channel{enabledChannel})
+
+	_, err = client.Project.Create().
+		SetName("default").
+		SetDescription("default project").
+		SetStatus("active").
+		Save(ctx)
+	require.NoError(t, err)
+
+	probeService := &ChannelProbeService{
+		AbstractService: &AbstractService{db: client},
+		SystemService:   systemService,
+		ChannelService:  channelService,
+	}
+
+	called := 0
+	probeService.idleChannelModelProber = func(_ context.Context, _ *ent.Channel, _ string) (time.Duration, bool, error) {
+		called++
+		return 10 * time.Millisecond, true, nil
+	}
+
+	req, err := client.Request.Create().
+		SetProjectID(1).
+		SetSource("api").
+		SetModelID("gpt-4.1-mini").
+		SetFormat("openai/chat_completions").
+		SetRequestBody([]byte(`{}`)).
+		SetStatus("completed").
+		SetStream(false).
+		SetClientIP("127.0.0.1").
+		Save(ctx)
+	require.NoError(t, err)
+
+	reqExec, err := client.RequestExecution.Create().
+		SetRequestID(req.ID).
+		SetChannelID(channelEntity.ID).
+		SetModelID("gpt-4.1-mini").
+		SetStatus("completed").
+		SetRequestBody([]byte(`{}`)).
+		Save(ctx)
+	require.NoError(t, err)
+
+	now := time.Date(2026, 4, 5, 14, 0, 0, 0, time.UTC)
+	err = probeService.persistModelHealthResult(ctx, ModelHealthProbeTarget{
+		DisplayModel:  req.ModelID,
+		ActualModelID: reqExec.ModelID,
+		ChannelID:     reqExec.ChannelID,
+		Source:        ModelHealthSourceDiscoveredRecentUsage,
+	}, true, now.Add(-time.Minute).Unix(), false)
+	require.NoError(t, err)
+
+	probeService.RefreshModelHealthFromUsage(ctx, req, reqExec, now)
+
+	time.Sleep(50 * time.Millisecond)
+
+	require.Equal(t, 0, called)
+
+	history, err := client.ModelHealthHistory.Query().All(ctx)
+	require.NoError(t, err)
+	require.Len(t, history, 1)
+}
