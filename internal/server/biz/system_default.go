@@ -4,6 +4,13 @@ var defaultStoragePolicy = StoragePolicy{
 	StoreChunks:       false,
 	StoreRequestBody:  true,
 	StoreResponseBody: true,
+	IdleDBMaintenance: IdleDBMaintenance{
+		Enabled:         false,
+		IdleMinutes:     30,
+		MinFreePages:    1024,
+		MinDBSizeMB:     128,
+		CooldownMinutes: 120,
+	},
 	CleanupOptions: []CleanupOption{
 		{
 			ResourceType: "requests",

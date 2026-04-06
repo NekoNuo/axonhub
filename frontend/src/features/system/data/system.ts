@@ -45,6 +45,13 @@ const STORAGE_POLICY_QUERY = `
       storeChunks
       storeRequestBody
       storeResponseBody
+      idleDbMaintenance {
+        enabled
+        idleMinutes
+        minFreePages
+        minDbSizeMB
+        cooldownMinutes
+      }
       cleanupOptions {
         resourceType
         enabled
@@ -178,7 +185,16 @@ export interface StoragePolicy {
   storeChunks: boolean;
   storeRequestBody: boolean;
   storeResponseBody: boolean;
+  idleDbMaintenance: IdleDBMaintenance;
   cleanupOptions: CleanupOption[];
+}
+
+export interface IdleDBMaintenance {
+  enabled: boolean;
+  idleMinutes: number;
+  minFreePages: number;
+  minDbSizeMB: number;
+  cooldownMinutes: number;
 }
 
 export interface CleanupOption {
@@ -196,7 +212,16 @@ export interface UpdateStoragePolicyInput {
   storeChunks?: boolean;
   storeRequestBody?: boolean;
   storeResponseBody?: boolean;
+  idleDbMaintenance?: IdleDBMaintenanceInput;
   cleanupOptions?: CleanupOptionInput[];
+}
+
+export interface IdleDBMaintenanceInput {
+  enabled: boolean;
+  idleMinutes: number;
+  minFreePages: number;
+  minDbSizeMB: number;
+  cooldownMinutes: number;
 }
 
 export interface CleanupOptionInput {

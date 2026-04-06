@@ -27,7 +27,16 @@ type StoragePolicy {
   storeChunks: Boolean!
   storeRequestBody: Boolean!
   storeResponseBody: Boolean!
+  idleDbMaintenance: IdleDBMaintenance!
   cleanupOptions: [CleanupOption!]!
+}
+
+type IdleDBMaintenance {
+  enabled: Boolean!
+  idleMinutes: Int!
+  minFreePages: Int!
+  minDbSizeMB: Int!
+  cooldownMinutes: Int!
 }
 
 type CleanupOption {
@@ -45,7 +54,16 @@ input UpdateStoragePolicyInput {
   storeChunks: Boolean
   storeRequestBody: Boolean
   storeResponseBody: Boolean
+  idleDbMaintenance: IdleDBMaintenanceInput
   cleanupOptions: [CleanupOptionInput!]
+}
+
+input IdleDBMaintenanceInput {
+  enabled: Boolean!
+  idleMinutes: Int!
+  minFreePages: Int!
+  minDbSizeMB: Int!
+  cooldownMinutes: Int!
 }
 
 input CleanupOptionInput {

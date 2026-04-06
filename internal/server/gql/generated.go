@@ -92,6 +92,7 @@ type ResolverRoot interface {
 	User() UserResolver
 	UserProject() UserProjectResolver
 	UserRole() UserRoleResolver
+	UpdateStoragePolicyInput() UpdateStoragePolicyInputResolver
 }
 
 type DirectiveRoot struct {
@@ -654,6 +655,14 @@ type ComplexityRoot struct {
 		Hour  func(childComplexity int) int
 	}
 
+	IdleDBMaintenance struct {
+		CooldownMinutes func(childComplexity int) int
+		Enabled         func(childComplexity int) int
+		IdleMinutes     func(childComplexity int) int
+		MinDBSizeMB     func(childComplexity int) int
+		MinFreePages    func(childComplexity int) int
+	}
+
 	InitializeSystemPayload struct {
 		Message func(childComplexity int) int
 		Success func(childComplexity int) int
@@ -919,8 +928,8 @@ type ComplexityRoot struct {
 		EnableChannelAPIKey                  func(childComplexity int, channelID objects.GUID, key string) int
 		EnableSelectedChannelAPIKeys         func(childComplexity int, channelID objects.GUID, keys []string) int
 		ManualModelProbe                     func(childComplexity int, input ManualModelProbeInput) int
-		ResetDiscoveredModelHealth           func(childComplexity int) int
 		RemoveUserFromProject                func(childComplexity int, input RemoveUserFromProjectInput) int
+		ResetDiscoveredModelHealth           func(childComplexity int) int
 		Restore                              func(childComplexity int, file graphql.Upload, input backup.RestoreOptions) int
 		SaveChannelModelPrices               func(childComplexity int, channelID objects.GUID, input []*biz.SaveChannelModelPriceInput) int
 		SaveProxyPreset                      func(childComplexity int, input biz.ProxyPreset) int
@@ -1481,6 +1490,7 @@ type ComplexityRoot struct {
 
 	StoragePolicy struct {
 		CleanupOptions    func(childComplexity int) int
+		IdleDBMaintenance func(childComplexity int) int
 		StoreChunks       func(childComplexity int) int
 		StoreRequestBody  func(childComplexity int) int
 		StoreResponseBody func(childComplexity int) int
@@ -2174,6 +2184,10 @@ type UserRoleResolver interface {
 	ID(ctx context.Context, obj *ent.UserRole) (*objects.GUID, error)
 	UserID(ctx context.Context, obj *ent.UserRole) (*objects.GUID, error)
 	RoleID(ctx context.Context, obj *ent.UserRole) (*objects.GUID, error)
+}
+
+type UpdateStoragePolicyInputResolver interface {
+	IdleDbMaintenance(ctx context.Context, obj *biz.StoragePolicy, data *IdleDBMaintenanceInput) error
 }
 
 type executableSchema struct {
@@ -4286,6 +4300,37 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.HourlyRequestStats.Hour(childComplexity), true
 
+	case "IdleDBMaintenance.cooldownMinutes":
+		if e.complexity.IdleDBMaintenance.CooldownMinutes == nil {
+			break
+		}
+
+		return e.complexity.IdleDBMaintenance.CooldownMinutes(childComplexity), true
+	case "IdleDBMaintenance.enabled":
+		if e.complexity.IdleDBMaintenance.Enabled == nil {
+			break
+		}
+
+		return e.complexity.IdleDBMaintenance.Enabled(childComplexity), true
+	case "IdleDBMaintenance.idleMinutes":
+		if e.complexity.IdleDBMaintenance.IdleMinutes == nil {
+			break
+		}
+
+		return e.complexity.IdleDBMaintenance.IdleMinutes(childComplexity), true
+	case "IdleDBMaintenance.minDbSizeMB":
+		if e.complexity.IdleDBMaintenance.MinDBSizeMB == nil {
+			break
+		}
+
+		return e.complexity.IdleDBMaintenance.MinDBSizeMB(childComplexity), true
+	case "IdleDBMaintenance.minFreePages":
+		if e.complexity.IdleDBMaintenance.MinFreePages == nil {
+			break
+		}
+
+		return e.complexity.IdleDBMaintenance.MinFreePages(childComplexity), true
+
 	case "InitializeSystemPayload.message":
 		if e.complexity.InitializeSystemPayload.Message == nil {
 			break
@@ -5664,12 +5709,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.ManualModelProbe(childComplexity, args["input"].(ManualModelProbeInput)), true
-	case "Mutation.resetDiscoveredModelHealth":
-		if e.complexity.Mutation.ResetDiscoveredModelHealth == nil {
-			break
-		}
-
-		return e.complexity.Mutation.ResetDiscoveredModelHealth(childComplexity), true
 	case "Mutation.removeUserFromProject":
 		if e.complexity.Mutation.RemoveUserFromProject == nil {
 			break
@@ -5681,6 +5720,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.RemoveUserFromProject(childComplexity, args["input"].(RemoveUserFromProjectInput)), true
+	case "Mutation.resetDiscoveredModelHealth":
+		if e.complexity.Mutation.ResetDiscoveredModelHealth == nil {
+			break
+		}
+
+		return e.complexity.Mutation.ResetDiscoveredModelHealth(childComplexity), true
 	case "Mutation.restore":
 		if e.complexity.Mutation.Restore == nil {
 			break
@@ -8459,6 +8504,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.StoragePolicy.CleanupOptions(childComplexity), true
+	case "StoragePolicy.idleDbMaintenance":
+		if e.complexity.StoragePolicy.IdleDBMaintenance == nil {
+			break
+		}
+
+		return e.complexity.StoragePolicy.IdleDBMaintenance(childComplexity), true
 	case "StoragePolicy.storeChunks":
 		if e.complexity.StoragePolicy.StoreChunks == nil {
 			break
@@ -9927,9 +9978,11 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputGetChannelHealthSnapshotsInput,
 		ec.unmarshalInputGetChannelProbeDataInput,
 		ec.unmarshalInputGetDiscoveredModelHealthSnapshotsInput,
+		ec.unmarshalInputGetLoadBalancerPreviewInput,
 		ec.unmarshalInputGetModelHealthHistoryInput,
 		ec.unmarshalInputGetModelHealthSnapshotsInput,
 		ec.unmarshalInputHeaderEntryInput,
+		ec.unmarshalInputIdleDBMaintenanceInput,
 		ec.unmarshalInputInitializeSystemInput,
 		ec.unmarshalInputManualModelProbeInput,
 		ec.unmarshalInputModelAssociationInput,
@@ -11891,17 +11944,6 @@ func (ec *executionContext) field_Query_apiKeyTokenUsageStats_args(ctx context.C
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_loadBalancerPreview_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalOGetLoadBalancerPreviewInput2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋgqlᚐGetLoadBalancerPreviewInput)
-	if err != nil {
-		return nil, err
-	}
-	args["input"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field_Query_apiKeys_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -12149,6 +12191,17 @@ func (ec *executionContext) field_Query_latestChannelHealthSnapshots_args(ctx co
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNGetChannelHealthSnapshotsInput2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋbizᚐGetChannelHealthSnapshotsInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_loadBalancerPreview_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalOGetLoadBalancerPreviewInput2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋgqlᚐGetLoadBalancerPreviewInput)
 	if err != nil {
 		return nil, err
 	}
@@ -24002,6 +24055,151 @@ func (ec *executionContext) fieldContext_HourlyRequestStats_count(_ context.Cont
 	return fc, nil
 }
 
+func (ec *executionContext) _IdleDBMaintenance_enabled(ctx context.Context, field graphql.CollectedField, obj *biz.IdleDBMaintenance) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_IdleDBMaintenance_enabled,
+		func(ctx context.Context) (any, error) {
+			return obj.Enabled, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_IdleDBMaintenance_enabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "IdleDBMaintenance",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _IdleDBMaintenance_idleMinutes(ctx context.Context, field graphql.CollectedField, obj *biz.IdleDBMaintenance) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_IdleDBMaintenance_idleMinutes,
+		func(ctx context.Context) (any, error) {
+			return obj.IdleMinutes, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_IdleDBMaintenance_idleMinutes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "IdleDBMaintenance",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _IdleDBMaintenance_minFreePages(ctx context.Context, field graphql.CollectedField, obj *biz.IdleDBMaintenance) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_IdleDBMaintenance_minFreePages,
+		func(ctx context.Context) (any, error) {
+			return obj.MinFreePages, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_IdleDBMaintenance_minFreePages(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "IdleDBMaintenance",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _IdleDBMaintenance_minDbSizeMB(ctx context.Context, field graphql.CollectedField, obj *biz.IdleDBMaintenance) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_IdleDBMaintenance_minDbSizeMB,
+		func(ctx context.Context) (any, error) {
+			return obj.MinDBSizeMB, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_IdleDBMaintenance_minDbSizeMB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "IdleDBMaintenance",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _IdleDBMaintenance_cooldownMinutes(ctx context.Context, field graphql.CollectedField, obj *biz.IdleDBMaintenance) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_IdleDBMaintenance_cooldownMinutes,
+		func(ctx context.Context) (any, error) {
+			return obj.CooldownMinutes, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_IdleDBMaintenance_cooldownMinutes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "IdleDBMaintenance",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _InitializeSystemPayload_success(ctx context.Context, field graphql.CollectedField, obj *InitializeSystemPayload) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -32115,22 +32313,6 @@ func (ec *executionContext) _Mutation_manualModelProbe(ctx context.Context, fiel
 	)
 }
 
-func (ec *executionContext) _Mutation_resetDiscoveredModelHealth(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Mutation_resetDiscoveredModelHealth,
-		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Mutation().ResetDiscoveredModelHealth(ctx)
-		},
-		nil,
-		ec.marshalNBoolean2bool,
-		true,
-		true,
-	)
-}
-
 func (ec *executionContext) fieldContext_Mutation_manualModelProbe(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Mutation",
@@ -32155,7 +32337,23 @@ func (ec *executionContext) fieldContext_Mutation_manualModelProbe(ctx context.C
 	return fc, nil
 }
 
-func (ec *executionContext) fieldContext_Mutation_resetDiscoveredModelHealth(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) _Mutation_resetDiscoveredModelHealth(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_resetDiscoveredModelHealth,
+		func(ctx context.Context) (any, error) {
+			return ec.resolvers.Mutation().ResetDiscoveredModelHealth(ctx)
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_resetDiscoveredModelHealth(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Mutation",
 		Field:      field,
@@ -32165,12 +32363,6 @@ func (ec *executionContext) fieldContext_Mutation_resetDiscoveredModelHealth(ctx
 			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
 	return fc, nil
 }
 
@@ -39259,6 +39451,8 @@ func (ec *executionContext) fieldContext_Query_storagePolicy(_ context.Context, 
 				return ec.fieldContext_StoragePolicy_storeRequestBody(ctx, field)
 			case "storeResponseBody":
 				return ec.fieldContext_StoragePolicy_storeResponseBody(ctx, field)
+			case "idleDbMaintenance":
+				return ec.fieldContext_StoragePolicy_idleDbMaintenance(ctx, field)
 			case "cleanupOptions":
 				return ec.fieldContext_StoragePolicy_cleanupOptions(ctx, field)
 			}
@@ -45574,6 +45768,47 @@ func (ec *executionContext) fieldContext_StoragePolicy_storeResponseBody(_ conte
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _StoragePolicy_idleDbMaintenance(ctx context.Context, field graphql.CollectedField, obj *biz.StoragePolicy) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_StoragePolicy_idleDbMaintenance,
+		func(ctx context.Context) (any, error) {
+			return obj.IdleDBMaintenance, nil
+		},
+		nil,
+		ec.marshalNIdleDBMaintenance2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋbizᚐIdleDBMaintenance,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_StoragePolicy_idleDbMaintenance(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "StoragePolicy",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "enabled":
+				return ec.fieldContext_IdleDBMaintenance_enabled(ctx, field)
+			case "idleMinutes":
+				return ec.fieldContext_IdleDBMaintenance_idleMinutes(ctx, field)
+			case "minFreePages":
+				return ec.fieldContext_IdleDBMaintenance_minFreePages(ctx, field)
+			case "minDbSizeMB":
+				return ec.fieldContext_IdleDBMaintenance_minDbSizeMB(ctx, field)
+			case "cooldownMinutes":
+				return ec.fieldContext_IdleDBMaintenance_cooldownMinutes(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type IdleDBMaintenance", field.Name)
 		},
 	}
 	return fc, nil
@@ -54586,33 +54821,6 @@ func (ec *executionContext) unmarshalInputAPIKeyTokenUsageStatsInput(ctx context
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputGetLoadBalancerPreviewInput(ctx context.Context, obj any) (GetLoadBalancerPreviewInput, error) {
-	var it GetLoadBalancerPreviewInput
-	asMap := map[string]any{}
-	for k, v := range obj.(map[string]any) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"modelId"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "modelId":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("modelId"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ModelID = data
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputAPIKeyWhereInput(ctx context.Context, obj any) (ent.APIKeyWhereInput, error) {
 	var it ent.APIKeyWhereInput
 	asMap := map[string]any{}
@@ -62038,6 +62246,33 @@ func (ec *executionContext) unmarshalInputGetDiscoveredModelHealthSnapshotsInput
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputGetLoadBalancerPreviewInput(ctx context.Context, obj any) (GetLoadBalancerPreviewInput, error) {
+	var it GetLoadBalancerPreviewInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"modelId"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "modelId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("modelId"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ModelID = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputGetModelHealthHistoryInput(ctx context.Context, obj any) (GetModelHealthHistoryInput, error) {
 	var it GetModelHealthHistoryInput
 	asMap := map[string]any{}
@@ -62134,6 +62369,61 @@ func (ec *executionContext) unmarshalInputHeaderEntryInput(ctx context.Context, 
 				return it, err
 			}
 			it.Value = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputIdleDBMaintenanceInput(ctx context.Context, obj any) (IdleDBMaintenanceInput, error) {
+	var it IdleDBMaintenanceInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"enabled", "idleMinutes", "minFreePages", "minDbSizeMB", "cooldownMinutes"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "enabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("enabled"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Enabled = data
+		case "idleMinutes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idleMinutes"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IdleMinutes = data
+		case "minFreePages":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("minFreePages"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MinFreePages = data
+		case "minDbSizeMB":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("minDbSizeMB"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MinDbSizeMb = data
+		case "cooldownMinutes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cooldownMinutes"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CooldownMinutes = data
 		}
 	}
 
@@ -74768,7 +75058,7 @@ func (ec *executionContext) unmarshalInputUpdateStoragePolicyInput(ctx context.C
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"storeChunks", "storeRequestBody", "storeResponseBody", "cleanupOptions"}
+	fieldsInOrder := [...]string{"storeChunks", "storeRequestBody", "storeResponseBody", "idleDbMaintenance", "cleanupOptions"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -74796,6 +75086,15 @@ func (ec *executionContext) unmarshalInputUpdateStoragePolicyInput(ctx context.C
 				return it, err
 			}
 			it.StoreResponseBody = data
+		case "idleDbMaintenance":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idleDbMaintenance"))
+			data, err := ec.unmarshalOIdleDBMaintenanceInput2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋgqlᚐIdleDBMaintenanceInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.resolvers.UpdateStoragePolicyInput().IdleDbMaintenance(ctx, &it, data); err != nil {
+				return it, err
+			}
 		case "cleanupOptions":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cleanupOptions"))
 			data, err := ec.unmarshalOCleanupOptionInput2ᚕgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋbizᚐCleanupOptionᚄ(ctx, v)
@@ -84003,6 +84302,65 @@ func (ec *executionContext) _HourlyRequestStats(ctx context.Context, sel ast.Sel
 	return out
 }
 
+var idleDBMaintenanceImplementors = []string{"IdleDBMaintenance"}
+
+func (ec *executionContext) _IdleDBMaintenance(ctx context.Context, sel ast.SelectionSet, obj *biz.IdleDBMaintenance) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, idleDBMaintenanceImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("IdleDBMaintenance")
+		case "enabled":
+			out.Values[i] = ec._IdleDBMaintenance_enabled(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "idleMinutes":
+			out.Values[i] = ec._IdleDBMaintenance_idleMinutes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "minFreePages":
+			out.Values[i] = ec._IdleDBMaintenance_minFreePages(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "minDbSizeMB":
+			out.Values[i] = ec._IdleDBMaintenance_minDbSizeMB(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "cooldownMinutes":
+			out.Values[i] = ec._IdleDBMaintenance_cooldownMinutes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var initializeSystemPayloadImplementors = []string{"InitializeSystemPayload"}
 
 func (ec *executionContext) _InitializeSystemPayload(ctx context.Context, sel ast.SelectionSet, obj *InitializeSystemPayload) graphql.Marshaler {
@@ -92586,6 +92944,11 @@ func (ec *executionContext) _StoragePolicy(ctx context.Context, sel ast.Selectio
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "idleDbMaintenance":
+			out.Values[i] = ec._StoragePolicy_idleDbMaintenance(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "cleanupOptions":
 			out.Values[i] = ec._StoragePolicy_cleanupOptions(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -98755,6 +99118,10 @@ func (ec *executionContext) marshalNID2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinte
 	return v
 }
 
+func (ec *executionContext) marshalNIdleDBMaintenance2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋbizᚐIdleDBMaintenance(ctx context.Context, sel ast.SelectionSet, v biz.IdleDBMaintenance) graphql.Marshaler {
+	return ec._IdleDBMaintenance(ctx, sel, &v)
+}
+
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v any) (int, error) {
 	res, err := graphql.UnmarshalInt(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -102642,14 +103009,6 @@ func (ec *executionContext) unmarshalOAPIKeyTokenUsageStatsInput2ᚖgithubᚗcom
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOGetLoadBalancerPreviewInput2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋgqlᚐGetLoadBalancerPreviewInput(ctx context.Context, v any) (*GetLoadBalancerPreviewInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputGetLoadBalancerPreviewInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
 func (ec *executionContext) unmarshalOAPIKeyType2ᚕgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚋapikeyᚐTypeᚄ(ctx context.Context, v any) ([]apikey.Type, error) {
 	if v == nil {
 		return nil, nil
@@ -104334,6 +104693,14 @@ func (ec *executionContext) unmarshalOGCSInput2ᚖgithubᚗcomᚋloopljᚋaxonhu
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalOGetLoadBalancerPreviewInput2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋgqlᚐGetLoadBalancerPreviewInput(ctx context.Context, v any) (*GetLoadBalancerPreviewInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputGetLoadBalancerPreviewInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalOID2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐGUIDᚄ(ctx context.Context, v any) ([]*objects.GUID, error) {
 	if v == nil {
 		return nil, nil
@@ -104384,6 +104751,14 @@ func (ec *executionContext) marshalOID2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinte
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) unmarshalOIdleDBMaintenanceInput2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋgqlᚐIdleDBMaintenanceInput(ctx context.Context, v any) (*IdleDBMaintenanceInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputIdleDBMaintenanceInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOInt2int(ctx context.Context, v any) (int, error) {

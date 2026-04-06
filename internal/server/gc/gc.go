@@ -3,6 +3,7 @@ package gc
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"entgo.io/ent/dialect"
@@ -26,6 +27,7 @@ import (
 // defaultBatchSize is the default batch size for cleanup operations
 // This can be overridden for testing.
 var defaultBatchSize = 500
+var idleMaintenanceInterval = time.Minute
 
 type Config struct {
 	CRON          string `json:"cron" yaml:"cron" conf:"cron" validate:"required"`
@@ -35,12 +37,20 @@ type Config struct {
 
 // Worker handles garbage collection and cleanup operations.
 type Worker struct {
-	SystemService      *biz.SystemService
-	DataStorageService *biz.DataStorageService
-	Executor           executors.ScheduledExecutor
-	Ent                *ent.Client
-	Config             Config
-	CancelFunc         context.CancelFunc
+	SystemService         *biz.SystemService
+	DataStorageService    *biz.DataStorageService
+	Executor              executors.ScheduledExecutor
+	Ent                   *ent.Client
+	Config                Config
+	CancelFunc            context.CancelFunc
+	IdleCancelFunc        context.CancelFunc
+	maintenanceMu         sync.Mutex
+	lastIdleMaintenanceAt time.Time
+	now                   func() time.Time
+	latestWriteAtFunc     func(ctx context.Context) (time.Time, error)
+	statsFunc             func(ctx context.Context) (dbMaintenanceStats, error)
+	checkpointFunc        func(ctx context.Context) error
+	vacuumFunc            func(ctx context.Context) error
 }
 
 type Params struct {
@@ -61,6 +71,195 @@ func NewWorker(params Params) *Worker {
 		Ent:                params.Client,
 		Config:             params.Config,
 	}
+}
+
+type dbMaintenanceStats struct {
+	PageSize      int64
+	PageCount     int64
+	FreeListCount int64
+}
+
+func (s dbMaintenanceStats) dbSizeBytes() int64 {
+	return s.PageSize * s.PageCount
+}
+
+func (w *Worker) shouldRunIdleMaintenance(settings biz.IdleDBMaintenance, stats dbMaintenanceStats) bool {
+	if !settings.Enabled {
+		return false
+	}
+
+	if settings.MinFreePages > 0 && stats.FreeListCount >= int64(settings.MinFreePages) {
+		return true
+	}
+
+	if settings.MinDBSizeMB > 0 && stats.dbSizeBytes() >= int64(settings.MinDBSizeMB)*1024*1024 {
+		return true
+	}
+
+	return false
+}
+
+func (w *Worker) canRunIdleMaintenance(now time.Time, settings biz.IdleDBMaintenance) bool {
+	if !settings.Enabled {
+		return false
+	}
+
+	w.maintenanceMu.Lock()
+	lastRunAt := w.lastIdleMaintenanceAt
+	w.maintenanceMu.Unlock()
+
+	if settings.CooldownMinutes <= 0 {
+		return true
+	}
+
+	if lastRunAt.IsZero() {
+		return true
+	}
+
+	return now.Sub(lastRunAt) >= time.Duration(settings.CooldownMinutes)*time.Minute
+}
+
+func (w *Worker) latestRequestWriteAt(ctx context.Context) (time.Time, error) {
+	var latest time.Time
+
+	req, err := w.Ent.Request.Query().
+		Order(ent.Desc(request.FieldUpdatedAt)).
+		First(ctx)
+	if err != nil && !ent.IsNotFound(err) {
+		return time.Time{}, fmt.Errorf("failed to query latest request write: %w", err)
+	}
+	if err == nil && req.UpdatedAt.After(latest) {
+		latest = req.UpdatedAt
+	}
+
+	exec, err := w.Ent.RequestExecution.Query().
+		Order(ent.Desc(requestexecution.FieldUpdatedAt)).
+		First(ctx)
+	if err != nil && !ent.IsNotFound(err) {
+		return time.Time{}, fmt.Errorf("failed to query latest request execution write: %w", err)
+	}
+	if err == nil && exec.UpdatedAt.After(latest) {
+		latest = exec.UpdatedAt
+	}
+
+	usage, err := w.Ent.UsageLog.Query().
+		Order(ent.Desc(usagelog.FieldUpdatedAt)).
+		First(ctx)
+	if err != nil && !ent.IsNotFound(err) {
+		return time.Time{}, fmt.Errorf("failed to query latest usage log write: %w", err)
+	}
+	if err == nil && usage.UpdatedAt.After(latest) {
+		latest = usage.UpdatedAt
+	}
+
+	return latest, nil
+}
+
+func (w *Worker) nowTime() time.Time {
+	if w.now != nil {
+		return w.now()
+	}
+
+	return time.Now()
+}
+
+func (w *Worker) latestRequestWriteTimestamp(ctx context.Context) (time.Time, error) {
+	if w.latestWriteAtFunc != nil {
+		return w.latestWriteAtFunc(ctx)
+	}
+
+	return w.latestRequestWriteAt(ctx)
+}
+
+func (w *Worker) maintenanceStats(ctx context.Context) (dbMaintenanceStats, error) {
+	if w.statsFunc != nil {
+		return w.statsFunc(ctx)
+	}
+
+	sqlDriver, ok := w.Ent.Driver().(*entsql.Driver)
+	if !ok {
+		return dbMaintenanceStats{}, fmt.Errorf("database driver is not *entsql.Driver")
+	}
+
+	if sqlDriver.Dialect() != dialect.SQLite {
+		return dbMaintenanceStats{}, fmt.Errorf("idle maintenance only supports sqlite")
+	}
+
+	db := sqlDriver.DB()
+	var stats dbMaintenanceStats
+
+	if err := db.QueryRowContext(ctx, "PRAGMA page_size").Scan(&stats.PageSize); err != nil {
+		return dbMaintenanceStats{}, fmt.Errorf("failed to query page_size: %w", err)
+	}
+
+	if err := db.QueryRowContext(ctx, "PRAGMA page_count").Scan(&stats.PageCount); err != nil {
+		return dbMaintenanceStats{}, fmt.Errorf("failed to query page_count: %w", err)
+	}
+
+	if err := db.QueryRowContext(ctx, "PRAGMA freelist_count").Scan(&stats.FreeListCount); err != nil {
+		return dbMaintenanceStats{}, fmt.Errorf("failed to query freelist_count: %w", err)
+	}
+
+	return stats, nil
+}
+
+func (w *Worker) runCheckpointTruncate(ctx context.Context) error {
+	if w.checkpointFunc != nil {
+		return w.checkpointFunc(ctx)
+	}
+
+	sqlDriver, ok := w.Ent.Driver().(*entsql.Driver)
+	if !ok {
+		return fmt.Errorf("database driver is not *entsql.Driver")
+	}
+
+	if sqlDriver.Dialect() != dialect.SQLite {
+		return fmt.Errorf("idle maintenance only supports sqlite")
+	}
+
+	var busy, walFrames, checkpointed int
+	if err := sqlDriver.DB().QueryRowContext(ctx, "PRAGMA wal_checkpoint(TRUNCATE)").Scan(&busy, &walFrames, &checkpointed); err != nil {
+		return fmt.Errorf("failed to run wal checkpoint truncate: %w", err)
+	}
+
+	log.Debug(ctx, "SQLite WAL checkpoint completed",
+		log.Int("busy", busy),
+		log.Int("wal_frames", walFrames),
+		log.Int("checkpointed_frames", checkpointed),
+	)
+
+	return nil
+}
+
+func (w *Worker) runVacuumNow(ctx context.Context) error {
+	if w.vacuumFunc != nil {
+		return w.vacuumFunc(ctx)
+	}
+
+	return w.runVacuum(ctx)
+}
+
+func (w *Worker) isIdleEnough(lastWriteAt, now time.Time, settings biz.IdleDBMaintenance) bool {
+	if lastWriteAt.IsZero() || settings.IdleMinutes <= 0 {
+		return true
+	}
+
+	return now.Sub(lastWriteAt) >= time.Duration(settings.IdleMinutes)*time.Minute
+}
+
+func (w *Worker) markIdleMaintenanceRun(at time.Time) {
+	w.maintenanceMu.Lock()
+	w.lastIdleMaintenanceAt = at
+	w.maintenanceMu.Unlock()
+}
+
+func (w *Worker) supportsIdleMaintenance() bool {
+	sqlDriver, ok := w.Ent.Driver().(*entsql.Driver)
+	if !ok {
+		return false
+	}
+
+	return sqlDriver.Dialect() == dialect.SQLite
 }
 
 // deleteInBatches deletes records in batches to avoid memory issues
@@ -106,10 +305,21 @@ func (w *Worker) Start(ctx context.Context) error {
 		return err
 	}
 
+	idleCancelFunc, err := w.Executor.ScheduleFuncAtFixRate(
+		w.runIdleMaintenanceWithSystemContext,
+		idleMaintenanceInterval,
+	)
+	if err != nil {
+		cancelFunc()
+		return err
+	}
+
 	w.CancelFunc = cancelFunc
+	w.IdleCancelFunc = idleCancelFunc
 
 	log.Info(ctx, "GC worker started", log.String("cron", w.Config.CRON),
 		log.Bool("cancel_func", w.CancelFunc != nil),
+		log.Bool("idle_cancel_func", w.IdleCancelFunc != nil),
 		log.Bool("ent", w.Ent != nil),
 		log.Bool("executor", w.Executor != nil),
 		log.Bool("system_service", w.SystemService != nil),
@@ -121,6 +331,10 @@ func (w *Worker) Start(ctx context.Context) error {
 func (w *Worker) Stop(ctx context.Context) error {
 	if w.CancelFunc != nil {
 		w.CancelFunc()
+	}
+
+	if w.IdleCancelFunc != nil {
+		w.IdleCancelFunc()
 	}
 
 	return w.Executor.Shutdown(ctx)
@@ -216,6 +430,88 @@ func (w *Worker) runCleanup(ctx context.Context, manual bool) {
 	}
 
 	log.Info(ctx, "Automatic cleanup process completed")
+}
+
+func (w *Worker) runIdleMaintenanceCheck(ctx context.Context) {
+	if !w.supportsIdleMaintenance() {
+		return
+	}
+
+	ctx = ent.NewContext(ctx, w.Ent)
+	ctx = schematype.SkipSoftDelete(ctx)
+
+	policy, err := w.SystemService.StoragePolicy(ctx)
+	if err != nil {
+		log.Error(ctx, "Failed to get storage policy for idle maintenance", log.Cause(err))
+		return
+	}
+
+	w.runIdleMaintenance(ctx, policy.IdleDBMaintenance)
+}
+
+func (w *Worker) runIdleMaintenance(ctx context.Context, settings biz.IdleDBMaintenance) {
+	if !settings.Enabled {
+		return
+	}
+
+	now := w.nowTime()
+	if !w.canRunIdleMaintenance(now, settings) {
+		return
+	}
+
+	lastWriteAt, err := w.latestRequestWriteTimestamp(ctx)
+	if err != nil {
+		log.Error(ctx, "Failed to determine latest request write time", log.Cause(err))
+		return
+	}
+
+	if !w.isIdleEnough(lastWriteAt, now, settings) {
+		return
+	}
+
+	if err := w.runCheckpointTruncate(ctx); err != nil {
+		log.Error(ctx, "Failed to run idle WAL checkpoint", log.Cause(err))
+		return
+	}
+
+	stats, err := w.maintenanceStats(ctx)
+	if err != nil {
+		log.Error(ctx, "Failed to collect idle maintenance stats", log.Cause(err))
+		return
+	}
+
+	now = w.nowTime()
+	lastWriteAt, err = w.latestRequestWriteTimestamp(ctx)
+	if err != nil {
+		log.Error(ctx, "Failed to recheck latest request write time", log.Cause(err))
+		return
+	}
+
+	if !w.isIdleEnough(lastWriteAt, now, settings) {
+		return
+	}
+
+	if !w.shouldRunIdleMaintenance(settings, stats) {
+		w.markIdleMaintenanceRun(now)
+		log.Debug(ctx, "Idle maintenance skipped VACUUM after checkpoint",
+			log.Int64("page_count", stats.PageCount),
+			log.Int64("free_list_count", stats.FreeListCount),
+			log.Int64("db_size_bytes", stats.dbSizeBytes()),
+		)
+		return
+	}
+
+	if err := w.runVacuumNow(ctx); err != nil {
+		log.Error(ctx, "Failed to run idle VACUUM", log.Cause(err))
+		return
+	}
+
+	w.markIdleMaintenanceRun(now)
+	log.Info(ctx, "Idle database maintenance completed",
+		log.Int64("page_count", stats.PageCount),
+		log.Int64("free_list_count", stats.FreeListCount),
+		log.Int64("db_size_bytes", stats.dbSizeBytes()),
+	)
 }
 
 // cleanupRequests deletes requests older than the specified number of days.
@@ -531,7 +827,11 @@ func (w *Worker) cleanupChannelProbes(ctx context.Context, cleanupDays int, manu
 // runVacuum executes VACUUM command on SQLite/PostgreSQL database to reclaim storage space.
 // This should be called after cleanup operations to defragment the database file.
 func (w *Worker) runVacuum(ctx context.Context) error {
-	if !w.Config.VacuumEnabled {
+	return w.executeVacuum(ctx, false)
+}
+
+func (w *Worker) executeVacuum(ctx context.Context, force bool) error {
+	if !force && !w.Config.VacuumEnabled {
 		log.Debug(ctx, "VACUUM is disabled, skipping")
 		return nil
 	}
@@ -587,7 +887,7 @@ func (w *Worker) runVacuum(ctx context.Context) error {
 // RunVacuumNow manually triggers the VACUUM operation.
 // This can be useful for testing or manual execution.
 func (w *Worker) RunVacuumNow(ctx context.Context) error {
-	return w.runVacuum(ctx)
+	return w.executeVacuum(ctx, true)
 }
 
 // RunCleanupNow manually triggers the cleanup process.

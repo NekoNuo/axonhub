@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Loader2, Save, Play } from 'lucide-react';
+import { CircleHelp, Loader2, Save, Play } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
   AlertDialog,
@@ -19,6 +19,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSystemContext } from '../context/system-context';
 import { useStoragePolicy, useUpdateStoragePolicy, useTriggerGcCleanup, CleanupOption } from '../data/system';
 
@@ -34,6 +35,13 @@ export function StoragePolicySettings() {
     storeChunks: storagePolicy?.storeChunks ?? false,
     storeRequestBody: storagePolicy?.storeRequestBody ?? true,
     storeResponseBody: storagePolicy?.storeResponseBody ?? true,
+    idleDbMaintenance: storagePolicy?.idleDbMaintenance ?? {
+      enabled: false,
+      idleMinutes: 30,
+      minFreePages: 1024,
+      minDbSizeMB: 128,
+      cooldownMinutes: 120,
+    },
     cleanupOptions: storagePolicy?.cleanupOptions ?? [],
   });
 
@@ -43,6 +51,7 @@ export function StoragePolicySettings() {
         storeChunks: storagePolicy.storeChunks,
         storeRequestBody: storagePolicy.storeRequestBody,
         storeResponseBody: storagePolicy.storeResponseBody,
+        idleDbMaintenance: storagePolicy.idleDbMaintenance,
         cleanupOptions: storagePolicy.cleanupOptions,
       });
     }
@@ -55,6 +64,7 @@ export function StoragePolicySettings() {
         storeChunks: storagePolicyState.storeChunks,
         storeRequestBody: storagePolicyState.storeRequestBody,
         storeResponseBody: storagePolicyState.storeResponseBody,
+        idleDbMaintenance: storagePolicyState.idleDbMaintenance,
         cleanupOptions: storagePolicyState.cleanupOptions.map((option) => ({
           resourceType: option.resourceType,
           enabled: option.enabled,
@@ -78,11 +88,29 @@ export function StoragePolicySettings() {
     });
   };
 
+  const renderLabelWithTooltip = (htmlFor: string, label: string, tooltip: string) => (
+    <div className='flex items-center gap-1.5'>
+      <Label htmlFor={htmlFor}>{label}</Label>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button type='button' className='text-muted-foreground hover:text-foreground transition-colors'>
+            <CircleHelp className='h-3.5 w-3.5' />
+            <span className='sr-only'>{tooltip}</span>
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side='top' className='max-w-xs'>
+          <p>{tooltip}</p>
+        </TooltipContent>
+      </Tooltip>
+    </div>
+  );
+
   const hasChanges =
     storagePolicy &&
     (storagePolicy.storeChunks !== storagePolicyState.storeChunks ||
       storagePolicy.storeRequestBody !== storagePolicyState.storeRequestBody ||
       storagePolicy.storeResponseBody !== storagePolicyState.storeResponseBody ||
+      JSON.stringify(storagePolicy.idleDbMaintenance) !== JSON.stringify(storagePolicyState.idleDbMaintenance) ||
       JSON.stringify(storagePolicy.cleanupOptions) !== JSON.stringify(storagePolicyState.cleanupOptions));
 
   if (isLoadingStoragePolicy) {
@@ -180,6 +208,138 @@ export function StoragePolicySettings() {
 
           <div className='space-y-4'>
             <div className='space-y-2'>
+              <div className='text-lg font-medium'>{t('system.storage.policy.idleDbMaintenance.title')}</div>
+              <div className='text-muted-foreground text-sm'>{t('system.storage.policy.idleDbMaintenance.description')}</div>
+            </div>
+
+            <div className='flex items-center justify-between rounded-lg border p-4'>
+              <div className='space-y-0.5'>
+                <Label htmlFor='storage-policy-idle-db-maintenance-enabled'>
+                  {t('system.storage.policy.idleDbMaintenance.enabled.label')}
+                </Label>
+                <div className='text-muted-foreground text-sm'>
+                  {t('system.storage.policy.idleDbMaintenance.enabled.description')}
+                </div>
+              </div>
+              <Switch
+                id='storage-policy-idle-db-maintenance-enabled'
+                checked={storagePolicyState.idleDbMaintenance.enabled}
+                onCheckedChange={(checked) =>
+                  setStoragePolicyState({
+                    ...storagePolicyState,
+                    idleDbMaintenance: {
+                      ...storagePolicyState.idleDbMaintenance,
+                      enabled: checked,
+                    },
+                  })
+                }
+                disabled={isLoading}
+              />
+            </div>
+
+            {storagePolicyState.idleDbMaintenance.enabled && (
+              <div className='grid gap-4 rounded-lg border p-4 md:grid-cols-2'>
+                <div className='space-y-2'>
+                  {renderLabelWithTooltip(
+                    'idle-db-maintenance-minutes',
+                    t('system.storage.policy.idleDbMaintenance.idleMinutes'),
+                    t('system.storage.policy.idleDbMaintenance.idleMinutesTooltip')
+                  )}
+                  <Input
+                    id='idle-db-maintenance-minutes'
+                    type='number'
+                    min='1'
+                    max='1440'
+                    value={storagePolicyState.idleDbMaintenance.idleMinutes}
+                    onChange={(e) =>
+                      setStoragePolicyState({
+                        ...storagePolicyState,
+                        idleDbMaintenance: {
+                          ...storagePolicyState.idleDbMaintenance,
+                          idleMinutes: parseInt(e.target.value) || 0,
+                        },
+                      })
+                    }
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div className='space-y-2'>
+                  {renderLabelWithTooltip(
+                    'idle-db-maintenance-cooldown',
+                    t('system.storage.policy.idleDbMaintenance.cooldownMinutes'),
+                    t('system.storage.policy.idleDbMaintenance.cooldownMinutesTooltip')
+                  )}
+                  <Input
+                    id='idle-db-maintenance-cooldown'
+                    type='number'
+                    min='0'
+                    max='10080'
+                    value={storagePolicyState.idleDbMaintenance.cooldownMinutes}
+                    onChange={(e) =>
+                      setStoragePolicyState({
+                        ...storagePolicyState,
+                        idleDbMaintenance: {
+                          ...storagePolicyState.idleDbMaintenance,
+                          cooldownMinutes: parseInt(e.target.value) || 0,
+                        },
+                      })
+                    }
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div className='space-y-2'>
+                  {renderLabelWithTooltip(
+                    'idle-db-maintenance-min-free-pages',
+                    t('system.storage.policy.idleDbMaintenance.minFreePages'),
+                    t('system.storage.policy.idleDbMaintenance.minFreePagesTooltip')
+                  )}
+                  <Input
+                    id='idle-db-maintenance-min-free-pages'
+                    type='number'
+                    min='0'
+                    value={storagePolicyState.idleDbMaintenance.minFreePages}
+                    onChange={(e) =>
+                      setStoragePolicyState({
+                        ...storagePolicyState,
+                        idleDbMaintenance: {
+                          ...storagePolicyState.idleDbMaintenance,
+                          minFreePages: parseInt(e.target.value) || 0,
+                        },
+                      })
+                    }
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div className='space-y-2'>
+                  {renderLabelWithTooltip(
+                    'idle-db-maintenance-min-db-size',
+                    t('system.storage.policy.idleDbMaintenance.minDbSizeMB'),
+                    t('system.storage.policy.idleDbMaintenance.minDbSizeMBTooltip')
+                  )}
+                  <Input
+                    id='idle-db-maintenance-min-db-size'
+                    type='number'
+                    min='0'
+                    value={storagePolicyState.idleDbMaintenance.minDbSizeMB}
+                    onChange={(e) =>
+                      setStoragePolicyState({
+                        ...storagePolicyState,
+                        idleDbMaintenance: {
+                          ...storagePolicyState.idleDbMaintenance,
+                          minDbSizeMB: parseInt(e.target.value) || 0,
+                        },
+                      })
+                    }
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className='space-y-2'>
               <div className='text-lg font-medium'>{t('system.storage.policy.cleanupOptions')}</div>
               <div className='text-muted-foreground text-sm'>{t('system.storage.policy.cleanupDescription')}</div>
             </div>
@@ -199,7 +359,11 @@ export function StoragePolicySettings() {
                 </div>
                 {option.enabled && (
                   <div className='flex items-center gap-2'>
-                    <Label htmlFor={`cleanup-days-${index}`}>{t('system.storage.policy.cleanupDays')}</Label>
+                    {renderLabelWithTooltip(
+                      `cleanup-days-${index}`,
+                      t('system.storage.policy.cleanupDays'),
+                      t(`system.storage.policy.cleanupDaysTooltip.${option.resourceType}`)
+                    )}
                     <Input
                       id={`cleanup-days-${index}`}
                       type='number'

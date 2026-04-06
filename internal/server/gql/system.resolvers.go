@@ -384,3 +384,15 @@ func (r *queryResolver) UserAgentPassThroughSettings(ctx context.Context) (*User
 		Enabled: enabled,
 	}, nil
 }
+
+// IdleDbMaintenance is the resolver for the idleDbMaintenance field.
+func (r *updateStoragePolicyInputResolver) IdleDbMaintenance(ctx context.Context, obj *biz.StoragePolicy, data *IdleDBMaintenanceInput) error {
+	panic(fmt.Errorf("not implemented: IdleDbMaintenance - idleDbMaintenance"))
+}
+
+// UpdateStoragePolicyInput returns UpdateStoragePolicyInputResolver implementation.
+func (r *Resolver) UpdateStoragePolicyInput() UpdateStoragePolicyInputResolver {
+	return &updateStoragePolicyInputResolver{r}
+}
+
+type updateStoragePolicyInputResolver struct{ *Resolver }

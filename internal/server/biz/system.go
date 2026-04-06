@@ -142,10 +142,19 @@ type AutoBackupSettings struct {
 
 // StoragePolicy represents the storage policy configuration.
 type StoragePolicy struct {
-	StoreChunks       bool            `json:"store_chunks"`
-	StoreRequestBody  bool            `json:"store_request_body"`
-	StoreResponseBody bool            `json:"store_response_body"`
-	CleanupOptions    []CleanupOption `json:"cleanup_options"`
+	StoreChunks       bool              `json:"store_chunks"`
+	StoreRequestBody  bool              `json:"store_request_body"`
+	StoreResponseBody bool              `json:"store_response_body"`
+	IdleDBMaintenance IdleDBMaintenance `json:"idle_db_maintenance"`
+	CleanupOptions    []CleanupOption   `json:"cleanup_options"`
+}
+
+type IdleDBMaintenance struct {
+	Enabled         bool `json:"enabled"`
+	IdleMinutes     int  `json:"idle_minutes"`
+	MinFreePages    int  `json:"min_free_pages"`
+	MinDBSizeMB     int  `json:"min_db_size_mb"`
+	CooldownMinutes int  `json:"cooldown_minutes"`
 }
 
 // CleanupOption represents cleanup configuration for a specific resource type.
@@ -717,6 +726,10 @@ func (s *SystemService) StoragePolicy(ctx context.Context) (*StoragePolicy, erro
 
 	if !strings.Contains(value, "\"store_response_body\"") {
 		policy.StoreResponseBody = true
+	}
+
+	if !strings.Contains(value, "\"idle_db_maintenance\"") {
+		policy.IdleDBMaintenance = defaultStoragePolicy.IdleDBMaintenance
 	}
 
 	return &policy, nil

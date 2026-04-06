@@ -189,6 +189,13 @@ func TestSystemService_StoragePolicy(t *testing.T) {
 		StoreChunks:       false,
 		StoreRequestBody:  true,
 		StoreResponseBody: true,
+		IdleDBMaintenance: IdleDBMaintenance{
+			Enabled:         false,
+			IdleMinutes:     30,
+			MinFreePages:    1024,
+			MinDBSizeMB:     128,
+			CooldownMinutes: 120,
+		},
 		CleanupOptions: []CleanupOption{
 			{
 				ResourceType: "requests",
@@ -212,6 +219,11 @@ func TestSystemService_StoragePolicy(t *testing.T) {
 	require.False(t, policy.StoreChunks)
 	require.True(t, policy.StoreRequestBody)
 	require.True(t, policy.StoreResponseBody)
+	require.False(t, policy.IdleDBMaintenance.Enabled)
+	require.Equal(t, 30, policy.IdleDBMaintenance.IdleMinutes)
+	require.Equal(t, 1024, policy.IdleDBMaintenance.MinFreePages)
+	require.Equal(t, 128, policy.IdleDBMaintenance.MinDBSizeMB)
+	require.Equal(t, 120, policy.IdleDBMaintenance.CooldownMinutes)
 	require.Len(t, policy.CleanupOptions, 2)
 
 	// Test setting custom storage policy
@@ -219,6 +231,13 @@ func TestSystemService_StoragePolicy(t *testing.T) {
 		StoreChunks:       true,
 		StoreRequestBody:  false,
 		StoreResponseBody: true,
+		IdleDBMaintenance: IdleDBMaintenance{
+			Enabled:         true,
+			IdleMinutes:     15,
+			MinFreePages:    2048,
+			MinDBSizeMB:     64,
+			CooldownMinutes: 45,
+		},
 		CleanupOptions: []CleanupOption{
 			{
 				ResourceType: "custom_resource",
@@ -236,6 +255,7 @@ func TestSystemService_StoragePolicy(t *testing.T) {
 	require.Equal(t, customPolicy.StoreChunks, retrievedPolicy.StoreChunks)
 	require.Equal(t, customPolicy.StoreRequestBody, retrievedPolicy.StoreRequestBody)
 	require.Equal(t, customPolicy.StoreResponseBody, retrievedPolicy.StoreResponseBody)
+	require.Equal(t, customPolicy.IdleDBMaintenance, retrievedPolicy.IdleDBMaintenance)
 	require.Len(t, retrievedPolicy.CleanupOptions, 1)
 	require.Equal(t, "custom_resource", retrievedPolicy.CleanupOptions[0].ResourceType)
 
@@ -510,6 +530,11 @@ func TestSystemService_BackwardCompatibility(t *testing.T) {
 	require.True(t, policy.StoreChunks)
 	require.True(t, policy.StoreRequestBody)  // Should default to true
 	require.True(t, policy.StoreResponseBody) // Should default to true
+	require.False(t, policy.IdleDBMaintenance.Enabled)
+	require.NotZero(t, policy.IdleDBMaintenance.IdleMinutes)
+	require.NotZero(t, policy.IdleDBMaintenance.MinFreePages)
+	require.NotZero(t, policy.IdleDBMaintenance.MinDBSizeMB)
+	require.NotZero(t, policy.IdleDBMaintenance.CooldownMinutes)
 	require.Len(t, policy.CleanupOptions, 1)
 }
 

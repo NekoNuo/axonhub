@@ -7,6 +7,10 @@ FRONTEND_DIR="${ROOT_DIR}/frontend"
 LOG_FILE="${ROOT_DIR}/axonhub.log"
 PID_FILE="${ROOT_DIR}/axonhub.pid"
 PORT="${AXONHUB_SERVER_PORT:-}"
+BINARY_PATH="${AXONHUB_BINARY_PATH:-${ROOT_DIR}/axonhub}"
+BUILD_OUTPUT="${AXONHUB_BUILD_OUTPUT:-${BINARY_PATH}}"
+BUILD_ONLY=0
+SKIP_BUILD=0
 
 info() {
   printf '[INFO] %s\n' "$1"
@@ -64,14 +68,25 @@ check_running() {
 }
 
 build_project() {
-  info "Building project"
+  info "Building frontend"
   (
     cd "${ROOT_DIR}"
-    make build
+    make build-frontend
+  )
+
+  info "Building backend binary -> ${BUILD_OUTPUT}"
+  mkdir -p "$(dirname "${BUILD_OUTPUT}")"
+  (
+    cd "${ROOT_DIR}"
+    go build -ldflags "-s -w" -tags=nomsgpack -o "${BUILD_OUTPUT}" ./cmd/axonhub
   )
 }
 
 start_server() {
+  if [[ ! -x "${BINARY_PATH}" ]]; then
+    fail "axonhub binary not found or not executable: ${BINARY_PATH}"
+  fi
+
   if [[ -n "${PORT}" ]]; then
     export AXONHUB_SERVER_PORT="${PORT}"
     info "Starting axonhub on port ${AXONHUB_SERVER_PORT}"
@@ -81,7 +96,7 @@ start_server() {
 
   (
     cd "${ROOT_DIR}"
-    nohup ./axonhub >> axonhub.log 2>&1 &
+    nohup "${BINARY_PATH}" >> axonhub.log 2>&1 &
     echo $! > "${PID_FILE}"
   )
 
@@ -90,6 +105,7 @@ start_server() {
   local pid
   pid="$(cat "${PID_FILE}")"
   if ! kill -0 "${pid}" 2>/dev/null; then
+    rm -f "${PID_FILE}"
     tail -n 50 "${LOG_FILE}" 2>/dev/null || true
     fail "axonhub failed to start"
   fi
@@ -107,13 +123,23 @@ parse_args() {
         PORT="$2"
         shift 2
         ;;
+      --build-only)
+        BUILD_ONLY=1
+        shift
+        ;;
+      --skip-build)
+        SKIP_BUILD=1
+        shift
+        ;;
       --help|-h)
         cat <<'EOF'
-Usage: ./scripts/build_and_start.sh [--port <port>]
+Usage: ./scripts/build_and_start.sh [--port <port>] [--build-only | --skip-build]
 
 Examples:
   ./scripts/build_and_start.sh
   ./scripts/build_and_start.sh --port 8091
+  AXONHUB_BUILD_OUTPUT=/tmp/axonhub.new ./scripts/build_and_start.sh --build-only
+  ./scripts/build_and_start.sh --skip-build
   AXONHUB_SERVER_PORT=8092 ./scripts/build_and_start.sh
 EOF
         exit 0
@@ -127,10 +153,28 @@ EOF
 
 main() {
   parse_args "$@"
-  ensure_macos_sdk
-  ensure_frontend_deps
+
+  if [[ "${BUILD_ONLY}" -eq 1 && "${SKIP_BUILD}" -eq 1 ]]; then
+    fail "--build-only and --skip-build cannot be used together"
+  fi
+
+  if [[ "${BUILD_ONLY}" -eq 1 ]]; then
+    ensure_macos_sdk
+    ensure_frontend_deps
+    build_project
+    return 0
+  fi
+
+  if [[ "${SKIP_BUILD}" -eq 0 ]]; then
+    ensure_macos_sdk
+    ensure_frontend_deps
+    check_running
+    build_project
+    start_server
+    return 0
+  fi
+
   check_running
-  build_project
   start_server
 }
 

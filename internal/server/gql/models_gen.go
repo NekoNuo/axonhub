@@ -220,6 +220,10 @@ type GetDiscoveredModelHealthSnapshotsInput struct {
 	DisplayModels []string `json:"displayModels,omitempty"`
 }
 
+type GetLoadBalancerPreviewInput struct {
+	ModelID *string `json:"modelId,omitempty"`
+}
+
 type GetModelHealthHistoryInput struct {
 	DisplayModel  *string         `json:"displayModel,omitempty"`
 	ActualModelID *string         `json:"actualModelID,omitempty"`
@@ -233,6 +237,14 @@ type GetModelHealthSnapshotsInput struct {
 type HourlyRequestStats struct {
 	Hour  int `json:"hour"`
 	Count int `json:"count"`
+}
+
+type IdleDBMaintenanceInput struct {
+	Enabled         bool `json:"enabled"`
+	IdleMinutes     int  `json:"idleMinutes"`
+	MinFreePages    int  `json:"minFreePages"`
+	MinDbSizeMb     int  `json:"minDbSizeMB"`
+	CooldownMinutes int  `json:"cooldownMinutes"`
 }
 
 type InitializeSystemInput struct {
@@ -254,10 +266,6 @@ type LoadBalancerPreview struct {
 	ModelID        string                         `json:"modelId"`
 	ActiveStrategy string                         `json:"activeStrategy"`
 	Strategies     []*LoadBalancerPreviewStrategy `json:"strategies"`
-}
-
-type GetLoadBalancerPreviewInput struct {
-	ModelID *string `json:"modelId,omitempty"`
 }
 
 type LoadBalancerPreviewCandidate struct {

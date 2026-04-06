@@ -21,6 +21,196 @@ import (
 	"github.com/looplj/axonhub/internal/server/biz"
 )
 
+func TestWorker_ShouldRunIdleMaintenance(t *testing.T) {
+	worker := &Worker{}
+
+	settings := biz.IdleDBMaintenance{
+		Enabled:         true,
+		IdleMinutes:     15,
+		MinFreePages:    100,
+		MinDBSizeMB:     64,
+		CooldownMinutes: 30,
+	}
+
+	t.Run("free pages threshold", func(t *testing.T) {
+		shouldRun := worker.shouldRunIdleMaintenance(settings, dbMaintenanceStats{
+			PageSize:      4096,
+			PageCount:     1024,
+			FreeListCount: 150,
+		})
+		require.True(t, shouldRun)
+	})
+
+	t.Run("db size threshold", func(t *testing.T) {
+		shouldRun := worker.shouldRunIdleMaintenance(settings, dbMaintenanceStats{
+			PageSize:      1024 * 1024,
+			PageCount:     80,
+			FreeListCount: 5,
+		})
+		require.True(t, shouldRun)
+	})
+
+	t.Run("disabled thresholds do not trigger", func(t *testing.T) {
+		shouldRun := worker.shouldRunIdleMaintenance(settings, dbMaintenanceStats{
+			PageSize:      4096,
+			PageCount:     100,
+			FreeListCount: 10,
+		})
+		require.False(t, shouldRun)
+	})
+}
+
+func TestWorker_MaintenanceCooldown(t *testing.T) {
+	now := time.Date(2026, 4, 6, 12, 0, 0, 0, time.UTC)
+	worker := &Worker{
+		lastIdleMaintenanceAt: now.Add(-10 * time.Minute),
+	}
+
+	settings := biz.IdleDBMaintenance{
+		Enabled:         true,
+		CooldownMinutes: 30,
+	}
+
+	require.False(t, worker.canRunIdleMaintenance(now, settings))
+
+	worker.lastIdleMaintenanceAt = now.Add(-31 * time.Minute)
+	require.True(t, worker.canRunIdleMaintenance(now, settings))
+}
+
+func TestWorker_LatestRequestWriteAt(t *testing.T) {
+	client := enttest.NewEntClient(t, "sqlite3", "file:ent?mode=memory&_fk=1")
+	t.Cleanup(func() { client.Close() })
+
+	ctx := context.Background()
+	ctx = ent.NewContext(ctx, client)
+	ctx = authz.WithTestBypass(ctx)
+
+	base := time.Date(2026, 4, 6, 10, 0, 0, 0, time.UTC)
+
+	_, err := client.Request.Create().
+		SetProjectID(1).
+		SetModelID("gpt-5.4").
+		SetFormat("openai/chat_completions").
+		SetRequestBody([]byte(`{}`)).
+		SetStatus("completed").
+		SetStream(false).
+		SetClientIP("127.0.0.1").
+		SetCreatedAt(base).
+		SetUpdatedAt(base).
+		Save(ctx)
+	require.NoError(t, err)
+
+	_, err = client.RequestExecution.Create().
+		SetProjectID(1).
+		SetRequestID(1).
+		SetChannelID(1).
+		SetModelID("gpt-5.4").
+		SetFormat("openai/chat_completions").
+		SetRequestBody([]byte(`{}`)).
+		SetStatus("completed").
+		SetStream(false).
+		SetCreatedAt(base.Add(5 * time.Minute)).
+		SetUpdatedAt(base.Add(5 * time.Minute)).
+		Save(ctx)
+	require.NoError(t, err)
+
+	_, err = client.UsageLog.Create().
+		SetProjectID(1).
+		SetRequestID(1).
+		SetModelID("gpt-5.4").
+		SetPromptTokens(1).
+		SetCompletionTokens(1).
+		SetTotalTokens(2).
+		SetCreatedAt(base.Add(8 * time.Minute)).
+		SetUpdatedAt(base.Add(8 * time.Minute)).
+		Save(ctx)
+	require.NoError(t, err)
+
+	worker := &Worker{Ent: client}
+
+	lastWriteAt, err := worker.latestRequestWriteAt(ctx)
+	require.NoError(t, err)
+	require.Equal(t, base.Add(8*time.Minute), lastWriteAt)
+}
+
+func TestWorker_RunIdleMaintenance(t *testing.T) {
+	ctx := context.Background()
+	now := time.Date(2026, 4, 6, 12, 0, 0, 0, time.UTC)
+	settings := biz.IdleDBMaintenance{
+		Enabled:         true,
+		IdleMinutes:     15,
+		MinFreePages:    100,
+		MinDBSizeMB:     64,
+		CooldownMinutes: 30,
+	}
+
+	t.Run("checkpoint then vacuum when thresholds match", func(t *testing.T) {
+		checkpointCalls := 0
+		vacuumCalls := 0
+
+		worker := &Worker{
+			now: func() time.Time { return now },
+			latestWriteAtFunc: func(context.Context) (time.Time, error) {
+				return now.Add(-20 * time.Minute), nil
+			},
+			statsFunc: func(context.Context) (dbMaintenanceStats, error) {
+				return dbMaintenanceStats{
+					PageSize:      4096,
+					PageCount:     50000,
+					FreeListCount: 200,
+				}, nil
+			},
+			checkpointFunc: func(context.Context) error {
+				checkpointCalls++
+				return nil
+			},
+			vacuumFunc: func(context.Context) error {
+				vacuumCalls++
+				return nil
+			},
+		}
+
+		worker.runIdleMaintenance(ctx, settings)
+
+		require.Equal(t, 1, checkpointCalls)
+		require.Equal(t, 1, vacuumCalls)
+		require.Equal(t, now, worker.lastIdleMaintenanceAt)
+	})
+
+	t.Run("checkpoint only when thresholds do not match", func(t *testing.T) {
+		checkpointCalls := 0
+		vacuumCalls := 0
+
+		worker := &Worker{
+			now: func() time.Time { return now },
+			latestWriteAtFunc: func(context.Context) (time.Time, error) {
+				return now.Add(-20 * time.Minute), nil
+			},
+			statsFunc: func(context.Context) (dbMaintenanceStats, error) {
+				return dbMaintenanceStats{
+					PageSize:      4096,
+					PageCount:     100,
+					FreeListCount: 5,
+				}, nil
+			},
+			checkpointFunc: func(context.Context) error {
+				checkpointCalls++
+				return nil
+			},
+			vacuumFunc: func(context.Context) error {
+				vacuumCalls++
+				return nil
+			},
+		}
+
+		worker.runIdleMaintenance(ctx, settings)
+
+		require.Equal(t, 1, checkpointCalls)
+		require.Zero(t, vacuumCalls)
+		require.Equal(t, now, worker.lastIdleMaintenanceAt)
+	})
+}
+
 func TestWorker_getBatchSize(t *testing.T) {
 	worker := &Worker{
 		Ent:    nil,
