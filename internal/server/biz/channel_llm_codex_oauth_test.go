@@ -60,6 +60,11 @@ func TestCodexRefreshPersistsChannelCredentials(t *testing.T) {
 
 	ch, err := svc.buildChannelWithTransformer(created)
 	require.NoError(t, err)
+	t.Cleanup(func() {
+		if ch.stopTokenProvider != nil {
+			ch.stopTokenProvider()
+		}
+	})
 
 	req := &llm.Request{
 		Model: "gpt-4o-mini",
