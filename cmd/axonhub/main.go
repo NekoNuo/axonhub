@@ -20,10 +20,13 @@ import (
 	"github.com/looplj/axonhub/internal/ent"
 	"github.com/looplj/axonhub/internal/log"
 	"github.com/looplj/axonhub/internal/metrics"
+	"github.com/looplj/axonhub/internal/pkg/xcontext"
 	"github.com/looplj/axonhub/internal/server"
 	"github.com/looplj/axonhub/internal/server/biz"
 	"github.com/looplj/axonhub/llm/transformer/antigravity"
 )
+
+const startupCleanupTimeout = 30 * time.Second
 
 func main() {
 	if len(os.Args) > 1 {
@@ -82,19 +85,11 @@ func startServer() {
 					return nil
 				},
 			})
-			lc.Append(fx.Hook{
-				OnStart: func(ctx context.Context) error {
-					// Run cleanup asynchronously with timeout to avoid blocking startup
-					go func() {
-						cleanupCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second) //nolint:gosec // intentional detached context
-						defer cancel()
+				lc.Append(fx.Hook{
+					OnStart: func(ctx context.Context) error {
+						runStartupCleanupAsync(ctx, requestSvc.ClearStaleProcessingOnStartup)
 
-						if err := requestSvc.ClearStaleProcessingOnStartup(cleanupCtx); err != nil {
-							log.Warn(context.Background(), "failed to cancel stale processing records on startup", log.Cause(err))
-						}
-					}()
-
-					go func() {
+						go func() {
 						err := server.Run()
 						if err != nil {
 							log.Error(context.Background(), "server run error:", log.Cause(err))
@@ -121,6 +116,17 @@ func startServer() {
 			})
 		}),
 	)
+}
+
+func runStartupCleanupAsync(ctx context.Context, clearFn func(context.Context) error) {
+	go func() {
+		cleanupCtx, cancel := xcontext.DetachWithTimeout(ctx, startupCleanupTimeout)
+		defer cancel()
+
+		if err := clearFn(cleanupCtx); err != nil {
+			log.Warn(cleanupCtx, "failed to cancel stale processing records on startup", log.Cause(err))
+		}
+	}()
 }
 
 func handleConfigCommand() {
