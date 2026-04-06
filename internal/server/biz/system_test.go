@@ -192,9 +192,9 @@ func TestSystemService_StoragePolicy(t *testing.T) {
 		IdleDBMaintenance: IdleDBMaintenance{
 			Enabled:         false,
 			IdleMinutes:     30,
-			MinFreePages:    1024,
-			MinDBSizeMB:     128,
-			CooldownMinutes: 120,
+			MinFreePages:    5000,
+			MinDBSizeMB:     256,
+			CooldownMinutes: 180,
 		},
 		CleanupOptions: []CleanupOption{
 			{
@@ -221,9 +221,9 @@ func TestSystemService_StoragePolicy(t *testing.T) {
 	require.True(t, policy.StoreResponseBody)
 	require.False(t, policy.IdleDBMaintenance.Enabled)
 	require.Equal(t, 30, policy.IdleDBMaintenance.IdleMinutes)
-	require.Equal(t, 1024, policy.IdleDBMaintenance.MinFreePages)
-	require.Equal(t, 128, policy.IdleDBMaintenance.MinDBSizeMB)
-	require.Equal(t, 120, policy.IdleDBMaintenance.CooldownMinutes)
+	require.Equal(t, 5000, policy.IdleDBMaintenance.MinFreePages)
+	require.Equal(t, 256, policy.IdleDBMaintenance.MinDBSizeMB)
+	require.Equal(t, 180, policy.IdleDBMaintenance.CooldownMinutes)
 	require.Len(t, policy.CleanupOptions, 2)
 
 	// Test setting custom storage policy

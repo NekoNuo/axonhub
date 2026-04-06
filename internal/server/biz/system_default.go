@@ -7,9 +7,9 @@ var defaultStoragePolicy = StoragePolicy{
 	IdleDBMaintenance: IdleDBMaintenance{
 		Enabled:         false,
 		IdleMinutes:     30,
-		MinFreePages:    1024,
-		MinDBSizeMB:     128,
-		CooldownMinutes: 120,
+		MinFreePages:    5000,
+		MinDBSizeMB:     256,
+		CooldownMinutes: 180,
 	},
 	CleanupOptions: []CleanupOption{
 		{

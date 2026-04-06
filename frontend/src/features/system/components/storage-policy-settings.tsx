@@ -38,9 +38,9 @@ export function StoragePolicySettings() {
     idleDbMaintenance: storagePolicy?.idleDbMaintenance ?? {
       enabled: false,
       idleMinutes: 30,
-      minFreePages: 1024,
-      minDbSizeMB: 128,
-      cooldownMinutes: 120,
+      minFreePages: 5000,
+      minDbSizeMB: 256,
+      cooldownMinutes: 180,
     },
     cleanupOptions: storagePolicy?.cleanupOptions ?? [],
   });
