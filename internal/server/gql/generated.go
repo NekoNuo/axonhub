@@ -30,6 +30,7 @@ import (
 	"github.com/looplj/axonhub/internal/ent/request"
 	"github.com/looplj/axonhub/internal/ent/requestexecution"
 	"github.com/looplj/axonhub/internal/ent/role"
+	"github.com/looplj/axonhub/internal/ent/runtimelog"
 	"github.com/looplj/axonhub/internal/ent/usagelog"
 	"github.com/looplj/axonhub/internal/ent/user"
 	"github.com/looplj/axonhub/internal/objects"
@@ -84,6 +85,7 @@ type ResolverRoot interface {
 	Request() RequestResolver
 	RequestExecution() RequestExecutionResolver
 	Role() RoleResolver
+	RuntimeLog() RuntimeLogResolver
 	Segment() SegmentResolver
 	System() SystemResolver
 	Thread() ThreadResolver
@@ -1221,6 +1223,7 @@ type ComplexityRoot struct {
 		Requests                     func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.RequestOrder, where *ent.RequestWhereInput) int
 		RetryPolicy                  func(childComplexity int) int
 		Roles                        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.RoleOrder, where *ent.RoleWhereInput) int
+		RuntimeLogs                  func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.RuntimeLogOrder, where *ent.RuntimeLogWhereInput) int
 		StoragePolicy                func(childComplexity int) int
 		SystemChannelSettings        func(childComplexity int) int
 		SystemGeneralSettings        func(childComplexity int) int
@@ -1400,6 +1403,34 @@ type ComplexityRoot struct {
 
 	RoleInfo struct {
 		Name func(childComplexity int) int
+	}
+
+	RuntimeLog struct {
+		Caller        func(childComplexity int) int
+		ChannelID     func(childComplexity int) int
+		ChannelName   func(childComplexity int) int
+		CreatedAt     func(childComplexity int) int
+		FieldsJSON    func(childComplexity int) int
+		ID            func(childComplexity int) int
+		Level         func(childComplexity int) int
+		Logger        func(childComplexity int) int
+		Message       func(childComplexity int) int
+		ModelID       func(childComplexity int) int
+		OperationName func(childComplexity int) int
+		RequestID     func(childComplexity int) int
+		TraceID       func(childComplexity int) int
+		UpdatedAt     func(childComplexity int) int
+	}
+
+	RuntimeLogConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	RuntimeLogEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 
 	S3 struct {
@@ -2036,6 +2067,7 @@ type QueryResolver interface {
 	PromptProtectionRules(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.PromptProtectionRuleOrder, where *ent.PromptProtectionRuleWhereInput) (*ent.PromptProtectionRuleConnection, error)
 	Requests(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.RequestOrder, where *ent.RequestWhereInput) (*ent.RequestConnection, error)
 	Roles(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.RoleOrder, where *ent.RoleWhereInput) (*ent.RoleConnection, error)
+	RuntimeLogs(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.RuntimeLogOrder, where *ent.RuntimeLogWhereInput) (*ent.RuntimeLogConnection, error)
 	Systems(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.SystemOrder, where *ent.SystemWhereInput) (*ent.SystemConnection, error)
 	Threads(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.ThreadOrder, where *ent.ThreadWhereInput) (*ent.ThreadConnection, error)
 	Traces(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.TraceOrder, where *ent.TraceWhereInput) (*ent.TraceConnection, error)
@@ -2129,6 +2161,9 @@ type RoleResolver interface {
 	ProjectID(ctx context.Context, obj *ent.Role) (*objects.GUID, error)
 
 	UserRoles(ctx context.Context, obj *ent.Role) ([]*ent.UserRole, error)
+}
+type RuntimeLogResolver interface {
+	ID(ctx context.Context, obj *ent.RuntimeLog) (*objects.GUID, error)
 }
 type SegmentResolver interface {
 	ID(ctx context.Context, obj *biz.Segment) (*objects.GUID, error)
@@ -7396,6 +7431,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.Roles(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].(*ent.RoleOrder), args["where"].(*ent.RoleWhereInput)), true
+	case "Query.runtimeLogs":
+		if e.complexity.Query.RuntimeLogs == nil {
+			break
+		}
+
+		args, err := ec.field_Query_runtimeLogs_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.RuntimeLogs(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].(*ent.RuntimeLogOrder), args["where"].(*ent.RuntimeLogWhereInput)), true
 	case "Query.storagePolicy":
 		if e.complexity.Query.StoragePolicy == nil {
 			break
@@ -8219,6 +8265,123 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.RoleInfo.Name(childComplexity), true
+
+	case "RuntimeLog.caller":
+		if e.complexity.RuntimeLog.Caller == nil {
+			break
+		}
+
+		return e.complexity.RuntimeLog.Caller(childComplexity), true
+	case "RuntimeLog.channelID":
+		if e.complexity.RuntimeLog.ChannelID == nil {
+			break
+		}
+
+		return e.complexity.RuntimeLog.ChannelID(childComplexity), true
+	case "RuntimeLog.channelName":
+		if e.complexity.RuntimeLog.ChannelName == nil {
+			break
+		}
+
+		return e.complexity.RuntimeLog.ChannelName(childComplexity), true
+	case "RuntimeLog.createdAt":
+		if e.complexity.RuntimeLog.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.RuntimeLog.CreatedAt(childComplexity), true
+	case "RuntimeLog.fieldsJSON":
+		if e.complexity.RuntimeLog.FieldsJSON == nil {
+			break
+		}
+
+		return e.complexity.RuntimeLog.FieldsJSON(childComplexity), true
+	case "RuntimeLog.id":
+		if e.complexity.RuntimeLog.ID == nil {
+			break
+		}
+
+		return e.complexity.RuntimeLog.ID(childComplexity), true
+	case "RuntimeLog.level":
+		if e.complexity.RuntimeLog.Level == nil {
+			break
+		}
+
+		return e.complexity.RuntimeLog.Level(childComplexity), true
+	case "RuntimeLog.logger":
+		if e.complexity.RuntimeLog.Logger == nil {
+			break
+		}
+
+		return e.complexity.RuntimeLog.Logger(childComplexity), true
+	case "RuntimeLog.message":
+		if e.complexity.RuntimeLog.Message == nil {
+			break
+		}
+
+		return e.complexity.RuntimeLog.Message(childComplexity), true
+	case "RuntimeLog.modelID":
+		if e.complexity.RuntimeLog.ModelID == nil {
+			break
+		}
+
+		return e.complexity.RuntimeLog.ModelID(childComplexity), true
+	case "RuntimeLog.operationName":
+		if e.complexity.RuntimeLog.OperationName == nil {
+			break
+		}
+
+		return e.complexity.RuntimeLog.OperationName(childComplexity), true
+	case "RuntimeLog.requestID":
+		if e.complexity.RuntimeLog.RequestID == nil {
+			break
+		}
+
+		return e.complexity.RuntimeLog.RequestID(childComplexity), true
+	case "RuntimeLog.traceID":
+		if e.complexity.RuntimeLog.TraceID == nil {
+			break
+		}
+
+		return e.complexity.RuntimeLog.TraceID(childComplexity), true
+	case "RuntimeLog.updatedAt":
+		if e.complexity.RuntimeLog.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.RuntimeLog.UpdatedAt(childComplexity), true
+
+	case "RuntimeLogConnection.edges":
+		if e.complexity.RuntimeLogConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.RuntimeLogConnection.Edges(childComplexity), true
+	case "RuntimeLogConnection.pageInfo":
+		if e.complexity.RuntimeLogConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.RuntimeLogConnection.PageInfo(childComplexity), true
+	case "RuntimeLogConnection.totalCount":
+		if e.complexity.RuntimeLogConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.RuntimeLogConnection.TotalCount(childComplexity), true
+
+	case "RuntimeLogEdge.cursor":
+		if e.complexity.RuntimeLogEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.RuntimeLogEdge.Cursor(childComplexity), true
+	case "RuntimeLogEdge.node":
+		if e.complexity.RuntimeLogEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.RuntimeLogEdge.Node(childComplexity), true
 
 	case "S3.bucketName":
 		if e.complexity.S3.BucketName == nil {
@@ -10034,6 +10197,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputRestoreOptionsInput,
 		ec.unmarshalInputRoleOrder,
 		ec.unmarshalInputRoleWhereInput,
+		ec.unmarshalInputRuntimeLogOrder,
+		ec.unmarshalInputRuntimeLogWhereInput,
 		ec.unmarshalInputS3Input,
 		ec.unmarshalInputSaveChannelModelPriceInput,
 		ec.unmarshalInputSaveProxyPresetInput,
@@ -12528,6 +12693,42 @@ func (ec *executionContext) field_Query_roles_args(ctx context.Context, rawArgs 
 	}
 	args["orderBy"] = arg4
 	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalORoleWhereInput2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐRoleWhereInput)
+	if err != nil {
+		return nil, err
+	}
+	args["where"] = arg5
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_runtimeLogs_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	if err != nil {
+		return nil, err
+	}
+	args["after"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["first"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	if err != nil {
+		return nil, err
+	}
+	args["before"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["last"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalORuntimeLogOrder2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐRuntimeLogOrder)
+	if err != nil {
+		return nil, err
+	}
+	args["orderBy"] = arg4
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalORuntimeLogWhereInput2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐRuntimeLogWhereInput)
 	if err != nil {
 		return nil, err
 	}
@@ -37657,6 +37858,55 @@ func (ec *executionContext) fieldContext_Query_roles(ctx context.Context, field 
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_runtimeLogs(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_runtimeLogs,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().RuntimeLogs(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].(*ent.RuntimeLogOrder), fc.Args["where"].(*ent.RuntimeLogWhereInput))
+		},
+		nil,
+		ec.marshalNRuntimeLogConnection2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐRuntimeLogConnection,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_runtimeLogs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "edges":
+				return ec.fieldContext_RuntimeLogConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_RuntimeLogConnection_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_RuntimeLogConnection_totalCount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RuntimeLogConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_runtimeLogs_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_systems(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -44253,6 +44503,603 @@ func (ec *executionContext) fieldContext_RoleInfo_name(_ context.Context, field 
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RuntimeLog_id(ctx context.Context, field graphql.CollectedField, obj *ent.RuntimeLog) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_RuntimeLog_id,
+		func(ctx context.Context) (any, error) {
+			return ec.resolvers.RuntimeLog().ID(ctx, obj)
+		},
+		nil,
+		ec.marshalNID2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐGUID,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_RuntimeLog_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RuntimeLog",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RuntimeLog_createdAt(ctx context.Context, field graphql.CollectedField, obj *ent.RuntimeLog) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_RuntimeLog_createdAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_RuntimeLog_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RuntimeLog",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RuntimeLog_updatedAt(ctx context.Context, field graphql.CollectedField, obj *ent.RuntimeLog) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_RuntimeLog_updatedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_RuntimeLog_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RuntimeLog",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RuntimeLog_logger(ctx context.Context, field graphql.CollectedField, obj *ent.RuntimeLog) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_RuntimeLog_logger,
+		func(ctx context.Context) (any, error) {
+			return obj.Logger, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_RuntimeLog_logger(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RuntimeLog",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RuntimeLog_level(ctx context.Context, field graphql.CollectedField, obj *ent.RuntimeLog) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_RuntimeLog_level,
+		func(ctx context.Context) (any, error) {
+			return obj.Level, nil
+		},
+		nil,
+		ec.marshalNRuntimeLogLevel2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚋruntimelogᚐLevel,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_RuntimeLog_level(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RuntimeLog",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type RuntimeLogLevel does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RuntimeLog_message(ctx context.Context, field graphql.CollectedField, obj *ent.RuntimeLog) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_RuntimeLog_message,
+		func(ctx context.Context) (any, error) {
+			return obj.Message, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_RuntimeLog_message(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RuntimeLog",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RuntimeLog_caller(ctx context.Context, field graphql.CollectedField, obj *ent.RuntimeLog) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_RuntimeLog_caller,
+		func(ctx context.Context) (any, error) {
+			return obj.Caller, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_RuntimeLog_caller(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RuntimeLog",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RuntimeLog_traceID(ctx context.Context, field graphql.CollectedField, obj *ent.RuntimeLog) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_RuntimeLog_traceID,
+		func(ctx context.Context) (any, error) {
+			return obj.TraceID, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_RuntimeLog_traceID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RuntimeLog",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RuntimeLog_requestID(ctx context.Context, field graphql.CollectedField, obj *ent.RuntimeLog) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_RuntimeLog_requestID,
+		func(ctx context.Context) (any, error) {
+			return obj.RequestID, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_RuntimeLog_requestID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RuntimeLog",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RuntimeLog_operationName(ctx context.Context, field graphql.CollectedField, obj *ent.RuntimeLog) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_RuntimeLog_operationName,
+		func(ctx context.Context) (any, error) {
+			return obj.OperationName, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_RuntimeLog_operationName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RuntimeLog",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RuntimeLog_channelID(ctx context.Context, field graphql.CollectedField, obj *ent.RuntimeLog) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_RuntimeLog_channelID,
+		func(ctx context.Context) (any, error) {
+			return obj.ChannelID, nil
+		},
+		nil,
+		ec.marshalOInt2ᚖint,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_RuntimeLog_channelID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RuntimeLog",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RuntimeLog_channelName(ctx context.Context, field graphql.CollectedField, obj *ent.RuntimeLog) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_RuntimeLog_channelName,
+		func(ctx context.Context) (any, error) {
+			return obj.ChannelName, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_RuntimeLog_channelName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RuntimeLog",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RuntimeLog_modelID(ctx context.Context, field graphql.CollectedField, obj *ent.RuntimeLog) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_RuntimeLog_modelID,
+		func(ctx context.Context) (any, error) {
+			return obj.ModelID, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_RuntimeLog_modelID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RuntimeLog",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RuntimeLog_fieldsJSON(ctx context.Context, field graphql.CollectedField, obj *ent.RuntimeLog) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_RuntimeLog_fieldsJSON,
+		func(ctx context.Context) (any, error) {
+			return obj.FieldsJSON, nil
+		},
+		nil,
+		ec.marshalNMap2map,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_RuntimeLog_fieldsJSON(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RuntimeLog",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Map does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RuntimeLogConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.RuntimeLogConnection) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_RuntimeLogConnection_edges,
+		func(ctx context.Context) (any, error) {
+			return obj.Edges, nil
+		},
+		nil,
+		ec.marshalORuntimeLogEdge2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐRuntimeLogEdge,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_RuntimeLogConnection_edges(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RuntimeLogConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "node":
+				return ec.fieldContext_RuntimeLogEdge_node(ctx, field)
+			case "cursor":
+				return ec.fieldContext_RuntimeLogEdge_cursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RuntimeLogEdge", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RuntimeLogConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *ent.RuntimeLogConnection) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_RuntimeLogConnection_pageInfo,
+		func(ctx context.Context) (any, error) {
+			return obj.PageInfo, nil
+		},
+		nil,
+		ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_RuntimeLogConnection_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RuntimeLogConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "hasNextPage":
+				return ec.fieldContext_PageInfo_hasNextPage(ctx, field)
+			case "hasPreviousPage":
+				return ec.fieldContext_PageInfo_hasPreviousPage(ctx, field)
+			case "startCursor":
+				return ec.fieldContext_PageInfo_startCursor(ctx, field)
+			case "endCursor":
+				return ec.fieldContext_PageInfo_endCursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PageInfo", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RuntimeLogConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *ent.RuntimeLogConnection) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_RuntimeLogConnection_totalCount,
+		func(ctx context.Context) (any, error) {
+			return obj.TotalCount, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_RuntimeLogConnection_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RuntimeLogConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RuntimeLogEdge_node(ctx context.Context, field graphql.CollectedField, obj *ent.RuntimeLogEdge) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_RuntimeLogEdge_node,
+		func(ctx context.Context) (any, error) {
+			return obj.Node, nil
+		},
+		nil,
+		ec.marshalORuntimeLog2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐRuntimeLog,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_RuntimeLogEdge_node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RuntimeLogEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_RuntimeLog_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_RuntimeLog_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_RuntimeLog_updatedAt(ctx, field)
+			case "logger":
+				return ec.fieldContext_RuntimeLog_logger(ctx, field)
+			case "level":
+				return ec.fieldContext_RuntimeLog_level(ctx, field)
+			case "message":
+				return ec.fieldContext_RuntimeLog_message(ctx, field)
+			case "caller":
+				return ec.fieldContext_RuntimeLog_caller(ctx, field)
+			case "traceID":
+				return ec.fieldContext_RuntimeLog_traceID(ctx, field)
+			case "requestID":
+				return ec.fieldContext_RuntimeLog_requestID(ctx, field)
+			case "operationName":
+				return ec.fieldContext_RuntimeLog_operationName(ctx, field)
+			case "channelID":
+				return ec.fieldContext_RuntimeLog_channelID(ctx, field)
+			case "channelName":
+				return ec.fieldContext_RuntimeLog_channelName(ctx, field)
+			case "modelID":
+				return ec.fieldContext_RuntimeLog_modelID(ctx, field)
+			case "fieldsJSON":
+				return ec.fieldContext_RuntimeLog_fieldsJSON(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RuntimeLog", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RuntimeLogEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *ent.RuntimeLogEdge) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_RuntimeLogEdge_cursor,
+		func(ctx context.Context) (any, error) {
+			return obj.Cursor, nil
+		},
+		nil,
+		ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_RuntimeLogEdge_cursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RuntimeLogEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Cursor does not have child fields")
 		},
 	}
 	return fc, nil
@@ -71825,6 +72672,1195 @@ func (ec *executionContext) unmarshalInputRoleWhereInput(ctx context.Context, ob
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputRuntimeLogOrder(ctx context.Context, obj any) (ent.RuntimeLogOrder, error) {
+	var it ent.RuntimeLogOrder
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	if _, present := asMap["direction"]; !present {
+		asMap["direction"] = "ASC"
+	}
+
+	fieldsInOrder := [...]string{"direction", "field"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "direction":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("direction"))
+			data, err := ec.unmarshalNOrderDirection2entgoᚗioᚋcontribᚋentgqlᚐOrderDirection(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Direction = data
+		case "field":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("field"))
+			data, err := ec.unmarshalNRuntimeLogOrderField2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐRuntimeLogOrderField(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Field = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputRuntimeLogWhereInput(ctx context.Context, obj any) (ent.RuntimeLogWhereInput, error) {
+	var it ent.RuntimeLogWhereInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "updatedAt", "updatedAtNEQ", "updatedAtIn", "updatedAtNotIn", "updatedAtGT", "updatedAtGTE", "updatedAtLT", "updatedAtLTE", "logger", "loggerNEQ", "loggerIn", "loggerNotIn", "loggerGT", "loggerGTE", "loggerLT", "loggerLTE", "loggerContains", "loggerHasPrefix", "loggerHasSuffix", "loggerEqualFold", "loggerContainsFold", "level", "levelNEQ", "levelIn", "levelNotIn", "message", "messageNEQ", "messageIn", "messageNotIn", "messageGT", "messageGTE", "messageLT", "messageLTE", "messageContains", "messageHasPrefix", "messageHasSuffix", "messageEqualFold", "messageContainsFold", "caller", "callerNEQ", "callerIn", "callerNotIn", "callerGT", "callerGTE", "callerLT", "callerLTE", "callerContains", "callerHasPrefix", "callerHasSuffix", "callerIsNil", "callerNotNil", "callerEqualFold", "callerContainsFold", "traceID", "traceIDNEQ", "traceIDIn", "traceIDNotIn", "traceIDGT", "traceIDGTE", "traceIDLT", "traceIDLTE", "traceIDContains", "traceIDHasPrefix", "traceIDHasSuffix", "traceIDIsNil", "traceIDNotNil", "traceIDEqualFold", "traceIDContainsFold", "requestID", "requestIDNEQ", "requestIDIn", "requestIDNotIn", "requestIDGT", "requestIDGTE", "requestIDLT", "requestIDLTE", "requestIDContains", "requestIDHasPrefix", "requestIDHasSuffix", "requestIDIsNil", "requestIDNotNil", "requestIDEqualFold", "requestIDContainsFold", "operationName", "operationNameNEQ", "operationNameIn", "operationNameNotIn", "operationNameGT", "operationNameGTE", "operationNameLT", "operationNameLTE", "operationNameContains", "operationNameHasPrefix", "operationNameHasSuffix", "operationNameIsNil", "operationNameNotNil", "operationNameEqualFold", "operationNameContainsFold", "channelID", "channelIDNEQ", "channelIDIn", "channelIDNotIn", "channelIDGT", "channelIDGTE", "channelIDLT", "channelIDLTE", "channelIDIsNil", "channelIDNotNil", "channelName", "channelNameNEQ", "channelNameIn", "channelNameNotIn", "channelNameGT", "channelNameGTE", "channelNameLT", "channelNameLTE", "channelNameContains", "channelNameHasPrefix", "channelNameHasSuffix", "channelNameIsNil", "channelNameNotNil", "channelNameEqualFold", "channelNameContainsFold", "modelID", "modelIDNEQ", "modelIDIn", "modelIDNotIn", "modelIDGT", "modelIDGTE", "modelIDLT", "modelIDLTE", "modelIDContains", "modelIDHasPrefix", "modelIDHasSuffix", "modelIDIsNil", "modelIDNotNil", "modelIDEqualFold", "modelIDContainsFold"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "not":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("not"))
+			data, err := ec.unmarshalORuntimeLogWhereInput2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐRuntimeLogWhereInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Not = data
+		case "and":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
+			data, err := ec.unmarshalORuntimeLogWhereInput2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐRuntimeLogWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.And = data
+		case "or":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
+			data, err := ec.unmarshalORuntimeLogWhereInput2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐRuntimeLogWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Or = data
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐGUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			converted, err := objects.ConvertGUIDPtrToIntPtr(data)
+			if err != nil {
+				return it, graphql.ErrorOnPath(ctx, err)
+			}
+			it.ID = converted
+		case "idNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNEQ"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐGUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			converted, err := objects.ConvertGUIDPtrToIntPtr(data)
+			if err != nil {
+				return it, graphql.ErrorOnPath(ctx, err)
+			}
+			it.IDNEQ = converted
+		case "idIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idIn"))
+			data, err := ec.unmarshalOID2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐGUIDᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			converted, err := objects.ConvertGUIDPtrsToInts(data)
+			if err != nil {
+				return it, graphql.ErrorOnPath(ctx, err)
+			}
+			it.IDIn = converted
+		case "idNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNotIn"))
+			data, err := ec.unmarshalOID2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐGUIDᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			converted, err := objects.ConvertGUIDPtrsToInts(data)
+			if err != nil {
+				return it, graphql.ErrorOnPath(ctx, err)
+			}
+			it.IDNotIn = converted
+		case "idGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGT"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐGUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			converted, err := objects.ConvertGUIDPtrToIntPtr(data)
+			if err != nil {
+				return it, graphql.ErrorOnPath(ctx, err)
+			}
+			it.IDGT = converted
+		case "idGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGTE"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐGUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			converted, err := objects.ConvertGUIDPtrToIntPtr(data)
+			if err != nil {
+				return it, graphql.ErrorOnPath(ctx, err)
+			}
+			it.IDGTE = converted
+		case "idLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLT"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐGUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			converted, err := objects.ConvertGUIDPtrToIntPtr(data)
+			if err != nil {
+				return it, graphql.ErrorOnPath(ctx, err)
+			}
+			it.IDLT = converted
+		case "idLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLTE"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐGUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			converted, err := objects.ConvertGUIDPtrToIntPtr(data)
+			if err != nil {
+				return it, graphql.ErrorOnPath(ctx, err)
+			}
+			it.IDLTE = converted
+		case "createdAt":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAt"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAt = data
+		case "createdAtNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtNEQ"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtNEQ = data
+		case "createdAtIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtIn"))
+			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtIn = data
+		case "createdAtNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtNotIn"))
+			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtNotIn = data
+		case "createdAtGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtGT"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtGT = data
+		case "createdAtGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtGTE"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtGTE = data
+		case "createdAtLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtLT"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtLT = data
+		case "createdAtLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtLTE"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtLTE = data
+		case "updatedAt":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAt"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UpdatedAt = data
+		case "updatedAtNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtNEQ"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UpdatedAtNEQ = data
+		case "updatedAtIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtIn"))
+			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UpdatedAtIn = data
+		case "updatedAtNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtNotIn"))
+			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UpdatedAtNotIn = data
+		case "updatedAtGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtGT"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UpdatedAtGT = data
+		case "updatedAtGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtGTE"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UpdatedAtGTE = data
+		case "updatedAtLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtLT"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UpdatedAtLT = data
+		case "updatedAtLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtLTE"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UpdatedAtLTE = data
+		case "logger":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("logger"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Logger = data
+		case "loggerNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("loggerNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LoggerNEQ = data
+		case "loggerIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("loggerIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LoggerIn = data
+		case "loggerNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("loggerNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LoggerNotIn = data
+		case "loggerGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("loggerGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LoggerGT = data
+		case "loggerGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("loggerGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LoggerGTE = data
+		case "loggerLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("loggerLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LoggerLT = data
+		case "loggerLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("loggerLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LoggerLTE = data
+		case "loggerContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("loggerContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LoggerContains = data
+		case "loggerHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("loggerHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LoggerHasPrefix = data
+		case "loggerHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("loggerHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LoggerHasSuffix = data
+		case "loggerEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("loggerEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LoggerEqualFold = data
+		case "loggerContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("loggerContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LoggerContainsFold = data
+		case "level":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("level"))
+			data, err := ec.unmarshalORuntimeLogLevel2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚋruntimelogᚐLevel(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Level = data
+		case "levelNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("levelNEQ"))
+			data, err := ec.unmarshalORuntimeLogLevel2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚋruntimelogᚐLevel(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LevelNEQ = data
+		case "levelIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("levelIn"))
+			data, err := ec.unmarshalORuntimeLogLevel2ᚕgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚋruntimelogᚐLevelᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LevelIn = data
+		case "levelNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("levelNotIn"))
+			data, err := ec.unmarshalORuntimeLogLevel2ᚕgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚋruntimelogᚐLevelᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LevelNotIn = data
+		case "message":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("message"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Message = data
+		case "messageNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("messageNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MessageNEQ = data
+		case "messageIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("messageIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MessageIn = data
+		case "messageNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("messageNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MessageNotIn = data
+		case "messageGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("messageGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MessageGT = data
+		case "messageGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("messageGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MessageGTE = data
+		case "messageLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("messageLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MessageLT = data
+		case "messageLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("messageLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MessageLTE = data
+		case "messageContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("messageContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MessageContains = data
+		case "messageHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("messageHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MessageHasPrefix = data
+		case "messageHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("messageHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MessageHasSuffix = data
+		case "messageEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("messageEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MessageEqualFold = data
+		case "messageContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("messageContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MessageContainsFold = data
+		case "caller":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("caller"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Caller = data
+		case "callerNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("callerNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CallerNEQ = data
+		case "callerIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("callerIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CallerIn = data
+		case "callerNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("callerNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CallerNotIn = data
+		case "callerGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("callerGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CallerGT = data
+		case "callerGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("callerGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CallerGTE = data
+		case "callerLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("callerLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CallerLT = data
+		case "callerLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("callerLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CallerLTE = data
+		case "callerContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("callerContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CallerContains = data
+		case "callerHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("callerHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CallerHasPrefix = data
+		case "callerHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("callerHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CallerHasSuffix = data
+		case "callerIsNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("callerIsNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CallerIsNil = data
+		case "callerNotNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("callerNotNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CallerNotNil = data
+		case "callerEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("callerEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CallerEqualFold = data
+		case "callerContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("callerContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CallerContainsFold = data
+		case "traceID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("traceID"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TraceID = data
+		case "traceIDNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("traceIDNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TraceIDNEQ = data
+		case "traceIDIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("traceIDIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TraceIDIn = data
+		case "traceIDNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("traceIDNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TraceIDNotIn = data
+		case "traceIDGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("traceIDGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TraceIDGT = data
+		case "traceIDGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("traceIDGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TraceIDGTE = data
+		case "traceIDLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("traceIDLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TraceIDLT = data
+		case "traceIDLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("traceIDLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TraceIDLTE = data
+		case "traceIDContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("traceIDContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TraceIDContains = data
+		case "traceIDHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("traceIDHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TraceIDHasPrefix = data
+		case "traceIDHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("traceIDHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TraceIDHasSuffix = data
+		case "traceIDIsNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("traceIDIsNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TraceIDIsNil = data
+		case "traceIDNotNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("traceIDNotNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TraceIDNotNil = data
+		case "traceIDEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("traceIDEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TraceIDEqualFold = data
+		case "traceIDContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("traceIDContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TraceIDContainsFold = data
+		case "requestID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("requestID"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RequestID = data
+		case "requestIDNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("requestIDNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RequestIDNEQ = data
+		case "requestIDIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("requestIDIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RequestIDIn = data
+		case "requestIDNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("requestIDNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RequestIDNotIn = data
+		case "requestIDGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("requestIDGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RequestIDGT = data
+		case "requestIDGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("requestIDGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RequestIDGTE = data
+		case "requestIDLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("requestIDLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RequestIDLT = data
+		case "requestIDLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("requestIDLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RequestIDLTE = data
+		case "requestIDContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("requestIDContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RequestIDContains = data
+		case "requestIDHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("requestIDHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RequestIDHasPrefix = data
+		case "requestIDHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("requestIDHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RequestIDHasSuffix = data
+		case "requestIDIsNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("requestIDIsNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RequestIDIsNil = data
+		case "requestIDNotNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("requestIDNotNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RequestIDNotNil = data
+		case "requestIDEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("requestIDEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RequestIDEqualFold = data
+		case "requestIDContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("requestIDContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RequestIDContainsFold = data
+		case "operationName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("operationName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OperationName = data
+		case "operationNameNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("operationNameNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OperationNameNEQ = data
+		case "operationNameIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("operationNameIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OperationNameIn = data
+		case "operationNameNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("operationNameNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OperationNameNotIn = data
+		case "operationNameGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("operationNameGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OperationNameGT = data
+		case "operationNameGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("operationNameGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OperationNameGTE = data
+		case "operationNameLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("operationNameLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OperationNameLT = data
+		case "operationNameLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("operationNameLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OperationNameLTE = data
+		case "operationNameContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("operationNameContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OperationNameContains = data
+		case "operationNameHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("operationNameHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OperationNameHasPrefix = data
+		case "operationNameHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("operationNameHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OperationNameHasSuffix = data
+		case "operationNameIsNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("operationNameIsNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OperationNameIsNil = data
+		case "operationNameNotNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("operationNameNotNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OperationNameNotNil = data
+		case "operationNameEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("operationNameEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OperationNameEqualFold = data
+		case "operationNameContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("operationNameContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OperationNameContainsFold = data
+		case "channelID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channelID"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChannelID = data
+		case "channelIDNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channelIDNEQ"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChannelIDNEQ = data
+		case "channelIDIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channelIDIn"))
+			data, err := ec.unmarshalOInt2ᚕintᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChannelIDIn = data
+		case "channelIDNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channelIDNotIn"))
+			data, err := ec.unmarshalOInt2ᚕintᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChannelIDNotIn = data
+		case "channelIDGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channelIDGT"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChannelIDGT = data
+		case "channelIDGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channelIDGTE"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChannelIDGTE = data
+		case "channelIDLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channelIDLT"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChannelIDLT = data
+		case "channelIDLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channelIDLTE"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChannelIDLTE = data
+		case "channelIDIsNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channelIDIsNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChannelIDIsNil = data
+		case "channelIDNotNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channelIDNotNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChannelIDNotNil = data
+		case "channelName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channelName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChannelName = data
+		case "channelNameNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channelNameNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChannelNameNEQ = data
+		case "channelNameIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channelNameIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChannelNameIn = data
+		case "channelNameNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channelNameNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChannelNameNotIn = data
+		case "channelNameGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channelNameGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChannelNameGT = data
+		case "channelNameGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channelNameGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChannelNameGTE = data
+		case "channelNameLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channelNameLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChannelNameLT = data
+		case "channelNameLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channelNameLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChannelNameLTE = data
+		case "channelNameContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channelNameContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChannelNameContains = data
+		case "channelNameHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channelNameHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChannelNameHasPrefix = data
+		case "channelNameHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channelNameHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChannelNameHasSuffix = data
+		case "channelNameIsNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channelNameIsNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChannelNameIsNil = data
+		case "channelNameNotNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channelNameNotNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChannelNameNotNil = data
+		case "channelNameEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channelNameEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChannelNameEqualFold = data
+		case "channelNameContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channelNameContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChannelNameContainsFold = data
+		case "modelID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("modelID"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ModelID = data
+		case "modelIDNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("modelIDNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ModelIDNEQ = data
+		case "modelIDIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("modelIDIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ModelIDIn = data
+		case "modelIDNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("modelIDNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ModelIDNotIn = data
+		case "modelIDGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("modelIDGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ModelIDGT = data
+		case "modelIDGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("modelIDGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ModelIDGTE = data
+		case "modelIDLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("modelIDLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ModelIDLT = data
+		case "modelIDLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("modelIDLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ModelIDLTE = data
+		case "modelIDContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("modelIDContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ModelIDContains = data
+		case "modelIDHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("modelIDHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ModelIDHasPrefix = data
+		case "modelIDHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("modelIDHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ModelIDHasSuffix = data
+		case "modelIDIsNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("modelIDIsNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ModelIDIsNil = data
+		case "modelIDNotNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("modelIDNotNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ModelIDNotNil = data
+		case "modelIDEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("modelIDEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ModelIDEqualFold = data
+		case "modelIDContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("modelIDContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ModelIDContainsFold = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputS3Input(ctx context.Context, obj any) (objects.S3, error) {
 	var it objects.S3
 	asMap := map[string]any{}
@@ -79050,6 +81086,11 @@ func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj
 			return graphql.Null
 		}
 		return ec._System(ctx, sel, obj)
+	case *ent.RuntimeLog:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._RuntimeLog(ctx, sel, obj)
 	case *ent.Role:
 		if obj == nil {
 			return graphql.Null
@@ -88967,6 +91008,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "runtimeLogs":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_runtimeLogs(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "systems":
 			field := field
 
@@ -92209,6 +94272,207 @@ func (ec *executionContext) _RoleInfo(ctx context.Context, sel ast.SelectionSet,
 			out.Values[i] = graphql.MarshalString("RoleInfo")
 		case "name":
 			out.Values[i] = ec._RoleInfo_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var runtimeLogImplementors = []string{"RuntimeLog", "Node"}
+
+func (ec *executionContext) _RuntimeLog(ctx context.Context, sel ast.SelectionSet, obj *ent.RuntimeLog) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, runtimeLogImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RuntimeLog")
+		case "id":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._RuntimeLog_id(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "createdAt":
+			out.Values[i] = ec._RuntimeLog_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "updatedAt":
+			out.Values[i] = ec._RuntimeLog_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "logger":
+			out.Values[i] = ec._RuntimeLog_logger(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "level":
+			out.Values[i] = ec._RuntimeLog_level(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "message":
+			out.Values[i] = ec._RuntimeLog_message(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "caller":
+			out.Values[i] = ec._RuntimeLog_caller(ctx, field, obj)
+		case "traceID":
+			out.Values[i] = ec._RuntimeLog_traceID(ctx, field, obj)
+		case "requestID":
+			out.Values[i] = ec._RuntimeLog_requestID(ctx, field, obj)
+		case "operationName":
+			out.Values[i] = ec._RuntimeLog_operationName(ctx, field, obj)
+		case "channelID":
+			out.Values[i] = ec._RuntimeLog_channelID(ctx, field, obj)
+		case "channelName":
+			out.Values[i] = ec._RuntimeLog_channelName(ctx, field, obj)
+		case "modelID":
+			out.Values[i] = ec._RuntimeLog_modelID(ctx, field, obj)
+		case "fieldsJSON":
+			out.Values[i] = ec._RuntimeLog_fieldsJSON(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var runtimeLogConnectionImplementors = []string{"RuntimeLogConnection"}
+
+func (ec *executionContext) _RuntimeLogConnection(ctx context.Context, sel ast.SelectionSet, obj *ent.RuntimeLogConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, runtimeLogConnectionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RuntimeLogConnection")
+		case "edges":
+			out.Values[i] = ec._RuntimeLogConnection_edges(ctx, field, obj)
+		case "pageInfo":
+			out.Values[i] = ec._RuntimeLogConnection_pageInfo(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalCount":
+			out.Values[i] = ec._RuntimeLogConnection_totalCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var runtimeLogEdgeImplementors = []string{"RuntimeLogEdge"}
+
+func (ec *executionContext) _RuntimeLogEdge(ctx context.Context, sel ast.SelectionSet, obj *ent.RuntimeLogEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, runtimeLogEdgeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RuntimeLogEdge")
+		case "node":
+			out.Values[i] = ec._RuntimeLogEdge_node(ctx, field, obj)
+		case "cursor":
+			out.Values[i] = ec._RuntimeLogEdge_cursor(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -101393,6 +103657,51 @@ func (ec *executionContext) unmarshalNRoleWhereInput2ᚖgithubᚗcomᚋloopljᚋ
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNRuntimeLogConnection2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐRuntimeLogConnection(ctx context.Context, sel ast.SelectionSet, v ent.RuntimeLogConnection) graphql.Marshaler {
+	return ec._RuntimeLogConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNRuntimeLogConnection2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐRuntimeLogConnection(ctx context.Context, sel ast.SelectionSet, v *ent.RuntimeLogConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._RuntimeLogConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNRuntimeLogLevel2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚋruntimelogᚐLevel(ctx context.Context, v any) (runtimelog.Level, error) {
+	var res runtimelog.Level
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNRuntimeLogLevel2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚋruntimelogᚐLevel(ctx context.Context, sel ast.SelectionSet, v runtimelog.Level) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNRuntimeLogOrderField2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐRuntimeLogOrderField(ctx context.Context, v any) (*ent.RuntimeLogOrderField, error) {
+	var res = new(ent.RuntimeLogOrderField)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNRuntimeLogOrderField2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐRuntimeLogOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.RuntimeLogOrderField) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return v
+}
+
+func (ec *executionContext) unmarshalNRuntimeLogWhereInput2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐRuntimeLogWhereInput(ctx context.Context, v any) (*ent.RuntimeLogWhereInput, error) {
+	res, err := ec.unmarshalInputRuntimeLogWhereInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNSaveChannelModelPriceInput2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋbizᚐSaveChannelModelPriceInputᚄ(ctx context.Context, v any) ([]*biz.SaveChannelModelPriceInput, error) {
 	var vSlice []any
 	vSlice = graphql.CoerceList(v)
@@ -107320,6 +109629,176 @@ func (ec *executionContext) unmarshalORoleWhereInput2ᚖgithubᚗcomᚋloopljᚋ
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputRoleWhereInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalORuntimeLog2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐRuntimeLog(ctx context.Context, sel ast.SelectionSet, v *ent.RuntimeLog) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._RuntimeLog(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalORuntimeLogEdge2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐRuntimeLogEdge(ctx context.Context, sel ast.SelectionSet, v []*ent.RuntimeLogEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalORuntimeLogEdge2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐRuntimeLogEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalORuntimeLogEdge2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐRuntimeLogEdge(ctx context.Context, sel ast.SelectionSet, v *ent.RuntimeLogEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._RuntimeLogEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalORuntimeLogLevel2ᚕgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚋruntimelogᚐLevelᚄ(ctx context.Context, v any) ([]runtimelog.Level, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]runtimelog.Level, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNRuntimeLogLevel2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚋruntimelogᚐLevel(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalORuntimeLogLevel2ᚕgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚋruntimelogᚐLevelᚄ(ctx context.Context, sel ast.SelectionSet, v []runtimelog.Level) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNRuntimeLogLevel2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚋruntimelogᚐLevel(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalORuntimeLogLevel2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚋruntimelogᚐLevel(ctx context.Context, v any) (*runtimelog.Level, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(runtimelog.Level)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalORuntimeLogLevel2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚋruntimelogᚐLevel(ctx context.Context, sel ast.SelectionSet, v *runtimelog.Level) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
+func (ec *executionContext) unmarshalORuntimeLogOrder2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐRuntimeLogOrder(ctx context.Context, v any) (*ent.RuntimeLogOrder, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputRuntimeLogOrder(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalORuntimeLogWhereInput2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐRuntimeLogWhereInputᚄ(ctx context.Context, v any) ([]*ent.RuntimeLogWhereInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*ent.RuntimeLogWhereInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNRuntimeLogWhereInput2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐRuntimeLogWhereInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalORuntimeLogWhereInput2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐRuntimeLogWhereInput(ctx context.Context, v any) (*ent.RuntimeLogWhereInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputRuntimeLogWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 

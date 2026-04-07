@@ -22,6 +22,7 @@ import (
 	"github.com/looplj/axonhub/internal/ent/request"
 	"github.com/looplj/axonhub/internal/ent/requestexecution"
 	"github.com/looplj/axonhub/internal/ent/role"
+	"github.com/looplj/axonhub/internal/ent/runtimelog"
 	"github.com/looplj/axonhub/internal/ent/schema"
 	"github.com/looplj/axonhub/internal/ent/system"
 	"github.com/looplj/axonhub/internal/ent/thread"
@@ -660,6 +661,38 @@ func init() {
 	roleDescScopes := roleFields[3].Descriptor()
 	// role.DefaultScopes holds the default value on creation for the scopes field.
 	role.DefaultScopes = roleDescScopes.Default.([]string)
+	runtimelogMixin := schema.RuntimeLog{}.Mixin()
+	runtimelog.Policy = privacy.NewPolicies(schema.RuntimeLog{})
+	runtimelog.Hooks[0] = func(next ent.Mutator) ent.Mutator {
+		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+			if err := runtimelog.Policy.EvalMutation(ctx, m); err != nil {
+				return nil, err
+			}
+			return next.Mutate(ctx, m)
+		})
+	}
+	runtimelogMixinFields0 := runtimelogMixin[0].Fields()
+	_ = runtimelogMixinFields0
+	runtimelogFields := schema.RuntimeLog{}.Fields()
+	_ = runtimelogFields
+	// runtimelogDescCreatedAt is the schema descriptor for created_at field.
+	runtimelogDescCreatedAt := runtimelogMixinFields0[0].Descriptor()
+	// runtimelog.DefaultCreatedAt holds the default value on creation for the created_at field.
+	runtimelog.DefaultCreatedAt = runtimelogDescCreatedAt.Default.(func() time.Time)
+	// runtimelogDescUpdatedAt is the schema descriptor for updated_at field.
+	runtimelogDescUpdatedAt := runtimelogMixinFields0[1].Descriptor()
+	// runtimelog.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	runtimelog.DefaultUpdatedAt = runtimelogDescUpdatedAt.Default.(func() time.Time)
+	// runtimelog.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	runtimelog.UpdateDefaultUpdatedAt = runtimelogDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// runtimelogDescCaller is the schema descriptor for caller field.
+	runtimelogDescCaller := runtimelogFields[3].Descriptor()
+	// runtimelog.DefaultCaller holds the default value on creation for the caller field.
+	runtimelog.DefaultCaller = runtimelogDescCaller.Default.(string)
+	// runtimelogDescFieldsJSON is the schema descriptor for fields_json field.
+	runtimelogDescFieldsJSON := runtimelogFields[10].Descriptor()
+	// runtimelog.DefaultFieldsJSON holds the default value on creation for the fields_json field.
+	runtimelog.DefaultFieldsJSON = runtimelogDescFieldsJSON.Default.(map[string]interface{})
 	systemMixin := schema.System{}.Mixin()
 	system.Policy = privacy.NewPolicies(schema.System{})
 	system.Hooks[0] = func(next ent.Mutator) ent.Mutator {

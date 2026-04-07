@@ -667,6 +667,46 @@ var (
 			},
 		},
 	}
+	// RuntimeLogsColumns holds the columns for the "runtime_logs" table.
+	RuntimeLogsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: schema.Expr("CURRENT_TIMESTAMP")},
+		{Name: "updated_at", Type: field.TypeTime, Default: schema.Expr("CURRENT_TIMESTAMP")},
+		{Name: "logger", Type: field.TypeString},
+		{Name: "level", Type: field.TypeEnum, Enums: []string{"debug", "info", "warn", "error"}},
+		{Name: "message", Type: field.TypeString},
+		{Name: "caller", Type: field.TypeString, Nullable: true, Default: ""},
+		{Name: "trace_id", Type: field.TypeString, Nullable: true},
+		{Name: "request_id", Type: field.TypeString, Nullable: true},
+		{Name: "operation_name", Type: field.TypeString, Nullable: true},
+		{Name: "channel_id", Type: field.TypeInt, Nullable: true},
+		{Name: "channel_name", Type: field.TypeString, Nullable: true},
+		{Name: "model_id", Type: field.TypeString, Nullable: true},
+		{Name: "fields_json", Type: field.TypeJSON},
+	}
+	// RuntimeLogsTable holds the schema information for the "runtime_logs" table.
+	RuntimeLogsTable = &schema.Table{
+		Name:       "runtime_logs",
+		Columns:    RuntimeLogsColumns,
+		PrimaryKey: []*schema.Column{RuntimeLogsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "runtime_logs_by_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{RuntimeLogsColumns[1]},
+			},
+			{
+				Name:    "runtime_logs_by_level_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{RuntimeLogsColumns[4], RuntimeLogsColumns[1]},
+			},
+			{
+				Name:    "runtime_logs_by_logger_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{RuntimeLogsColumns[3], RuntimeLogsColumns[1]},
+			},
+		},
+	}
 	// SystemsColumns holds the columns for the "systems" table.
 	SystemsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -1003,6 +1043,7 @@ var (
 		RequestsTable,
 		RequestExecutionsTable,
 		RolesTable,
+		RuntimeLogsTable,
 		SystemsTable,
 		ThreadsTable,
 		TracesTable,

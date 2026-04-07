@@ -13,6 +13,7 @@ import (
 	"github.com/looplj/axonhub/internal/ent/model"
 	"github.com/looplj/axonhub/internal/ent/modelhealthhistory"
 	"github.com/looplj/axonhub/internal/ent/modelhealthsnapshot"
+	entrequest "github.com/looplj/axonhub/internal/ent/request"
 	"github.com/looplj/axonhub/internal/pkg/xcontext"
 )
 
@@ -189,6 +190,9 @@ func (svc *ChannelProbeService) RefreshModelHealthFromUsage(
 		return
 	}
 	if request == nil || requestExec == nil || request.ModelID == "" || requestExec.ModelID == "" || requestExec.ChannelID == 0 {
+		return
+	}
+	if request.Source == entrequest.SourceTest {
 		return
 	}
 

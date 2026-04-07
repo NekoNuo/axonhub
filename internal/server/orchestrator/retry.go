@@ -55,3 +55,16 @@ func deriveLoadBalancerStrategy(retryPolicy *biz.RetryPolicy, apiKey *ent.APIKey
 
 	return *activeProfile.LoadBalanceStrategy
 }
+
+// normalizeRetryBudget converts the user-facing retry settings into pipeline retry budgets.
+// The configured values are treated as total attempts including the initial request.
+func normalizeRetryBudget(retryPolicy *biz.RetryPolicy) (channelRetries int, sameChannelRetries int) {
+	if retryPolicy == nil {
+		return 0, 0
+	}
+
+	channelRetries = max(retryPolicy.MaxChannelRetries-1, 0)
+	sameChannelRetries = max(retryPolicy.MaxSingleChannelRetries-1, 0)
+
+	return channelRetries, sameChannelRetries
+}

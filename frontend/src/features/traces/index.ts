@@ -1,1 +1,2 @@
-export { default } from './index.tsx';
+export { default, TracesContent } from './index.tsx';
+export { TracesTable } from './components';

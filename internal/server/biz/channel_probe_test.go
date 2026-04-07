@@ -21,6 +21,24 @@ import (
 	"github.com/looplj/axonhub/internal/pkg/xtime"
 )
 
+func TestShouldRunProbe(t *testing.T) {
+	now := time.Date(2026, 4, 7, 1, 38, 0, 0, time.UTC)
+
+	t.Run("skip immediate execution on startup", func(t *testing.T) {
+		assert.False(t, shouldRunProbe(ProbeFrequency1Hour, now, time.Time{}))
+	})
+
+	t.Run("skip when current bucket already executed", func(t *testing.T) {
+		lastExecution := time.Date(2026, 4, 7, 1, 0, 0, 0, time.UTC)
+		assert.False(t, shouldRunProbe(ProbeFrequency1Hour, now, lastExecution))
+	})
+
+	t.Run("run when entering next bucket", func(t *testing.T) {
+		lastExecution := time.Date(2026, 4, 7, 0, 0, 0, 0, time.UTC)
+		assert.True(t, shouldRunProbe(ProbeFrequency1Hour, now, lastExecution))
+	})
+}
+
 // TestTPSCalculation_RetryScenario tests that only successful executions are counted
 func TestTPSCalculation_RetryScenario(t *testing.T) {
 	client := enttest.NewEntClient(t, "sqlite3", "file:ent?mode=memory&_fk=0")
@@ -1206,6 +1224,7 @@ func TestRunProbeNow_OverridesCurrentBucketAfterScheduledProbe(t *testing.T) {
 		AbstractService: &AbstractService{db: client},
 		SystemService:   systemService,
 	}
+	svc.lastExecutionTime = xtime.UTCNow().UTC().Truncate(time.Minute).Add(-time.Minute)
 	svc.idleChannelProber = func(_ context.Context, got *ent.Channel) (time.Duration, bool, error) {
 		probeCalls++
 		require.Equal(t, ch.ID, got.ID)

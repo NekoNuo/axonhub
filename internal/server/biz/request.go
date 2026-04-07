@@ -121,6 +121,11 @@ func (s *RequestService) CreateRequest(
 	// It will be not prsent in the admin pages,
 	// e.g: test channel.
 	projectID, _ := contexts.GetProjectID(ctx)
+	if projectID == 0 {
+		if apiKey, ok := contexts.GetAPIKey(ctx); ok && apiKey != nil && apiKey.ProjectID != 0 {
+			projectID = apiKey.ProjectID
+		}
+	}
 
 	// Decide whether to store the original request body
 	storeRequestBody := true

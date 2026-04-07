@@ -9,6 +9,8 @@ import (
 	"github.com/samber/lo"
 	"github.com/tidwall/gjson"
 
+	"github.com/looplj/axonhub/internal/contexts"
+	entrequest "github.com/looplj/axonhub/internal/ent/request"
 	"github.com/looplj/axonhub/internal/log"
 	"github.com/looplj/axonhub/internal/objects"
 	"github.com/looplj/axonhub/internal/pkg/xjson"
@@ -80,6 +82,8 @@ func (processor *TestChannelOrchestrator) TestChannel(
 	modelID *string,
 	proxy *httpclient.ProxyConfig,
 ) (*TestChannelResult, error) {
+	ctx = contexts.WithSource(ctx, entrequest.SourceTest)
+
 	inbound := openai.NewInboundTransformer()
 	// Create ChatCompletionOrchestrator for this test request
 	chatProcessor := &ChatCompletionOrchestrator{

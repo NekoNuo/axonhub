@@ -519,6 +519,30 @@ func (f RoleMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) 
 	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.RoleMutation", m)
 }
 
+// The RuntimeLogQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type RuntimeLogQueryRuleFunc func(context.Context, *ent.RuntimeLogQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f RuntimeLogQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.RuntimeLogQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.RuntimeLogQuery", q)
+}
+
+// The RuntimeLogMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type RuntimeLogMutationRuleFunc func(context.Context, *ent.RuntimeLogMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f RuntimeLogMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.RuntimeLogMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.RuntimeLogMutation", m)
+}
+
 // The SystemQueryRuleFunc type is an adapter to allow the use of ordinary
 // functions as a query rule.
 type SystemQueryRuleFunc func(context.Context, *ent.SystemQuery) error
@@ -756,6 +780,8 @@ func queryFilter(q ent.Query) (Filter, error) {
 		return q.Filter(), nil
 	case *ent.RoleQuery:
 		return q.Filter(), nil
+	case *ent.RuntimeLogQuery:
+		return q.Filter(), nil
 	case *ent.SystemQuery:
 		return q.Filter(), nil
 	case *ent.ThreadQuery:
@@ -810,6 +836,8 @@ func mutationFilter(m ent.Mutation) (Filter, error) {
 	case *ent.RequestExecutionMutation:
 		return m.Filter(), nil
 	case *ent.RoleMutation:
+		return m.Filter(), nil
+	case *ent.RuntimeLogMutation:
 		return m.Filter(), nil
 	case *ent.SystemMutation:
 		return m.Filter(), nil

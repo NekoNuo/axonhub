@@ -31,6 +31,7 @@ import (
 	"github.com/looplj/axonhub/internal/ent/request"
 	"github.com/looplj/axonhub/internal/ent/requestexecution"
 	"github.com/looplj/axonhub/internal/ent/role"
+	"github.com/looplj/axonhub/internal/ent/runtimelog"
 	"github.com/looplj/axonhub/internal/ent/system"
 	"github.com/looplj/axonhub/internal/ent/thread"
 	"github.com/looplj/axonhub/internal/ent/trace"
@@ -5515,6 +5516,320 @@ func (_m *Role) ToEdge(order *RoleOrder) *RoleEdge {
 		order = DefaultRoleOrder
 	}
 	return &RoleEdge{
+		Node:   _m,
+		Cursor: order.Field.toCursor(_m),
+	}
+}
+
+// RuntimeLogEdge is the edge representation of RuntimeLog.
+type RuntimeLogEdge struct {
+	Node   *RuntimeLog `json:"node"`
+	Cursor Cursor      `json:"cursor"`
+}
+
+// RuntimeLogConnection is the connection containing edges to RuntimeLog.
+type RuntimeLogConnection struct {
+	Edges      []*RuntimeLogEdge `json:"edges"`
+	PageInfo   PageInfo          `json:"pageInfo"`
+	TotalCount int               `json:"totalCount"`
+}
+
+func (c *RuntimeLogConnection) build(nodes []*RuntimeLog, pager *runtimelogPager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *RuntimeLog
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *RuntimeLog {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *RuntimeLog {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*RuntimeLogEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &RuntimeLogEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// RuntimeLogPaginateOption enables pagination customization.
+type RuntimeLogPaginateOption func(*runtimelogPager) error
+
+// WithRuntimeLogOrder configures pagination ordering.
+func WithRuntimeLogOrder(order *RuntimeLogOrder) RuntimeLogPaginateOption {
+	if order == nil {
+		order = DefaultRuntimeLogOrder
+	}
+	o := *order
+	return func(pager *runtimelogPager) error {
+		if err := o.Direction.Validate(); err != nil {
+			return err
+		}
+		if o.Field == nil {
+			o.Field = DefaultRuntimeLogOrder.Field
+		}
+		pager.order = &o
+		return nil
+	}
+}
+
+// WithRuntimeLogFilter configures pagination filter.
+func WithRuntimeLogFilter(filter func(*RuntimeLogQuery) (*RuntimeLogQuery, error)) RuntimeLogPaginateOption {
+	return func(pager *runtimelogPager) error {
+		if filter == nil {
+			return errors.New("RuntimeLogQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type runtimelogPager struct {
+	reverse bool
+	order   *RuntimeLogOrder
+	filter  func(*RuntimeLogQuery) (*RuntimeLogQuery, error)
+}
+
+func newRuntimeLogPager(opts []RuntimeLogPaginateOption, reverse bool) (*runtimelogPager, error) {
+	pager := &runtimelogPager{reverse: reverse}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	if pager.order == nil {
+		pager.order = DefaultRuntimeLogOrder
+	}
+	return pager, nil
+}
+
+func (p *runtimelogPager) applyFilter(query *RuntimeLogQuery) (*RuntimeLogQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *runtimelogPager) toCursor(_m *RuntimeLog) Cursor {
+	return p.order.Field.toCursor(_m)
+}
+
+func (p *runtimelogPager) applyCursors(query *RuntimeLogQuery, after, before *Cursor) (*RuntimeLogQuery, error) {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	for _, predicate := range entgql.CursorsPredicate(after, before, DefaultRuntimeLogOrder.Field.column, p.order.Field.column, direction) {
+		query = query.Where(predicate)
+	}
+	return query, nil
+}
+
+func (p *runtimelogPager) applyOrder(query *RuntimeLogQuery) *RuntimeLogQuery {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	query = query.Order(p.order.Field.toTerm(direction.OrderTermOption()))
+	if p.order.Field != DefaultRuntimeLogOrder.Field {
+		query = query.Order(DefaultRuntimeLogOrder.Field.toTerm(direction.OrderTermOption()))
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(p.order.Field.column)
+	}
+	return query
+}
+
+func (p *runtimelogPager) orderExpr(query *RuntimeLogQuery) sql.Querier {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(p.order.Field.column)
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		b.Ident(p.order.Field.column).Pad().WriteString(string(direction))
+		if p.order.Field != DefaultRuntimeLogOrder.Field {
+			b.Comma().Ident(DefaultRuntimeLogOrder.Field.column).Pad().WriteString(string(direction))
+		}
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to RuntimeLog.
+func (_m *RuntimeLogQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...RuntimeLogPaginateOption,
+) (*RuntimeLogConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newRuntimeLogPager(opts, last != nil)
+	if err != nil {
+		return nil, err
+	}
+	if _m, err = pager.applyFilter(_m); err != nil {
+		return nil, err
+	}
+	conn := &RuntimeLogConnection{Edges: []*RuntimeLogEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			c := _m.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+	if _m, err = pager.applyCursors(_m, after, before); err != nil {
+		return nil, err
+	}
+	limit := paginateLimit(first, last)
+	if limit != 0 {
+		_m.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := _m.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+	_m = pager.applyOrder(_m)
+	nodes, err := _m.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+var (
+	// RuntimeLogOrderFieldCreatedAt orders RuntimeLog by created_at.
+	RuntimeLogOrderFieldCreatedAt = &RuntimeLogOrderField{
+		Value: func(_m *RuntimeLog) (ent.Value, error) {
+			return _m.CreatedAt, nil
+		},
+		column: runtimelog.FieldCreatedAt,
+		toTerm: runtimelog.ByCreatedAt,
+		toCursor: func(_m *RuntimeLog) Cursor {
+			return Cursor{
+				ID:    _m.ID,
+				Value: _m.CreatedAt,
+			}
+		},
+	}
+	// RuntimeLogOrderFieldUpdatedAt orders RuntimeLog by updated_at.
+	RuntimeLogOrderFieldUpdatedAt = &RuntimeLogOrderField{
+		Value: func(_m *RuntimeLog) (ent.Value, error) {
+			return _m.UpdatedAt, nil
+		},
+		column: runtimelog.FieldUpdatedAt,
+		toTerm: runtimelog.ByUpdatedAt,
+		toCursor: func(_m *RuntimeLog) Cursor {
+			return Cursor{
+				ID:    _m.ID,
+				Value: _m.UpdatedAt,
+			}
+		},
+	}
+)
+
+// String implement fmt.Stringer interface.
+func (f RuntimeLogOrderField) String() string {
+	var str string
+	switch f.column {
+	case RuntimeLogOrderFieldCreatedAt.column:
+		str = "CREATED_AT"
+	case RuntimeLogOrderFieldUpdatedAt.column:
+		str = "UPDATED_AT"
+	}
+	return str
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (f RuntimeLogOrderField) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(f.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (f *RuntimeLogOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("RuntimeLogOrderField %T must be a string", v)
+	}
+	switch str {
+	case "CREATED_AT":
+		*f = *RuntimeLogOrderFieldCreatedAt
+	case "UPDATED_AT":
+		*f = *RuntimeLogOrderFieldUpdatedAt
+	default:
+		return fmt.Errorf("%s is not a valid RuntimeLogOrderField", str)
+	}
+	return nil
+}
+
+// RuntimeLogOrderField defines the ordering field of RuntimeLog.
+type RuntimeLogOrderField struct {
+	// Value extracts the ordering value from the given RuntimeLog.
+	Value    func(*RuntimeLog) (ent.Value, error)
+	column   string // field or computed.
+	toTerm   func(...sql.OrderTermOption) runtimelog.OrderOption
+	toCursor func(*RuntimeLog) Cursor
+}
+
+// RuntimeLogOrder defines the ordering of RuntimeLog.
+type RuntimeLogOrder struct {
+	Direction OrderDirection        `json:"direction"`
+	Field     *RuntimeLogOrderField `json:"field"`
+}
+
+// DefaultRuntimeLogOrder is the default ordering of RuntimeLog.
+var DefaultRuntimeLogOrder = &RuntimeLogOrder{
+	Direction: entgql.OrderDirectionAsc,
+	Field: &RuntimeLogOrderField{
+		Value: func(_m *RuntimeLog) (ent.Value, error) {
+			return _m.ID, nil
+		},
+		column: runtimelog.FieldID,
+		toTerm: runtimelog.ByID,
+		toCursor: func(_m *RuntimeLog) Cursor {
+			return Cursor{ID: _m.ID}
+		},
+	},
+}
+
+// ToEdge converts RuntimeLog into RuntimeLogEdge.
+func (_m *RuntimeLog) ToEdge(order *RuntimeLogOrder) *RuntimeLogEdge {
+	if order == nil {
+		order = DefaultRuntimeLogOrder
+	}
+	return &RuntimeLogEdge{
 		Node:   _m,
 		Cursor: order.Field.toCursor(_m),
 	}

@@ -13,6 +13,7 @@ interface DataTableToolbarProps<TData> {
   table: Table<TData>;
   dateRange?: DateTimeRangeValue;
   onDateRangeChange?: (range: DateTimeRangeValue | undefined) => void;
+  showDateRangeFilter?: boolean;
   traceIdFilter: string;
   onTraceIdFilterChange: (traceId: string) => void;
   onRefresh?: () => void;
@@ -25,6 +26,7 @@ export function DataTableToolbar<TData>({
   table,
   dateRange,
   onDateRangeChange,
+  showDateRangeFilter = true,
   traceIdFilter,
   onTraceIdFilterChange,
   onRefresh,
@@ -45,8 +47,8 @@ export function DataTableToolbar<TData>({
           onChange={(event) => onTraceIdFilterChange(event.target.value)}
           className='h-8 w-[150px] lg:w-[250px]'
         />
-        <DateRangePicker value={dateRange} onChange={onDateRangeChange} />
-        {hasDateRange && (
+        {showDateRangeFilter && <DateRangePicker value={dateRange} onChange={onDateRangeChange} />}
+        {showDateRangeFilter && hasDateRange && (
           <Button variant='ghost' onClick={() => onDateRangeChange?.(undefined)} className='h-8 px-2' size='sm'>
             <X className='h-4 w-4' />
           </Button>

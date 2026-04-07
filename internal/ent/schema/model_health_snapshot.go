@@ -34,6 +34,7 @@ func (ModelHealthSnapshot) Edges() []ent.Edge {
 		edge.From("channel", Channel.Type).
 			Ref("model_health_snapshots").
 			Field("channel_id").
+			Unique().
 			Required(),
 	}
 }

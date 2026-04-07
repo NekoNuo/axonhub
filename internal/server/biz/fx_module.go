@@ -27,6 +27,7 @@ var Module = fx.Module("biz",
 	fx.Provide(NewPromptProtectionRuleService),
 	fx.Provide(NewQuotaService),
 	fx.Provide(NewProviderQuotaService),
+	fx.Provide(NewRuntimeLogService),
 	fx.Invoke(func(lc fx.Lifecycle, svc *ProviderQuotaService) {
 		lc.Append(fx.Hook{
 			OnStart: func(ctx context.Context) error {
@@ -68,6 +69,16 @@ var Module = fx.Module("biz",
 			OnStop: func(ctx context.Context) error {
 				svc.Stop()
 				return nil
+			},
+		})
+	}),
+	fx.Invoke(func(lc fx.Lifecycle, svc *RuntimeLogService) {
+		lc.Append(fx.Hook{
+			OnStart: func(ctx context.Context) error {
+				return svc.Start(ctx)
+			},
+			OnStop: func(ctx context.Context) error {
+				return svc.Stop(ctx)
 			},
 		})
 	}),

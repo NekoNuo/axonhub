@@ -137,6 +137,10 @@ func (svc *ChannelProbeService) Stop(ctx context.Context) error {
 // It returns true if the current aligned time is different from the last execution time.
 // This is a pure function that does not depend on any external state.
 func shouldRunProbe(frequency ProbeFrequency, now time.Time, lastExecution time.Time) bool {
+	if lastExecution.IsZero() {
+		return false
+	}
+
 	intervalMinutes := getIntervalMinutesFromFrequency(frequency)
 	alignedTime := now.Truncate(time.Duration(intervalMinutes) * time.Minute)
 
@@ -471,7 +475,11 @@ func (svc *ChannelProbeService) runProbeWithMode(ctx context.Context, force bool
 	svc.mu.Lock()
 
 	lastExecution := svc.lastExecutionTime
-	if !force && !lastExecution.IsZero() && !shouldRunProbe(setting.Probe.Frequency, now, lastExecution) {
+	if !force && !shouldRunProbe(setting.Probe.Frequency, now, lastExecution) {
+		if lastExecution.IsZero() {
+			svc.lastExecutionTime = alignedTime
+		}
+
 		// Already executed for this interval
 		svc.mu.Unlock()
 		log.Debug(ctx, "Skipping probe, already executed for this interval",

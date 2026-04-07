@@ -46,6 +46,8 @@ type Tx struct {
 	RequestExecution *RequestExecutionClient
 	// Role is the client for interacting with the Role builders.
 	Role *RoleClient
+	// RuntimeLog is the client for interacting with the RuntimeLog builders.
+	RuntimeLog *RuntimeLogClient
 	// System is the client for interacting with the System builders.
 	System *SystemClient
 	// Thread is the client for interacting with the Thread builders.
@@ -208,6 +210,7 @@ func (tx *Tx) init() {
 	tx.Request = NewRequestClient(tx.config)
 	tx.RequestExecution = NewRequestExecutionClient(tx.config)
 	tx.Role = NewRoleClient(tx.config)
+	tx.RuntimeLog = NewRuntimeLogClient(tx.config)
 	tx.System = NewSystemClient(tx.config)
 	tx.Thread = NewThreadClient(tx.config)
 	tx.Trace = NewTraceClient(tx.config)

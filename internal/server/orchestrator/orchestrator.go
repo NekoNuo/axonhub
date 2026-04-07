@@ -210,9 +210,10 @@ func (processor *ChatCompletionOrchestrator) Process(ctx context.Context, reques
 
 	// Only apply retry if policy is enabled
 	if retryPolicy.Enabled {
+		channelRetries, sameChannelRetries := normalizeRetryBudget(retryPolicy)
 		pipelineOpts = append(pipelineOpts, pipeline.WithRetry(
-			retryPolicy.MaxChannelRetries,
-			retryPolicy.MaxSingleChannelRetries,
+			channelRetries,
+			sameChannelRetries,
 			time.Duration(retryPolicy.RetryDelayMs)*time.Millisecond,
 		))
 	}

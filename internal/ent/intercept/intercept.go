@@ -26,6 +26,7 @@ import (
 	"github.com/looplj/axonhub/internal/ent/request"
 	"github.com/looplj/axonhub/internal/ent/requestexecution"
 	"github.com/looplj/axonhub/internal/ent/role"
+	"github.com/looplj/axonhub/internal/ent/runtimelog"
 	"github.com/looplj/axonhub/internal/ent/system"
 	"github.com/looplj/axonhub/internal/ent/thread"
 	"github.com/looplj/axonhub/internal/ent/trace"
@@ -550,6 +551,33 @@ func (f TraverseRole) Traverse(ctx context.Context, q ent.Query) error {
 	return fmt.Errorf("unexpected query type %T. expect *ent.RoleQuery", q)
 }
 
+// The RuntimeLogFunc type is an adapter to allow the use of ordinary function as a Querier.
+type RuntimeLogFunc func(context.Context, *ent.RuntimeLogQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f RuntimeLogFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.RuntimeLogQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.RuntimeLogQuery", q)
+}
+
+// The TraverseRuntimeLog type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseRuntimeLog func(context.Context, *ent.RuntimeLogQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseRuntimeLog) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseRuntimeLog) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.RuntimeLogQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.RuntimeLogQuery", q)
+}
+
 // The SystemFunc type is an adapter to allow the use of ordinary function as a Querier.
 type SystemFunc func(context.Context, *ent.SystemQuery) (ent.Value, error)
 
@@ -776,6 +804,8 @@ func NewQuery(q ent.Query) (Query, error) {
 		return &query[*ent.RequestExecutionQuery, predicate.RequestExecution, requestexecution.OrderOption]{typ: ent.TypeRequestExecution, tq: q}, nil
 	case *ent.RoleQuery:
 		return &query[*ent.RoleQuery, predicate.Role, role.OrderOption]{typ: ent.TypeRole, tq: q}, nil
+	case *ent.RuntimeLogQuery:
+		return &query[*ent.RuntimeLogQuery, predicate.RuntimeLog, runtimelog.OrderOption]{typ: ent.TypeRuntimeLog, tq: q}, nil
 	case *ent.SystemQuery:
 		return &query[*ent.SystemQuery, predicate.System, system.OrderOption]{typ: ent.TypeSystem, tq: q}, nil
 	case *ent.ThreadQuery:

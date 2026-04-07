@@ -6,12 +6,10 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
 
-	"github.com/looplj/axonhub/internal/ent"
 	"github.com/looplj/axonhub/internal/log"
 	"github.com/looplj/axonhub/internal/server/api"
 	"github.com/looplj/axonhub/internal/server/backup"
@@ -78,6 +76,11 @@ func (srv *Server) Shutdown(ctx context.Context) error {
 	return srv.server.Shutdown(ctx)
 }
 
+func configureUsageLogHooks(usageLogSvc *biz.UsageLogService) {
+	usageLogSvc.OnUsageLogCreated = gql.InvalidateAllTimeTokenStatsCache
+	usageLogSvc.OnUsageLogFromRequestCreated = nil
+}
+
 func Run(opts ...fx.Option) {
 	constructors := []any{
 		openapi.NewGraphqlHandlers,
@@ -100,13 +103,18 @@ func Run(opts ...fx.Option) {
 				tracing.SetupLogger(log.GetGlobalLogger())
 				slog.SetDefault(log.GetGlobalLogger().AsSlog())
 			}),
-			fx.Invoke(func(usageLogSvc *biz.UsageLogService) {
-				usageLogSvc.OnUsageLogCreated = gql.InvalidateAllTimeTokenStatsCache
-			}),
-			fx.Invoke(func(usageLogSvc *biz.UsageLogService, channelProbeSvc *biz.ChannelProbeService) {
-				usageLogSvc.OnUsageLogFromRequestCreated = func(ctx context.Context, request *ent.Request, requestExec *ent.RequestExecution, _ *ent.UsageLog) {
-					channelProbeSvc.RefreshModelHealthFromUsage(ctx, request, requestExec, time.Now().UTC())
-				}
+			fx.Invoke(configureUsageLogHooks),
+			fx.Invoke(func(lc fx.Lifecycle, runtimeLogSvc *biz.RuntimeLogService) {
+				lc.Append(fx.Hook{
+					OnStart: func(context.Context) error {
+						log.SetRuntimeLogSink(runtimeLogSvc)
+						return nil
+					},
+					OnStop: func(context.Context) error {
+						log.SetRuntimeLogSink(nil)
+						return nil
+					},
+				})
 			}),
 			fx.Invoke(func(cfg Config) {
 				if cfg.Dashboard.AllTimeTokenStatsSoftTTL > 0 && cfg.Dashboard.AllTimeTokenStatsHardTTL > 0 {

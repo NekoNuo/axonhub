@@ -40,6 +40,7 @@ interface TracesTableProps {
   pageSize: number;
   totalCount?: number;
   dateRange?: DateTimeRangeValue;
+  showDateRangeFilter?: boolean;
   traceIdFilter: string;
   onNextPage: () => void;
   onPreviousPage: () => void;
@@ -59,6 +60,7 @@ export function TracesTable({
   totalCount,
   pageSize,
   dateRange,
+  showDateRangeFilter = true,
   traceIdFilter,
   onNextPage,
   onPreviousPage,
@@ -109,6 +111,7 @@ export function TracesTable({
         table={table}
         dateRange={dateRange}
         onDateRangeChange={onDateRangeChange}
+        showDateRangeFilter={showDateRangeFilter}
         traceIdFilter={traceIdFilter}
         onTraceIdFilterChange={onTraceIdFilterChange}
         onRefresh={onRefresh}

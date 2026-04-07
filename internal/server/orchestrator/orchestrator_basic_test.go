@@ -463,7 +463,7 @@ func TestChatCompletionOrchestrator_Process_SameChannelRetryNextModel(t *testing
 	err := systemService.SetRetryPolicy(ctx, &biz.RetryPolicy{
 		Enabled:                 true,
 		MaxChannelRetries:       1,
-		MaxSingleChannelRetries: 1,
+		MaxSingleChannelRetries: 2,
 		RetryDelayMs:            0,
 		LoadBalancerStrategy:    "adaptive",
 	})

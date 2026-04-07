@@ -213,6 +213,18 @@ func (f RoleFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RoleMutation", m)
 }
 
+// The RuntimeLogFunc type is an adapter to allow the use of ordinary
+// function as RuntimeLog mutator.
+type RuntimeLogFunc func(context.Context, *ent.RuntimeLogMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f RuntimeLogFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.RuntimeLogMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RuntimeLogMutation", m)
+}
+
 // The SystemFunc type is an adapter to allow the use of ordinary
 // function as System mutator.
 type SystemFunc func(context.Context, *ent.SystemMutation) (ent.Value, error)

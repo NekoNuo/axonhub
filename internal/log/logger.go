@@ -243,8 +243,7 @@ func (l *Logger) Debug(ctx context.Context, msg string, fields ...zap.Field) {
 		return
 	}
 
-	fields = l.executeHooks(ctx, msg, fields...)
-	l.logger.Debug(msg, fields...)
+	l.write(ctx, DebugLevel, msg, fields...)
 }
 
 func (l *Logger) Info(ctx context.Context, msg string, fields ...zap.Field) {
@@ -252,8 +251,7 @@ func (l *Logger) Info(ctx context.Context, msg string, fields ...zap.Field) {
 		return
 	}
 
-	fields = l.executeHooks(ctx, msg, fields...)
-	l.logger.Info(msg, fields...)
+	l.write(ctx, InfoLevel, msg, fields...)
 }
 
 func (l *Logger) Warn(ctx context.Context, msg string, fields ...zap.Field) {
@@ -261,8 +259,7 @@ func (l *Logger) Warn(ctx context.Context, msg string, fields ...zap.Field) {
 		return
 	}
 
-	fields = l.executeHooks(ctx, msg, fields...)
-	l.logger.Warn(msg, fields...)
+	l.write(ctx, WarnLevel, msg, fields...)
 }
 
 func (l *Logger) Error(ctx context.Context, msg string, fields ...zap.Field) {
@@ -270,8 +267,7 @@ func (l *Logger) Error(ctx context.Context, msg string, fields ...zap.Field) {
 		return
 	}
 
-	fields = l.executeHooks(ctx, msg, fields...)
-	l.logger.Error(msg, fields...)
+	l.write(ctx, ErrorLevel, msg, fields...)
 }
 
 func (l *Logger) Panic(ctx context.Context, msg string, fields ...zap.Field) {
@@ -281,4 +277,15 @@ func (l *Logger) Panic(ctx context.Context, msg string, fields ...zap.Field) {
 
 	fields = l.executeHooks(ctx, msg, fields...)
 	l.logger.Panic(msg, fields...)
+}
+
+func (l *Logger) write(ctx context.Context, level zapcore.Level, msg string, fields ...zap.Field) {
+	fields = l.executeHooks(ctx, msg, fields...)
+	checkedEntry := l.logger.Check(level, msg)
+	if checkedEntry == nil {
+		return
+	}
+
+	publishRuntimeLogRecord(ctx, l.config.Name, level, msg, checkedEntry.Caller.TrimmedPath(), fields)
+	checkedEntry.Write(fields...)
 }

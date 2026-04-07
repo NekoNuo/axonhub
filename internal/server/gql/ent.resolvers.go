@@ -442,6 +442,18 @@ func (r *queryResolver) Roles(ctx context.Context, after *entgql.Cursor[int], fi
 	)
 }
 
+// RuntimeLogs is the resolver for the runtimeLogs field.
+func (r *queryResolver) RuntimeLogs(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.RuntimeLogOrder, where *ent.RuntimeLogWhereInput) (*ent.RuntimeLogConnection, error) {
+	if err := validatePaginationArgs(first, last); err != nil {
+		return nil, err
+	}
+
+	return r.client.RuntimeLog.Query().Paginate(ctx, after, first, before, last,
+		ent.WithRuntimeLogOrder(orderBy),
+		ent.WithRuntimeLogFilter(where.Filter),
+	)
+}
+
 // Systems is the resolver for the systems field.
 func (r *queryResolver) Systems(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.SystemOrder, where *ent.SystemWhereInput) (*ent.SystemConnection, error) {
 	if err := validatePaginationArgs(first, last); err != nil {
@@ -726,6 +738,14 @@ func (r *roleResolver) UserRoles(ctx context.Context, obj *ent.Role) ([]*ent.Use
 }
 
 // ID is the resolver for the id field.
+func (r *runtimeLogResolver) ID(ctx context.Context, obj *ent.RuntimeLog) (*objects.GUID, error) {
+	return &objects.GUID{
+		Type: ent.TypeRuntimeLog,
+		ID:   obj.ID,
+	}, nil
+}
+
+// ID is the resolver for the id field.
 func (r *systemResolver) ID(ctx context.Context, obj *ent.System) (*objects.GUID, error) {
 	return &objects.GUID{
 		Type: ent.TypeSystem,
@@ -944,6 +964,9 @@ func (r *Resolver) RequestExecution() RequestExecutionResolver { return &request
 // Role returns RoleResolver implementation.
 func (r *Resolver) Role() RoleResolver { return &roleResolver{r} }
 
+// RuntimeLog returns RuntimeLogResolver implementation.
+func (r *Resolver) RuntimeLog() RuntimeLogResolver { return &runtimeLogResolver{r} }
+
 // System returns SystemResolver implementation.
 func (r *Resolver) System() SystemResolver { return &systemResolver{r} }
 
@@ -983,6 +1006,7 @@ type queryResolver struct{ *Resolver }
 type requestResolver struct{ *Resolver }
 type requestExecutionResolver struct{ *Resolver }
 type roleResolver struct{ *Resolver }
+type runtimeLogResolver struct{ *Resolver }
 type systemResolver struct{ *Resolver }
 type threadResolver struct{ *Resolver }
 type traceResolver struct{ *Resolver }

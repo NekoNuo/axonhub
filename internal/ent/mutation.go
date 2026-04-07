@@ -29,6 +29,7 @@ import (
 	"github.com/looplj/axonhub/internal/ent/request"
 	"github.com/looplj/axonhub/internal/ent/requestexecution"
 	"github.com/looplj/axonhub/internal/ent/role"
+	"github.com/looplj/axonhub/internal/ent/runtimelog"
 	"github.com/looplj/axonhub/internal/ent/system"
 	"github.com/looplj/axonhub/internal/ent/thread"
 	"github.com/looplj/axonhub/internal/ent/trace"
@@ -65,6 +66,7 @@ const (
 	TypeRequest                  = "Request"
 	TypeRequestExecution         = "RequestExecution"
 	TypeRole                     = "Role"
+	TypeRuntimeLog               = "RuntimeLog"
 	TypeSystem                   = "System"
 	TypeThread                   = "Thread"
 	TypeTrace                    = "Trace"
@@ -20495,6 +20497,1153 @@ func (m *RoleMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown Role edge %s", name)
+}
+
+// RuntimeLogMutation represents an operation that mutates the RuntimeLog nodes in the graph.
+type RuntimeLogMutation struct {
+	config
+	op             Op
+	typ            string
+	id             *int
+	created_at     *time.Time
+	updated_at     *time.Time
+	logger         *string
+	level          *runtimelog.Level
+	message        *string
+	caller         *string
+	trace_id       *string
+	request_id     *string
+	operation_name *string
+	channel_id     *int
+	addchannel_id  *int
+	channel_name   *string
+	model_id       *string
+	fields_json    *map[string]interface{}
+	clearedFields  map[string]struct{}
+	done           bool
+	oldValue       func(context.Context) (*RuntimeLog, error)
+	predicates     []predicate.RuntimeLog
+}
+
+var _ ent.Mutation = (*RuntimeLogMutation)(nil)
+
+// runtimelogOption allows management of the mutation configuration using functional options.
+type runtimelogOption func(*RuntimeLogMutation)
+
+// newRuntimeLogMutation creates new mutation for the RuntimeLog entity.
+func newRuntimeLogMutation(c config, op Op, opts ...runtimelogOption) *RuntimeLogMutation {
+	m := &RuntimeLogMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeRuntimeLog,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withRuntimeLogID sets the ID field of the mutation.
+func withRuntimeLogID(id int) runtimelogOption {
+	return func(m *RuntimeLogMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *RuntimeLog
+		)
+		m.oldValue = func(ctx context.Context) (*RuntimeLog, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().RuntimeLog.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withRuntimeLog sets the old RuntimeLog of the mutation.
+func withRuntimeLog(node *RuntimeLog) runtimelogOption {
+	return func(m *RuntimeLogMutation) {
+		m.oldValue = func(context.Context) (*RuntimeLog, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m RuntimeLogMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m RuntimeLogMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *RuntimeLogMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *RuntimeLogMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().RuntimeLog.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *RuntimeLogMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *RuntimeLogMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the RuntimeLog entity.
+// If the RuntimeLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RuntimeLogMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *RuntimeLogMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *RuntimeLogMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *RuntimeLogMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the RuntimeLog entity.
+// If the RuntimeLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RuntimeLogMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *RuntimeLogMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetLogger sets the "logger" field.
+func (m *RuntimeLogMutation) SetLogger(s string) {
+	m.logger = &s
+}
+
+// Logger returns the value of the "logger" field in the mutation.
+func (m *RuntimeLogMutation) Logger() (r string, exists bool) {
+	v := m.logger
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLogger returns the old "logger" field's value of the RuntimeLog entity.
+// If the RuntimeLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RuntimeLogMutation) OldLogger(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLogger is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLogger requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLogger: %w", err)
+	}
+	return oldValue.Logger, nil
+}
+
+// ResetLogger resets all changes to the "logger" field.
+func (m *RuntimeLogMutation) ResetLogger() {
+	m.logger = nil
+}
+
+// SetLevel sets the "level" field.
+func (m *RuntimeLogMutation) SetLevel(r runtimelog.Level) {
+	m.level = &r
+}
+
+// Level returns the value of the "level" field in the mutation.
+func (m *RuntimeLogMutation) Level() (r runtimelog.Level, exists bool) {
+	v := m.level
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLevel returns the old "level" field's value of the RuntimeLog entity.
+// If the RuntimeLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RuntimeLogMutation) OldLevel(ctx context.Context) (v runtimelog.Level, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLevel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLevel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLevel: %w", err)
+	}
+	return oldValue.Level, nil
+}
+
+// ResetLevel resets all changes to the "level" field.
+func (m *RuntimeLogMutation) ResetLevel() {
+	m.level = nil
+}
+
+// SetMessage sets the "message" field.
+func (m *RuntimeLogMutation) SetMessage(s string) {
+	m.message = &s
+}
+
+// Message returns the value of the "message" field in the mutation.
+func (m *RuntimeLogMutation) Message() (r string, exists bool) {
+	v := m.message
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMessage returns the old "message" field's value of the RuntimeLog entity.
+// If the RuntimeLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RuntimeLogMutation) OldMessage(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMessage is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMessage requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMessage: %w", err)
+	}
+	return oldValue.Message, nil
+}
+
+// ResetMessage resets all changes to the "message" field.
+func (m *RuntimeLogMutation) ResetMessage() {
+	m.message = nil
+}
+
+// SetCaller sets the "caller" field.
+func (m *RuntimeLogMutation) SetCaller(s string) {
+	m.caller = &s
+}
+
+// Caller returns the value of the "caller" field in the mutation.
+func (m *RuntimeLogMutation) Caller() (r string, exists bool) {
+	v := m.caller
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCaller returns the old "caller" field's value of the RuntimeLog entity.
+// If the RuntimeLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RuntimeLogMutation) OldCaller(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCaller is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCaller requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCaller: %w", err)
+	}
+	return oldValue.Caller, nil
+}
+
+// ClearCaller clears the value of the "caller" field.
+func (m *RuntimeLogMutation) ClearCaller() {
+	m.caller = nil
+	m.clearedFields[runtimelog.FieldCaller] = struct{}{}
+}
+
+// CallerCleared returns if the "caller" field was cleared in this mutation.
+func (m *RuntimeLogMutation) CallerCleared() bool {
+	_, ok := m.clearedFields[runtimelog.FieldCaller]
+	return ok
+}
+
+// ResetCaller resets all changes to the "caller" field.
+func (m *RuntimeLogMutation) ResetCaller() {
+	m.caller = nil
+	delete(m.clearedFields, runtimelog.FieldCaller)
+}
+
+// SetTraceID sets the "trace_id" field.
+func (m *RuntimeLogMutation) SetTraceID(s string) {
+	m.trace_id = &s
+}
+
+// TraceID returns the value of the "trace_id" field in the mutation.
+func (m *RuntimeLogMutation) TraceID() (r string, exists bool) {
+	v := m.trace_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTraceID returns the old "trace_id" field's value of the RuntimeLog entity.
+// If the RuntimeLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RuntimeLogMutation) OldTraceID(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTraceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTraceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTraceID: %w", err)
+	}
+	return oldValue.TraceID, nil
+}
+
+// ClearTraceID clears the value of the "trace_id" field.
+func (m *RuntimeLogMutation) ClearTraceID() {
+	m.trace_id = nil
+	m.clearedFields[runtimelog.FieldTraceID] = struct{}{}
+}
+
+// TraceIDCleared returns if the "trace_id" field was cleared in this mutation.
+func (m *RuntimeLogMutation) TraceIDCleared() bool {
+	_, ok := m.clearedFields[runtimelog.FieldTraceID]
+	return ok
+}
+
+// ResetTraceID resets all changes to the "trace_id" field.
+func (m *RuntimeLogMutation) ResetTraceID() {
+	m.trace_id = nil
+	delete(m.clearedFields, runtimelog.FieldTraceID)
+}
+
+// SetRequestID sets the "request_id" field.
+func (m *RuntimeLogMutation) SetRequestID(s string) {
+	m.request_id = &s
+}
+
+// RequestID returns the value of the "request_id" field in the mutation.
+func (m *RuntimeLogMutation) RequestID() (r string, exists bool) {
+	v := m.request_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRequestID returns the old "request_id" field's value of the RuntimeLog entity.
+// If the RuntimeLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RuntimeLogMutation) OldRequestID(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRequestID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRequestID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRequestID: %w", err)
+	}
+	return oldValue.RequestID, nil
+}
+
+// ClearRequestID clears the value of the "request_id" field.
+func (m *RuntimeLogMutation) ClearRequestID() {
+	m.request_id = nil
+	m.clearedFields[runtimelog.FieldRequestID] = struct{}{}
+}
+
+// RequestIDCleared returns if the "request_id" field was cleared in this mutation.
+func (m *RuntimeLogMutation) RequestIDCleared() bool {
+	_, ok := m.clearedFields[runtimelog.FieldRequestID]
+	return ok
+}
+
+// ResetRequestID resets all changes to the "request_id" field.
+func (m *RuntimeLogMutation) ResetRequestID() {
+	m.request_id = nil
+	delete(m.clearedFields, runtimelog.FieldRequestID)
+}
+
+// SetOperationName sets the "operation_name" field.
+func (m *RuntimeLogMutation) SetOperationName(s string) {
+	m.operation_name = &s
+}
+
+// OperationName returns the value of the "operation_name" field in the mutation.
+func (m *RuntimeLogMutation) OperationName() (r string, exists bool) {
+	v := m.operation_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOperationName returns the old "operation_name" field's value of the RuntimeLog entity.
+// If the RuntimeLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RuntimeLogMutation) OldOperationName(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOperationName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOperationName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOperationName: %w", err)
+	}
+	return oldValue.OperationName, nil
+}
+
+// ClearOperationName clears the value of the "operation_name" field.
+func (m *RuntimeLogMutation) ClearOperationName() {
+	m.operation_name = nil
+	m.clearedFields[runtimelog.FieldOperationName] = struct{}{}
+}
+
+// OperationNameCleared returns if the "operation_name" field was cleared in this mutation.
+func (m *RuntimeLogMutation) OperationNameCleared() bool {
+	_, ok := m.clearedFields[runtimelog.FieldOperationName]
+	return ok
+}
+
+// ResetOperationName resets all changes to the "operation_name" field.
+func (m *RuntimeLogMutation) ResetOperationName() {
+	m.operation_name = nil
+	delete(m.clearedFields, runtimelog.FieldOperationName)
+}
+
+// SetChannelID sets the "channel_id" field.
+func (m *RuntimeLogMutation) SetChannelID(i int) {
+	m.channel_id = &i
+	m.addchannel_id = nil
+}
+
+// ChannelID returns the value of the "channel_id" field in the mutation.
+func (m *RuntimeLogMutation) ChannelID() (r int, exists bool) {
+	v := m.channel_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldChannelID returns the old "channel_id" field's value of the RuntimeLog entity.
+// If the RuntimeLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RuntimeLogMutation) OldChannelID(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldChannelID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldChannelID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldChannelID: %w", err)
+	}
+	return oldValue.ChannelID, nil
+}
+
+// AddChannelID adds i to the "channel_id" field.
+func (m *RuntimeLogMutation) AddChannelID(i int) {
+	if m.addchannel_id != nil {
+		*m.addchannel_id += i
+	} else {
+		m.addchannel_id = &i
+	}
+}
+
+// AddedChannelID returns the value that was added to the "channel_id" field in this mutation.
+func (m *RuntimeLogMutation) AddedChannelID() (r int, exists bool) {
+	v := m.addchannel_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearChannelID clears the value of the "channel_id" field.
+func (m *RuntimeLogMutation) ClearChannelID() {
+	m.channel_id = nil
+	m.addchannel_id = nil
+	m.clearedFields[runtimelog.FieldChannelID] = struct{}{}
+}
+
+// ChannelIDCleared returns if the "channel_id" field was cleared in this mutation.
+func (m *RuntimeLogMutation) ChannelIDCleared() bool {
+	_, ok := m.clearedFields[runtimelog.FieldChannelID]
+	return ok
+}
+
+// ResetChannelID resets all changes to the "channel_id" field.
+func (m *RuntimeLogMutation) ResetChannelID() {
+	m.channel_id = nil
+	m.addchannel_id = nil
+	delete(m.clearedFields, runtimelog.FieldChannelID)
+}
+
+// SetChannelName sets the "channel_name" field.
+func (m *RuntimeLogMutation) SetChannelName(s string) {
+	m.channel_name = &s
+}
+
+// ChannelName returns the value of the "channel_name" field in the mutation.
+func (m *RuntimeLogMutation) ChannelName() (r string, exists bool) {
+	v := m.channel_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldChannelName returns the old "channel_name" field's value of the RuntimeLog entity.
+// If the RuntimeLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RuntimeLogMutation) OldChannelName(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldChannelName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldChannelName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldChannelName: %w", err)
+	}
+	return oldValue.ChannelName, nil
+}
+
+// ClearChannelName clears the value of the "channel_name" field.
+func (m *RuntimeLogMutation) ClearChannelName() {
+	m.channel_name = nil
+	m.clearedFields[runtimelog.FieldChannelName] = struct{}{}
+}
+
+// ChannelNameCleared returns if the "channel_name" field was cleared in this mutation.
+func (m *RuntimeLogMutation) ChannelNameCleared() bool {
+	_, ok := m.clearedFields[runtimelog.FieldChannelName]
+	return ok
+}
+
+// ResetChannelName resets all changes to the "channel_name" field.
+func (m *RuntimeLogMutation) ResetChannelName() {
+	m.channel_name = nil
+	delete(m.clearedFields, runtimelog.FieldChannelName)
+}
+
+// SetModelID sets the "model_id" field.
+func (m *RuntimeLogMutation) SetModelID(s string) {
+	m.model_id = &s
+}
+
+// ModelID returns the value of the "model_id" field in the mutation.
+func (m *RuntimeLogMutation) ModelID() (r string, exists bool) {
+	v := m.model_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldModelID returns the old "model_id" field's value of the RuntimeLog entity.
+// If the RuntimeLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RuntimeLogMutation) OldModelID(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldModelID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldModelID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldModelID: %w", err)
+	}
+	return oldValue.ModelID, nil
+}
+
+// ClearModelID clears the value of the "model_id" field.
+func (m *RuntimeLogMutation) ClearModelID() {
+	m.model_id = nil
+	m.clearedFields[runtimelog.FieldModelID] = struct{}{}
+}
+
+// ModelIDCleared returns if the "model_id" field was cleared in this mutation.
+func (m *RuntimeLogMutation) ModelIDCleared() bool {
+	_, ok := m.clearedFields[runtimelog.FieldModelID]
+	return ok
+}
+
+// ResetModelID resets all changes to the "model_id" field.
+func (m *RuntimeLogMutation) ResetModelID() {
+	m.model_id = nil
+	delete(m.clearedFields, runtimelog.FieldModelID)
+}
+
+// SetFieldsJSON sets the "fields_json" field.
+func (m *RuntimeLogMutation) SetFieldsJSON(value map[string]interface{}) {
+	m.fields_json = &value
+}
+
+// FieldsJSON returns the value of the "fields_json" field in the mutation.
+func (m *RuntimeLogMutation) FieldsJSON() (r map[string]interface{}, exists bool) {
+	v := m.fields_json
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFieldsJSON returns the old "fields_json" field's value of the RuntimeLog entity.
+// If the RuntimeLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RuntimeLogMutation) OldFieldsJSON(ctx context.Context) (v map[string]interface{}, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFieldsJSON is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFieldsJSON requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFieldsJSON: %w", err)
+	}
+	return oldValue.FieldsJSON, nil
+}
+
+// ResetFieldsJSON resets all changes to the "fields_json" field.
+func (m *RuntimeLogMutation) ResetFieldsJSON() {
+	m.fields_json = nil
+}
+
+// Where appends a list predicates to the RuntimeLogMutation builder.
+func (m *RuntimeLogMutation) Where(ps ...predicate.RuntimeLog) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the RuntimeLogMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *RuntimeLogMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.RuntimeLog, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *RuntimeLogMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *RuntimeLogMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (RuntimeLog).
+func (m *RuntimeLogMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *RuntimeLogMutation) Fields() []string {
+	fields := make([]string, 0, 13)
+	if m.created_at != nil {
+		fields = append(fields, runtimelog.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, runtimelog.FieldUpdatedAt)
+	}
+	if m.logger != nil {
+		fields = append(fields, runtimelog.FieldLogger)
+	}
+	if m.level != nil {
+		fields = append(fields, runtimelog.FieldLevel)
+	}
+	if m.message != nil {
+		fields = append(fields, runtimelog.FieldMessage)
+	}
+	if m.caller != nil {
+		fields = append(fields, runtimelog.FieldCaller)
+	}
+	if m.trace_id != nil {
+		fields = append(fields, runtimelog.FieldTraceID)
+	}
+	if m.request_id != nil {
+		fields = append(fields, runtimelog.FieldRequestID)
+	}
+	if m.operation_name != nil {
+		fields = append(fields, runtimelog.FieldOperationName)
+	}
+	if m.channel_id != nil {
+		fields = append(fields, runtimelog.FieldChannelID)
+	}
+	if m.channel_name != nil {
+		fields = append(fields, runtimelog.FieldChannelName)
+	}
+	if m.model_id != nil {
+		fields = append(fields, runtimelog.FieldModelID)
+	}
+	if m.fields_json != nil {
+		fields = append(fields, runtimelog.FieldFieldsJSON)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *RuntimeLogMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case runtimelog.FieldCreatedAt:
+		return m.CreatedAt()
+	case runtimelog.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case runtimelog.FieldLogger:
+		return m.Logger()
+	case runtimelog.FieldLevel:
+		return m.Level()
+	case runtimelog.FieldMessage:
+		return m.Message()
+	case runtimelog.FieldCaller:
+		return m.Caller()
+	case runtimelog.FieldTraceID:
+		return m.TraceID()
+	case runtimelog.FieldRequestID:
+		return m.RequestID()
+	case runtimelog.FieldOperationName:
+		return m.OperationName()
+	case runtimelog.FieldChannelID:
+		return m.ChannelID()
+	case runtimelog.FieldChannelName:
+		return m.ChannelName()
+	case runtimelog.FieldModelID:
+		return m.ModelID()
+	case runtimelog.FieldFieldsJSON:
+		return m.FieldsJSON()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *RuntimeLogMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case runtimelog.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case runtimelog.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case runtimelog.FieldLogger:
+		return m.OldLogger(ctx)
+	case runtimelog.FieldLevel:
+		return m.OldLevel(ctx)
+	case runtimelog.FieldMessage:
+		return m.OldMessage(ctx)
+	case runtimelog.FieldCaller:
+		return m.OldCaller(ctx)
+	case runtimelog.FieldTraceID:
+		return m.OldTraceID(ctx)
+	case runtimelog.FieldRequestID:
+		return m.OldRequestID(ctx)
+	case runtimelog.FieldOperationName:
+		return m.OldOperationName(ctx)
+	case runtimelog.FieldChannelID:
+		return m.OldChannelID(ctx)
+	case runtimelog.FieldChannelName:
+		return m.OldChannelName(ctx)
+	case runtimelog.FieldModelID:
+		return m.OldModelID(ctx)
+	case runtimelog.FieldFieldsJSON:
+		return m.OldFieldsJSON(ctx)
+	}
+	return nil, fmt.Errorf("unknown RuntimeLog field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *RuntimeLogMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case runtimelog.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case runtimelog.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case runtimelog.FieldLogger:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLogger(v)
+		return nil
+	case runtimelog.FieldLevel:
+		v, ok := value.(runtimelog.Level)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLevel(v)
+		return nil
+	case runtimelog.FieldMessage:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMessage(v)
+		return nil
+	case runtimelog.FieldCaller:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCaller(v)
+		return nil
+	case runtimelog.FieldTraceID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTraceID(v)
+		return nil
+	case runtimelog.FieldRequestID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRequestID(v)
+		return nil
+	case runtimelog.FieldOperationName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOperationName(v)
+		return nil
+	case runtimelog.FieldChannelID:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetChannelID(v)
+		return nil
+	case runtimelog.FieldChannelName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetChannelName(v)
+		return nil
+	case runtimelog.FieldModelID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetModelID(v)
+		return nil
+	case runtimelog.FieldFieldsJSON:
+		v, ok := value.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFieldsJSON(v)
+		return nil
+	}
+	return fmt.Errorf("unknown RuntimeLog field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *RuntimeLogMutation) AddedFields() []string {
+	var fields []string
+	if m.addchannel_id != nil {
+		fields = append(fields, runtimelog.FieldChannelID)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *RuntimeLogMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case runtimelog.FieldChannelID:
+		return m.AddedChannelID()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *RuntimeLogMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case runtimelog.FieldChannelID:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddChannelID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown RuntimeLog numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *RuntimeLogMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(runtimelog.FieldCaller) {
+		fields = append(fields, runtimelog.FieldCaller)
+	}
+	if m.FieldCleared(runtimelog.FieldTraceID) {
+		fields = append(fields, runtimelog.FieldTraceID)
+	}
+	if m.FieldCleared(runtimelog.FieldRequestID) {
+		fields = append(fields, runtimelog.FieldRequestID)
+	}
+	if m.FieldCleared(runtimelog.FieldOperationName) {
+		fields = append(fields, runtimelog.FieldOperationName)
+	}
+	if m.FieldCleared(runtimelog.FieldChannelID) {
+		fields = append(fields, runtimelog.FieldChannelID)
+	}
+	if m.FieldCleared(runtimelog.FieldChannelName) {
+		fields = append(fields, runtimelog.FieldChannelName)
+	}
+	if m.FieldCleared(runtimelog.FieldModelID) {
+		fields = append(fields, runtimelog.FieldModelID)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *RuntimeLogMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *RuntimeLogMutation) ClearField(name string) error {
+	switch name {
+	case runtimelog.FieldCaller:
+		m.ClearCaller()
+		return nil
+	case runtimelog.FieldTraceID:
+		m.ClearTraceID()
+		return nil
+	case runtimelog.FieldRequestID:
+		m.ClearRequestID()
+		return nil
+	case runtimelog.FieldOperationName:
+		m.ClearOperationName()
+		return nil
+	case runtimelog.FieldChannelID:
+		m.ClearChannelID()
+		return nil
+	case runtimelog.FieldChannelName:
+		m.ClearChannelName()
+		return nil
+	case runtimelog.FieldModelID:
+		m.ClearModelID()
+		return nil
+	}
+	return fmt.Errorf("unknown RuntimeLog nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *RuntimeLogMutation) ResetField(name string) error {
+	switch name {
+	case runtimelog.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case runtimelog.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case runtimelog.FieldLogger:
+		m.ResetLogger()
+		return nil
+	case runtimelog.FieldLevel:
+		m.ResetLevel()
+		return nil
+	case runtimelog.FieldMessage:
+		m.ResetMessage()
+		return nil
+	case runtimelog.FieldCaller:
+		m.ResetCaller()
+		return nil
+	case runtimelog.FieldTraceID:
+		m.ResetTraceID()
+		return nil
+	case runtimelog.FieldRequestID:
+		m.ResetRequestID()
+		return nil
+	case runtimelog.FieldOperationName:
+		m.ResetOperationName()
+		return nil
+	case runtimelog.FieldChannelID:
+		m.ResetChannelID()
+		return nil
+	case runtimelog.FieldChannelName:
+		m.ResetChannelName()
+		return nil
+	case runtimelog.FieldModelID:
+		m.ResetModelID()
+		return nil
+	case runtimelog.FieldFieldsJSON:
+		m.ResetFieldsJSON()
+		return nil
+	}
+	return fmt.Errorf("unknown RuntimeLog field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *RuntimeLogMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *RuntimeLogMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *RuntimeLogMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *RuntimeLogMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *RuntimeLogMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *RuntimeLogMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *RuntimeLogMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown RuntimeLog unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *RuntimeLogMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown RuntimeLog edge %s", name)
 }
 
 // SystemMutation represents an operation that mutates the System nodes in the graph.

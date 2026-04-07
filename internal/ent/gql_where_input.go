@@ -25,6 +25,7 @@ import (
 	"github.com/looplj/axonhub/internal/ent/request"
 	"github.com/looplj/axonhub/internal/ent/requestexecution"
 	"github.com/looplj/axonhub/internal/ent/role"
+	"github.com/looplj/axonhub/internal/ent/runtimelog"
 	"github.com/looplj/axonhub/internal/ent/system"
 	"github.com/looplj/axonhub/internal/ent/thread"
 	"github.com/looplj/axonhub/internal/ent/trace"
@@ -8641,6 +8642,738 @@ func (i *RoleWhereInput) P() (predicate.Role, error) {
 		return predicates[0], nil
 	default:
 		return role.And(predicates...), nil
+	}
+}
+
+// RuntimeLogWhereInput represents a where input for filtering RuntimeLog queries.
+type RuntimeLogWhereInput struct {
+	Predicates []predicate.RuntimeLog  `json:"-"`
+	Not        *RuntimeLogWhereInput   `json:"not,omitempty"`
+	Or         []*RuntimeLogWhereInput `json:"or,omitempty"`
+	And        []*RuntimeLogWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "created_at" field predicates.
+	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdAtNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdAtIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdAtNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdAtGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdAtGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdAtLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdAtLTE,omitempty"`
+
+	// "updated_at" field predicates.
+	UpdatedAt      *time.Time  `json:"updatedAt,omitempty"`
+	UpdatedAtNEQ   *time.Time  `json:"updatedAtNEQ,omitempty"`
+	UpdatedAtIn    []time.Time `json:"updatedAtIn,omitempty"`
+	UpdatedAtNotIn []time.Time `json:"updatedAtNotIn,omitempty"`
+	UpdatedAtGT    *time.Time  `json:"updatedAtGT,omitempty"`
+	UpdatedAtGTE   *time.Time  `json:"updatedAtGTE,omitempty"`
+	UpdatedAtLT    *time.Time  `json:"updatedAtLT,omitempty"`
+	UpdatedAtLTE   *time.Time  `json:"updatedAtLTE,omitempty"`
+
+	// "logger" field predicates.
+	Logger             *string  `json:"logger,omitempty"`
+	LoggerNEQ          *string  `json:"loggerNEQ,omitempty"`
+	LoggerIn           []string `json:"loggerIn,omitempty"`
+	LoggerNotIn        []string `json:"loggerNotIn,omitempty"`
+	LoggerGT           *string  `json:"loggerGT,omitempty"`
+	LoggerGTE          *string  `json:"loggerGTE,omitempty"`
+	LoggerLT           *string  `json:"loggerLT,omitempty"`
+	LoggerLTE          *string  `json:"loggerLTE,omitempty"`
+	LoggerContains     *string  `json:"loggerContains,omitempty"`
+	LoggerHasPrefix    *string  `json:"loggerHasPrefix,omitempty"`
+	LoggerHasSuffix    *string  `json:"loggerHasSuffix,omitempty"`
+	LoggerEqualFold    *string  `json:"loggerEqualFold,omitempty"`
+	LoggerContainsFold *string  `json:"loggerContainsFold,omitempty"`
+
+	// "level" field predicates.
+	Level      *runtimelog.Level  `json:"level,omitempty"`
+	LevelNEQ   *runtimelog.Level  `json:"levelNEQ,omitempty"`
+	LevelIn    []runtimelog.Level `json:"levelIn,omitempty"`
+	LevelNotIn []runtimelog.Level `json:"levelNotIn,omitempty"`
+
+	// "message" field predicates.
+	Message             *string  `json:"message,omitempty"`
+	MessageNEQ          *string  `json:"messageNEQ,omitempty"`
+	MessageIn           []string `json:"messageIn,omitempty"`
+	MessageNotIn        []string `json:"messageNotIn,omitempty"`
+	MessageGT           *string  `json:"messageGT,omitempty"`
+	MessageGTE          *string  `json:"messageGTE,omitempty"`
+	MessageLT           *string  `json:"messageLT,omitempty"`
+	MessageLTE          *string  `json:"messageLTE,omitempty"`
+	MessageContains     *string  `json:"messageContains,omitempty"`
+	MessageHasPrefix    *string  `json:"messageHasPrefix,omitempty"`
+	MessageHasSuffix    *string  `json:"messageHasSuffix,omitempty"`
+	MessageEqualFold    *string  `json:"messageEqualFold,omitempty"`
+	MessageContainsFold *string  `json:"messageContainsFold,omitempty"`
+
+	// "caller" field predicates.
+	Caller             *string  `json:"caller,omitempty"`
+	CallerNEQ          *string  `json:"callerNEQ,omitempty"`
+	CallerIn           []string `json:"callerIn,omitempty"`
+	CallerNotIn        []string `json:"callerNotIn,omitempty"`
+	CallerGT           *string  `json:"callerGT,omitempty"`
+	CallerGTE          *string  `json:"callerGTE,omitempty"`
+	CallerLT           *string  `json:"callerLT,omitempty"`
+	CallerLTE          *string  `json:"callerLTE,omitempty"`
+	CallerContains     *string  `json:"callerContains,omitempty"`
+	CallerHasPrefix    *string  `json:"callerHasPrefix,omitempty"`
+	CallerHasSuffix    *string  `json:"callerHasSuffix,omitempty"`
+	CallerIsNil        bool     `json:"callerIsNil,omitempty"`
+	CallerNotNil       bool     `json:"callerNotNil,omitempty"`
+	CallerEqualFold    *string  `json:"callerEqualFold,omitempty"`
+	CallerContainsFold *string  `json:"callerContainsFold,omitempty"`
+
+	// "trace_id" field predicates.
+	TraceID             *string  `json:"traceID,omitempty"`
+	TraceIDNEQ          *string  `json:"traceIDNEQ,omitempty"`
+	TraceIDIn           []string `json:"traceIDIn,omitempty"`
+	TraceIDNotIn        []string `json:"traceIDNotIn,omitempty"`
+	TraceIDGT           *string  `json:"traceIDGT,omitempty"`
+	TraceIDGTE          *string  `json:"traceIDGTE,omitempty"`
+	TraceIDLT           *string  `json:"traceIDLT,omitempty"`
+	TraceIDLTE          *string  `json:"traceIDLTE,omitempty"`
+	TraceIDContains     *string  `json:"traceIDContains,omitempty"`
+	TraceIDHasPrefix    *string  `json:"traceIDHasPrefix,omitempty"`
+	TraceIDHasSuffix    *string  `json:"traceIDHasSuffix,omitempty"`
+	TraceIDIsNil        bool     `json:"traceIDIsNil,omitempty"`
+	TraceIDNotNil       bool     `json:"traceIDNotNil,omitempty"`
+	TraceIDEqualFold    *string  `json:"traceIDEqualFold,omitempty"`
+	TraceIDContainsFold *string  `json:"traceIDContainsFold,omitempty"`
+
+	// "request_id" field predicates.
+	RequestID             *string  `json:"requestID,omitempty"`
+	RequestIDNEQ          *string  `json:"requestIDNEQ,omitempty"`
+	RequestIDIn           []string `json:"requestIDIn,omitempty"`
+	RequestIDNotIn        []string `json:"requestIDNotIn,omitempty"`
+	RequestIDGT           *string  `json:"requestIDGT,omitempty"`
+	RequestIDGTE          *string  `json:"requestIDGTE,omitempty"`
+	RequestIDLT           *string  `json:"requestIDLT,omitempty"`
+	RequestIDLTE          *string  `json:"requestIDLTE,omitempty"`
+	RequestIDContains     *string  `json:"requestIDContains,omitempty"`
+	RequestIDHasPrefix    *string  `json:"requestIDHasPrefix,omitempty"`
+	RequestIDHasSuffix    *string  `json:"requestIDHasSuffix,omitempty"`
+	RequestIDIsNil        bool     `json:"requestIDIsNil,omitempty"`
+	RequestIDNotNil       bool     `json:"requestIDNotNil,omitempty"`
+	RequestIDEqualFold    *string  `json:"requestIDEqualFold,omitempty"`
+	RequestIDContainsFold *string  `json:"requestIDContainsFold,omitempty"`
+
+	// "operation_name" field predicates.
+	OperationName             *string  `json:"operationName,omitempty"`
+	OperationNameNEQ          *string  `json:"operationNameNEQ,omitempty"`
+	OperationNameIn           []string `json:"operationNameIn,omitempty"`
+	OperationNameNotIn        []string `json:"operationNameNotIn,omitempty"`
+	OperationNameGT           *string  `json:"operationNameGT,omitempty"`
+	OperationNameGTE          *string  `json:"operationNameGTE,omitempty"`
+	OperationNameLT           *string  `json:"operationNameLT,omitempty"`
+	OperationNameLTE          *string  `json:"operationNameLTE,omitempty"`
+	OperationNameContains     *string  `json:"operationNameContains,omitempty"`
+	OperationNameHasPrefix    *string  `json:"operationNameHasPrefix,omitempty"`
+	OperationNameHasSuffix    *string  `json:"operationNameHasSuffix,omitempty"`
+	OperationNameIsNil        bool     `json:"operationNameIsNil,omitempty"`
+	OperationNameNotNil       bool     `json:"operationNameNotNil,omitempty"`
+	OperationNameEqualFold    *string  `json:"operationNameEqualFold,omitempty"`
+	OperationNameContainsFold *string  `json:"operationNameContainsFold,omitempty"`
+
+	// "channel_id" field predicates.
+	ChannelID       *int  `json:"channelID,omitempty"`
+	ChannelIDNEQ    *int  `json:"channelIDNEQ,omitempty"`
+	ChannelIDIn     []int `json:"channelIDIn,omitempty"`
+	ChannelIDNotIn  []int `json:"channelIDNotIn,omitempty"`
+	ChannelIDGT     *int  `json:"channelIDGT,omitempty"`
+	ChannelIDGTE    *int  `json:"channelIDGTE,omitempty"`
+	ChannelIDLT     *int  `json:"channelIDLT,omitempty"`
+	ChannelIDLTE    *int  `json:"channelIDLTE,omitempty"`
+	ChannelIDIsNil  bool  `json:"channelIDIsNil,omitempty"`
+	ChannelIDNotNil bool  `json:"channelIDNotNil,omitempty"`
+
+	// "channel_name" field predicates.
+	ChannelName             *string  `json:"channelName,omitempty"`
+	ChannelNameNEQ          *string  `json:"channelNameNEQ,omitempty"`
+	ChannelNameIn           []string `json:"channelNameIn,omitempty"`
+	ChannelNameNotIn        []string `json:"channelNameNotIn,omitempty"`
+	ChannelNameGT           *string  `json:"channelNameGT,omitempty"`
+	ChannelNameGTE          *string  `json:"channelNameGTE,omitempty"`
+	ChannelNameLT           *string  `json:"channelNameLT,omitempty"`
+	ChannelNameLTE          *string  `json:"channelNameLTE,omitempty"`
+	ChannelNameContains     *string  `json:"channelNameContains,omitempty"`
+	ChannelNameHasPrefix    *string  `json:"channelNameHasPrefix,omitempty"`
+	ChannelNameHasSuffix    *string  `json:"channelNameHasSuffix,omitempty"`
+	ChannelNameIsNil        bool     `json:"channelNameIsNil,omitempty"`
+	ChannelNameNotNil       bool     `json:"channelNameNotNil,omitempty"`
+	ChannelNameEqualFold    *string  `json:"channelNameEqualFold,omitempty"`
+	ChannelNameContainsFold *string  `json:"channelNameContainsFold,omitempty"`
+
+	// "model_id" field predicates.
+	ModelID             *string  `json:"modelID,omitempty"`
+	ModelIDNEQ          *string  `json:"modelIDNEQ,omitempty"`
+	ModelIDIn           []string `json:"modelIDIn,omitempty"`
+	ModelIDNotIn        []string `json:"modelIDNotIn,omitempty"`
+	ModelIDGT           *string  `json:"modelIDGT,omitempty"`
+	ModelIDGTE          *string  `json:"modelIDGTE,omitempty"`
+	ModelIDLT           *string  `json:"modelIDLT,omitempty"`
+	ModelIDLTE          *string  `json:"modelIDLTE,omitempty"`
+	ModelIDContains     *string  `json:"modelIDContains,omitempty"`
+	ModelIDHasPrefix    *string  `json:"modelIDHasPrefix,omitempty"`
+	ModelIDHasSuffix    *string  `json:"modelIDHasSuffix,omitempty"`
+	ModelIDIsNil        bool     `json:"modelIDIsNil,omitempty"`
+	ModelIDNotNil       bool     `json:"modelIDNotNil,omitempty"`
+	ModelIDEqualFold    *string  `json:"modelIDEqualFold,omitempty"`
+	ModelIDContainsFold *string  `json:"modelIDContainsFold,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *RuntimeLogWhereInput) AddPredicates(predicates ...predicate.RuntimeLog) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the RuntimeLogWhereInput filter on the RuntimeLogQuery builder.
+func (i *RuntimeLogWhereInput) Filter(q *RuntimeLogQuery) (*RuntimeLogQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyRuntimeLogWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyRuntimeLogWhereInput is returned in case the RuntimeLogWhereInput is empty.
+var ErrEmptyRuntimeLogWhereInput = errors.New("ent: empty predicate RuntimeLogWhereInput")
+
+// P returns a predicate for filtering runtimelogs.
+// An error is returned if the input is empty or invalid.
+func (i *RuntimeLogWhereInput) P() (predicate.RuntimeLog, error) {
+	var predicates []predicate.RuntimeLog
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, runtimelog.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.RuntimeLog, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, runtimelog.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.RuntimeLog, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, runtimelog.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, runtimelog.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, runtimelog.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, runtimelog.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, runtimelog.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, runtimelog.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, runtimelog.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, runtimelog.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, runtimelog.IDLTE(*i.IDLTE))
+	}
+	if i.CreatedAt != nil {
+		predicates = append(predicates, runtimelog.CreatedAtEQ(*i.CreatedAt))
+	}
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, runtimelog.CreatedAtNEQ(*i.CreatedAtNEQ))
+	}
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, runtimelog.CreatedAtIn(i.CreatedAtIn...))
+	}
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, runtimelog.CreatedAtNotIn(i.CreatedAtNotIn...))
+	}
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, runtimelog.CreatedAtGT(*i.CreatedAtGT))
+	}
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, runtimelog.CreatedAtGTE(*i.CreatedAtGTE))
+	}
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, runtimelog.CreatedAtLT(*i.CreatedAtLT))
+	}
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, runtimelog.CreatedAtLTE(*i.CreatedAtLTE))
+	}
+	if i.UpdatedAt != nil {
+		predicates = append(predicates, runtimelog.UpdatedAtEQ(*i.UpdatedAt))
+	}
+	if i.UpdatedAtNEQ != nil {
+		predicates = append(predicates, runtimelog.UpdatedAtNEQ(*i.UpdatedAtNEQ))
+	}
+	if len(i.UpdatedAtIn) > 0 {
+		predicates = append(predicates, runtimelog.UpdatedAtIn(i.UpdatedAtIn...))
+	}
+	if len(i.UpdatedAtNotIn) > 0 {
+		predicates = append(predicates, runtimelog.UpdatedAtNotIn(i.UpdatedAtNotIn...))
+	}
+	if i.UpdatedAtGT != nil {
+		predicates = append(predicates, runtimelog.UpdatedAtGT(*i.UpdatedAtGT))
+	}
+	if i.UpdatedAtGTE != nil {
+		predicates = append(predicates, runtimelog.UpdatedAtGTE(*i.UpdatedAtGTE))
+	}
+	if i.UpdatedAtLT != nil {
+		predicates = append(predicates, runtimelog.UpdatedAtLT(*i.UpdatedAtLT))
+	}
+	if i.UpdatedAtLTE != nil {
+		predicates = append(predicates, runtimelog.UpdatedAtLTE(*i.UpdatedAtLTE))
+	}
+	if i.Logger != nil {
+		predicates = append(predicates, runtimelog.LoggerEQ(*i.Logger))
+	}
+	if i.LoggerNEQ != nil {
+		predicates = append(predicates, runtimelog.LoggerNEQ(*i.LoggerNEQ))
+	}
+	if len(i.LoggerIn) > 0 {
+		predicates = append(predicates, runtimelog.LoggerIn(i.LoggerIn...))
+	}
+	if len(i.LoggerNotIn) > 0 {
+		predicates = append(predicates, runtimelog.LoggerNotIn(i.LoggerNotIn...))
+	}
+	if i.LoggerGT != nil {
+		predicates = append(predicates, runtimelog.LoggerGT(*i.LoggerGT))
+	}
+	if i.LoggerGTE != nil {
+		predicates = append(predicates, runtimelog.LoggerGTE(*i.LoggerGTE))
+	}
+	if i.LoggerLT != nil {
+		predicates = append(predicates, runtimelog.LoggerLT(*i.LoggerLT))
+	}
+	if i.LoggerLTE != nil {
+		predicates = append(predicates, runtimelog.LoggerLTE(*i.LoggerLTE))
+	}
+	if i.LoggerContains != nil {
+		predicates = append(predicates, runtimelog.LoggerContains(*i.LoggerContains))
+	}
+	if i.LoggerHasPrefix != nil {
+		predicates = append(predicates, runtimelog.LoggerHasPrefix(*i.LoggerHasPrefix))
+	}
+	if i.LoggerHasSuffix != nil {
+		predicates = append(predicates, runtimelog.LoggerHasSuffix(*i.LoggerHasSuffix))
+	}
+	if i.LoggerEqualFold != nil {
+		predicates = append(predicates, runtimelog.LoggerEqualFold(*i.LoggerEqualFold))
+	}
+	if i.LoggerContainsFold != nil {
+		predicates = append(predicates, runtimelog.LoggerContainsFold(*i.LoggerContainsFold))
+	}
+	if i.Level != nil {
+		predicates = append(predicates, runtimelog.LevelEQ(*i.Level))
+	}
+	if i.LevelNEQ != nil {
+		predicates = append(predicates, runtimelog.LevelNEQ(*i.LevelNEQ))
+	}
+	if len(i.LevelIn) > 0 {
+		predicates = append(predicates, runtimelog.LevelIn(i.LevelIn...))
+	}
+	if len(i.LevelNotIn) > 0 {
+		predicates = append(predicates, runtimelog.LevelNotIn(i.LevelNotIn...))
+	}
+	if i.Message != nil {
+		predicates = append(predicates, runtimelog.MessageEQ(*i.Message))
+	}
+	if i.MessageNEQ != nil {
+		predicates = append(predicates, runtimelog.MessageNEQ(*i.MessageNEQ))
+	}
+	if len(i.MessageIn) > 0 {
+		predicates = append(predicates, runtimelog.MessageIn(i.MessageIn...))
+	}
+	if len(i.MessageNotIn) > 0 {
+		predicates = append(predicates, runtimelog.MessageNotIn(i.MessageNotIn...))
+	}
+	if i.MessageGT != nil {
+		predicates = append(predicates, runtimelog.MessageGT(*i.MessageGT))
+	}
+	if i.MessageGTE != nil {
+		predicates = append(predicates, runtimelog.MessageGTE(*i.MessageGTE))
+	}
+	if i.MessageLT != nil {
+		predicates = append(predicates, runtimelog.MessageLT(*i.MessageLT))
+	}
+	if i.MessageLTE != nil {
+		predicates = append(predicates, runtimelog.MessageLTE(*i.MessageLTE))
+	}
+	if i.MessageContains != nil {
+		predicates = append(predicates, runtimelog.MessageContains(*i.MessageContains))
+	}
+	if i.MessageHasPrefix != nil {
+		predicates = append(predicates, runtimelog.MessageHasPrefix(*i.MessageHasPrefix))
+	}
+	if i.MessageHasSuffix != nil {
+		predicates = append(predicates, runtimelog.MessageHasSuffix(*i.MessageHasSuffix))
+	}
+	if i.MessageEqualFold != nil {
+		predicates = append(predicates, runtimelog.MessageEqualFold(*i.MessageEqualFold))
+	}
+	if i.MessageContainsFold != nil {
+		predicates = append(predicates, runtimelog.MessageContainsFold(*i.MessageContainsFold))
+	}
+	if i.Caller != nil {
+		predicates = append(predicates, runtimelog.CallerEQ(*i.Caller))
+	}
+	if i.CallerNEQ != nil {
+		predicates = append(predicates, runtimelog.CallerNEQ(*i.CallerNEQ))
+	}
+	if len(i.CallerIn) > 0 {
+		predicates = append(predicates, runtimelog.CallerIn(i.CallerIn...))
+	}
+	if len(i.CallerNotIn) > 0 {
+		predicates = append(predicates, runtimelog.CallerNotIn(i.CallerNotIn...))
+	}
+	if i.CallerGT != nil {
+		predicates = append(predicates, runtimelog.CallerGT(*i.CallerGT))
+	}
+	if i.CallerGTE != nil {
+		predicates = append(predicates, runtimelog.CallerGTE(*i.CallerGTE))
+	}
+	if i.CallerLT != nil {
+		predicates = append(predicates, runtimelog.CallerLT(*i.CallerLT))
+	}
+	if i.CallerLTE != nil {
+		predicates = append(predicates, runtimelog.CallerLTE(*i.CallerLTE))
+	}
+	if i.CallerContains != nil {
+		predicates = append(predicates, runtimelog.CallerContains(*i.CallerContains))
+	}
+	if i.CallerHasPrefix != nil {
+		predicates = append(predicates, runtimelog.CallerHasPrefix(*i.CallerHasPrefix))
+	}
+	if i.CallerHasSuffix != nil {
+		predicates = append(predicates, runtimelog.CallerHasSuffix(*i.CallerHasSuffix))
+	}
+	if i.CallerIsNil {
+		predicates = append(predicates, runtimelog.CallerIsNil())
+	}
+	if i.CallerNotNil {
+		predicates = append(predicates, runtimelog.CallerNotNil())
+	}
+	if i.CallerEqualFold != nil {
+		predicates = append(predicates, runtimelog.CallerEqualFold(*i.CallerEqualFold))
+	}
+	if i.CallerContainsFold != nil {
+		predicates = append(predicates, runtimelog.CallerContainsFold(*i.CallerContainsFold))
+	}
+	if i.TraceID != nil {
+		predicates = append(predicates, runtimelog.TraceIDEQ(*i.TraceID))
+	}
+	if i.TraceIDNEQ != nil {
+		predicates = append(predicates, runtimelog.TraceIDNEQ(*i.TraceIDNEQ))
+	}
+	if len(i.TraceIDIn) > 0 {
+		predicates = append(predicates, runtimelog.TraceIDIn(i.TraceIDIn...))
+	}
+	if len(i.TraceIDNotIn) > 0 {
+		predicates = append(predicates, runtimelog.TraceIDNotIn(i.TraceIDNotIn...))
+	}
+	if i.TraceIDGT != nil {
+		predicates = append(predicates, runtimelog.TraceIDGT(*i.TraceIDGT))
+	}
+	if i.TraceIDGTE != nil {
+		predicates = append(predicates, runtimelog.TraceIDGTE(*i.TraceIDGTE))
+	}
+	if i.TraceIDLT != nil {
+		predicates = append(predicates, runtimelog.TraceIDLT(*i.TraceIDLT))
+	}
+	if i.TraceIDLTE != nil {
+		predicates = append(predicates, runtimelog.TraceIDLTE(*i.TraceIDLTE))
+	}
+	if i.TraceIDContains != nil {
+		predicates = append(predicates, runtimelog.TraceIDContains(*i.TraceIDContains))
+	}
+	if i.TraceIDHasPrefix != nil {
+		predicates = append(predicates, runtimelog.TraceIDHasPrefix(*i.TraceIDHasPrefix))
+	}
+	if i.TraceIDHasSuffix != nil {
+		predicates = append(predicates, runtimelog.TraceIDHasSuffix(*i.TraceIDHasSuffix))
+	}
+	if i.TraceIDIsNil {
+		predicates = append(predicates, runtimelog.TraceIDIsNil())
+	}
+	if i.TraceIDNotNil {
+		predicates = append(predicates, runtimelog.TraceIDNotNil())
+	}
+	if i.TraceIDEqualFold != nil {
+		predicates = append(predicates, runtimelog.TraceIDEqualFold(*i.TraceIDEqualFold))
+	}
+	if i.TraceIDContainsFold != nil {
+		predicates = append(predicates, runtimelog.TraceIDContainsFold(*i.TraceIDContainsFold))
+	}
+	if i.RequestID != nil {
+		predicates = append(predicates, runtimelog.RequestIDEQ(*i.RequestID))
+	}
+	if i.RequestIDNEQ != nil {
+		predicates = append(predicates, runtimelog.RequestIDNEQ(*i.RequestIDNEQ))
+	}
+	if len(i.RequestIDIn) > 0 {
+		predicates = append(predicates, runtimelog.RequestIDIn(i.RequestIDIn...))
+	}
+	if len(i.RequestIDNotIn) > 0 {
+		predicates = append(predicates, runtimelog.RequestIDNotIn(i.RequestIDNotIn...))
+	}
+	if i.RequestIDGT != nil {
+		predicates = append(predicates, runtimelog.RequestIDGT(*i.RequestIDGT))
+	}
+	if i.RequestIDGTE != nil {
+		predicates = append(predicates, runtimelog.RequestIDGTE(*i.RequestIDGTE))
+	}
+	if i.RequestIDLT != nil {
+		predicates = append(predicates, runtimelog.RequestIDLT(*i.RequestIDLT))
+	}
+	if i.RequestIDLTE != nil {
+		predicates = append(predicates, runtimelog.RequestIDLTE(*i.RequestIDLTE))
+	}
+	if i.RequestIDContains != nil {
+		predicates = append(predicates, runtimelog.RequestIDContains(*i.RequestIDContains))
+	}
+	if i.RequestIDHasPrefix != nil {
+		predicates = append(predicates, runtimelog.RequestIDHasPrefix(*i.RequestIDHasPrefix))
+	}
+	if i.RequestIDHasSuffix != nil {
+		predicates = append(predicates, runtimelog.RequestIDHasSuffix(*i.RequestIDHasSuffix))
+	}
+	if i.RequestIDIsNil {
+		predicates = append(predicates, runtimelog.RequestIDIsNil())
+	}
+	if i.RequestIDNotNil {
+		predicates = append(predicates, runtimelog.RequestIDNotNil())
+	}
+	if i.RequestIDEqualFold != nil {
+		predicates = append(predicates, runtimelog.RequestIDEqualFold(*i.RequestIDEqualFold))
+	}
+	if i.RequestIDContainsFold != nil {
+		predicates = append(predicates, runtimelog.RequestIDContainsFold(*i.RequestIDContainsFold))
+	}
+	if i.OperationName != nil {
+		predicates = append(predicates, runtimelog.OperationNameEQ(*i.OperationName))
+	}
+	if i.OperationNameNEQ != nil {
+		predicates = append(predicates, runtimelog.OperationNameNEQ(*i.OperationNameNEQ))
+	}
+	if len(i.OperationNameIn) > 0 {
+		predicates = append(predicates, runtimelog.OperationNameIn(i.OperationNameIn...))
+	}
+	if len(i.OperationNameNotIn) > 0 {
+		predicates = append(predicates, runtimelog.OperationNameNotIn(i.OperationNameNotIn...))
+	}
+	if i.OperationNameGT != nil {
+		predicates = append(predicates, runtimelog.OperationNameGT(*i.OperationNameGT))
+	}
+	if i.OperationNameGTE != nil {
+		predicates = append(predicates, runtimelog.OperationNameGTE(*i.OperationNameGTE))
+	}
+	if i.OperationNameLT != nil {
+		predicates = append(predicates, runtimelog.OperationNameLT(*i.OperationNameLT))
+	}
+	if i.OperationNameLTE != nil {
+		predicates = append(predicates, runtimelog.OperationNameLTE(*i.OperationNameLTE))
+	}
+	if i.OperationNameContains != nil {
+		predicates = append(predicates, runtimelog.OperationNameContains(*i.OperationNameContains))
+	}
+	if i.OperationNameHasPrefix != nil {
+		predicates = append(predicates, runtimelog.OperationNameHasPrefix(*i.OperationNameHasPrefix))
+	}
+	if i.OperationNameHasSuffix != nil {
+		predicates = append(predicates, runtimelog.OperationNameHasSuffix(*i.OperationNameHasSuffix))
+	}
+	if i.OperationNameIsNil {
+		predicates = append(predicates, runtimelog.OperationNameIsNil())
+	}
+	if i.OperationNameNotNil {
+		predicates = append(predicates, runtimelog.OperationNameNotNil())
+	}
+	if i.OperationNameEqualFold != nil {
+		predicates = append(predicates, runtimelog.OperationNameEqualFold(*i.OperationNameEqualFold))
+	}
+	if i.OperationNameContainsFold != nil {
+		predicates = append(predicates, runtimelog.OperationNameContainsFold(*i.OperationNameContainsFold))
+	}
+	if i.ChannelID != nil {
+		predicates = append(predicates, runtimelog.ChannelIDEQ(*i.ChannelID))
+	}
+	if i.ChannelIDNEQ != nil {
+		predicates = append(predicates, runtimelog.ChannelIDNEQ(*i.ChannelIDNEQ))
+	}
+	if len(i.ChannelIDIn) > 0 {
+		predicates = append(predicates, runtimelog.ChannelIDIn(i.ChannelIDIn...))
+	}
+	if len(i.ChannelIDNotIn) > 0 {
+		predicates = append(predicates, runtimelog.ChannelIDNotIn(i.ChannelIDNotIn...))
+	}
+	if i.ChannelIDGT != nil {
+		predicates = append(predicates, runtimelog.ChannelIDGT(*i.ChannelIDGT))
+	}
+	if i.ChannelIDGTE != nil {
+		predicates = append(predicates, runtimelog.ChannelIDGTE(*i.ChannelIDGTE))
+	}
+	if i.ChannelIDLT != nil {
+		predicates = append(predicates, runtimelog.ChannelIDLT(*i.ChannelIDLT))
+	}
+	if i.ChannelIDLTE != nil {
+		predicates = append(predicates, runtimelog.ChannelIDLTE(*i.ChannelIDLTE))
+	}
+	if i.ChannelIDIsNil {
+		predicates = append(predicates, runtimelog.ChannelIDIsNil())
+	}
+	if i.ChannelIDNotNil {
+		predicates = append(predicates, runtimelog.ChannelIDNotNil())
+	}
+	if i.ChannelName != nil {
+		predicates = append(predicates, runtimelog.ChannelNameEQ(*i.ChannelName))
+	}
+	if i.ChannelNameNEQ != nil {
+		predicates = append(predicates, runtimelog.ChannelNameNEQ(*i.ChannelNameNEQ))
+	}
+	if len(i.ChannelNameIn) > 0 {
+		predicates = append(predicates, runtimelog.ChannelNameIn(i.ChannelNameIn...))
+	}
+	if len(i.ChannelNameNotIn) > 0 {
+		predicates = append(predicates, runtimelog.ChannelNameNotIn(i.ChannelNameNotIn...))
+	}
+	if i.ChannelNameGT != nil {
+		predicates = append(predicates, runtimelog.ChannelNameGT(*i.ChannelNameGT))
+	}
+	if i.ChannelNameGTE != nil {
+		predicates = append(predicates, runtimelog.ChannelNameGTE(*i.ChannelNameGTE))
+	}
+	if i.ChannelNameLT != nil {
+		predicates = append(predicates, runtimelog.ChannelNameLT(*i.ChannelNameLT))
+	}
+	if i.ChannelNameLTE != nil {
+		predicates = append(predicates, runtimelog.ChannelNameLTE(*i.ChannelNameLTE))
+	}
+	if i.ChannelNameContains != nil {
+		predicates = append(predicates, runtimelog.ChannelNameContains(*i.ChannelNameContains))
+	}
+	if i.ChannelNameHasPrefix != nil {
+		predicates = append(predicates, runtimelog.ChannelNameHasPrefix(*i.ChannelNameHasPrefix))
+	}
+	if i.ChannelNameHasSuffix != nil {
+		predicates = append(predicates, runtimelog.ChannelNameHasSuffix(*i.ChannelNameHasSuffix))
+	}
+	if i.ChannelNameIsNil {
+		predicates = append(predicates, runtimelog.ChannelNameIsNil())
+	}
+	if i.ChannelNameNotNil {
+		predicates = append(predicates, runtimelog.ChannelNameNotNil())
+	}
+	if i.ChannelNameEqualFold != nil {
+		predicates = append(predicates, runtimelog.ChannelNameEqualFold(*i.ChannelNameEqualFold))
+	}
+	if i.ChannelNameContainsFold != nil {
+		predicates = append(predicates, runtimelog.ChannelNameContainsFold(*i.ChannelNameContainsFold))
+	}
+	if i.ModelID != nil {
+		predicates = append(predicates, runtimelog.ModelIDEQ(*i.ModelID))
+	}
+	if i.ModelIDNEQ != nil {
+		predicates = append(predicates, runtimelog.ModelIDNEQ(*i.ModelIDNEQ))
+	}
+	if len(i.ModelIDIn) > 0 {
+		predicates = append(predicates, runtimelog.ModelIDIn(i.ModelIDIn...))
+	}
+	if len(i.ModelIDNotIn) > 0 {
+		predicates = append(predicates, runtimelog.ModelIDNotIn(i.ModelIDNotIn...))
+	}
+	if i.ModelIDGT != nil {
+		predicates = append(predicates, runtimelog.ModelIDGT(*i.ModelIDGT))
+	}
+	if i.ModelIDGTE != nil {
+		predicates = append(predicates, runtimelog.ModelIDGTE(*i.ModelIDGTE))
+	}
+	if i.ModelIDLT != nil {
+		predicates = append(predicates, runtimelog.ModelIDLT(*i.ModelIDLT))
+	}
+	if i.ModelIDLTE != nil {
+		predicates = append(predicates, runtimelog.ModelIDLTE(*i.ModelIDLTE))
+	}
+	if i.ModelIDContains != nil {
+		predicates = append(predicates, runtimelog.ModelIDContains(*i.ModelIDContains))
+	}
+	if i.ModelIDHasPrefix != nil {
+		predicates = append(predicates, runtimelog.ModelIDHasPrefix(*i.ModelIDHasPrefix))
+	}
+	if i.ModelIDHasSuffix != nil {
+		predicates = append(predicates, runtimelog.ModelIDHasSuffix(*i.ModelIDHasSuffix))
+	}
+	if i.ModelIDIsNil {
+		predicates = append(predicates, runtimelog.ModelIDIsNil())
+	}
+	if i.ModelIDNotNil {
+		predicates = append(predicates, runtimelog.ModelIDNotNil())
+	}
+	if i.ModelIDEqualFold != nil {
+		predicates = append(predicates, runtimelog.ModelIDEqualFold(*i.ModelIDEqualFold))
+	}
+	if i.ModelIDContainsFold != nil {
+		predicates = append(predicates, runtimelog.ModelIDContainsFold(*i.ModelIDContainsFold))
+	}
+
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyRuntimeLogWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return runtimelog.And(predicates...), nil
 	}
 }
 

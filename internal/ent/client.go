@@ -32,6 +32,7 @@ import (
 	"github.com/looplj/axonhub/internal/ent/request"
 	"github.com/looplj/axonhub/internal/ent/requestexecution"
 	"github.com/looplj/axonhub/internal/ent/role"
+	"github.com/looplj/axonhub/internal/ent/runtimelog"
 	"github.com/looplj/axonhub/internal/ent/system"
 	"github.com/looplj/axonhub/internal/ent/thread"
 	"github.com/looplj/axonhub/internal/ent/trace"
@@ -80,6 +81,8 @@ type Client struct {
 	RequestExecution *RequestExecutionClient
 	// Role is the client for interacting with the Role builders.
 	Role *RoleClient
+	// RuntimeLog is the client for interacting with the RuntimeLog builders.
+	RuntimeLog *RuntimeLogClient
 	// System is the client for interacting with the System builders.
 	System *SystemClient
 	// Thread is the client for interacting with the Thread builders.
@@ -124,6 +127,7 @@ func (c *Client) init() {
 	c.Request = NewRequestClient(c.config)
 	c.RequestExecution = NewRequestExecutionClient(c.config)
 	c.Role = NewRoleClient(c.config)
+	c.RuntimeLog = NewRuntimeLogClient(c.config)
 	c.System = NewSystemClient(c.config)
 	c.Thread = NewThreadClient(c.config)
 	c.Trace = NewTraceClient(c.config)
@@ -240,6 +244,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Request:                  NewRequestClient(cfg),
 		RequestExecution:         NewRequestExecutionClient(cfg),
 		Role:                     NewRoleClient(cfg),
+		RuntimeLog:               NewRuntimeLogClient(cfg),
 		System:                   NewSystemClient(cfg),
 		Thread:                   NewThreadClient(cfg),
 		Trace:                    NewTraceClient(cfg),
@@ -283,6 +288,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Request:                  NewRequestClient(cfg),
 		RequestExecution:         NewRequestExecutionClient(cfg),
 		Role:                     NewRoleClient(cfg),
+		RuntimeLog:               NewRuntimeLogClient(cfg),
 		System:                   NewSystemClient(cfg),
 		Thread:                   NewThreadClient(cfg),
 		Trace:                    NewTraceClient(cfg),
@@ -323,8 +329,8 @@ func (c *Client) Use(hooks ...Hook) {
 		c.ChannelOverrideTemplate, c.ChannelProbe, c.DataStorage, c.Model,
 		c.ModelHealthHistory, c.ModelHealthSnapshot, c.Project, c.Prompt,
 		c.PromptProtectionRule, c.ProviderQuotaStatus, c.Request, c.RequestExecution,
-		c.Role, c.System, c.Thread, c.Trace, c.UsageLog, c.User, c.UserProject,
-		c.UserRole,
+		c.Role, c.RuntimeLog, c.System, c.Thread, c.Trace, c.UsageLog, c.User,
+		c.UserProject, c.UserRole,
 	} {
 		n.Use(hooks...)
 	}
@@ -338,8 +344,8 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.ChannelOverrideTemplate, c.ChannelProbe, c.DataStorage, c.Model,
 		c.ModelHealthHistory, c.ModelHealthSnapshot, c.Project, c.Prompt,
 		c.PromptProtectionRule, c.ProviderQuotaStatus, c.Request, c.RequestExecution,
-		c.Role, c.System, c.Thread, c.Trace, c.UsageLog, c.User, c.UserProject,
-		c.UserRole,
+		c.Role, c.RuntimeLog, c.System, c.Thread, c.Trace, c.UsageLog, c.User,
+		c.UserProject, c.UserRole,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -382,6 +388,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.RequestExecution.mutate(ctx, m)
 	case *RoleMutation:
 		return c.Role.mutate(ctx, m)
+	case *RuntimeLogMutation:
+		return c.RuntimeLog.mutate(ctx, m)
 	case *SystemMutation:
 		return c.System.mutate(ctx, m)
 	case *ThreadMutation:
@@ -3390,6 +3398,140 @@ func (c *RoleClient) mutate(ctx context.Context, m *RoleMutation) (Value, error)
 	}
 }
 
+// RuntimeLogClient is a client for the RuntimeLog schema.
+type RuntimeLogClient struct {
+	config
+}
+
+// NewRuntimeLogClient returns a client for the RuntimeLog from the given config.
+func NewRuntimeLogClient(c config) *RuntimeLogClient {
+	return &RuntimeLogClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `runtimelog.Hooks(f(g(h())))`.
+func (c *RuntimeLogClient) Use(hooks ...Hook) {
+	c.hooks.RuntimeLog = append(c.hooks.RuntimeLog, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `runtimelog.Intercept(f(g(h())))`.
+func (c *RuntimeLogClient) Intercept(interceptors ...Interceptor) {
+	c.inters.RuntimeLog = append(c.inters.RuntimeLog, interceptors...)
+}
+
+// Create returns a builder for creating a RuntimeLog entity.
+func (c *RuntimeLogClient) Create() *RuntimeLogCreate {
+	mutation := newRuntimeLogMutation(c.config, OpCreate)
+	return &RuntimeLogCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of RuntimeLog entities.
+func (c *RuntimeLogClient) CreateBulk(builders ...*RuntimeLogCreate) *RuntimeLogCreateBulk {
+	return &RuntimeLogCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *RuntimeLogClient) MapCreateBulk(slice any, setFunc func(*RuntimeLogCreate, int)) *RuntimeLogCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &RuntimeLogCreateBulk{err: fmt.Errorf("calling to RuntimeLogClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*RuntimeLogCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &RuntimeLogCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for RuntimeLog.
+func (c *RuntimeLogClient) Update() *RuntimeLogUpdate {
+	mutation := newRuntimeLogMutation(c.config, OpUpdate)
+	return &RuntimeLogUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *RuntimeLogClient) UpdateOne(_m *RuntimeLog) *RuntimeLogUpdateOne {
+	mutation := newRuntimeLogMutation(c.config, OpUpdateOne, withRuntimeLog(_m))
+	return &RuntimeLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *RuntimeLogClient) UpdateOneID(id int) *RuntimeLogUpdateOne {
+	mutation := newRuntimeLogMutation(c.config, OpUpdateOne, withRuntimeLogID(id))
+	return &RuntimeLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for RuntimeLog.
+func (c *RuntimeLogClient) Delete() *RuntimeLogDelete {
+	mutation := newRuntimeLogMutation(c.config, OpDelete)
+	return &RuntimeLogDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *RuntimeLogClient) DeleteOne(_m *RuntimeLog) *RuntimeLogDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *RuntimeLogClient) DeleteOneID(id int) *RuntimeLogDeleteOne {
+	builder := c.Delete().Where(runtimelog.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &RuntimeLogDeleteOne{builder}
+}
+
+// Query returns a query builder for RuntimeLog.
+func (c *RuntimeLogClient) Query() *RuntimeLogQuery {
+	return &RuntimeLogQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeRuntimeLog},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a RuntimeLog entity by its id.
+func (c *RuntimeLogClient) Get(ctx context.Context, id int) (*RuntimeLog, error) {
+	return c.Query().Where(runtimelog.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *RuntimeLogClient) GetX(ctx context.Context, id int) *RuntimeLog {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *RuntimeLogClient) Hooks() []Hook {
+	hooks := c.hooks.RuntimeLog
+	return append(hooks[:len(hooks):len(hooks)], runtimelog.Hooks[:]...)
+}
+
+// Interceptors returns the client interceptors.
+func (c *RuntimeLogClient) Interceptors() []Interceptor {
+	return c.inters.RuntimeLog
+}
+
+func (c *RuntimeLogClient) mutate(ctx context.Context, m *RuntimeLogMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&RuntimeLogCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&RuntimeLogUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&RuntimeLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&RuntimeLogDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown RuntimeLog mutation op: %q", m.Op())
+	}
+}
+
 // SystemClient is a client for the System schema.
 type SystemClient struct {
 	config
@@ -4623,14 +4765,14 @@ type (
 		APIKey, Channel, ChannelModelPrice, ChannelModelPriceVersion,
 		ChannelOverrideTemplate, ChannelProbe, DataStorage, Model, ModelHealthHistory,
 		ModelHealthSnapshot, Project, Prompt, PromptProtectionRule,
-		ProviderQuotaStatus, Request, RequestExecution, Role, System, Thread, Trace,
-		UsageLog, User, UserProject, UserRole []ent.Hook
+		ProviderQuotaStatus, Request, RequestExecution, Role, RuntimeLog, System,
+		Thread, Trace, UsageLog, User, UserProject, UserRole []ent.Hook
 	}
 	inters struct {
 		APIKey, Channel, ChannelModelPrice, ChannelModelPriceVersion,
 		ChannelOverrideTemplate, ChannelProbe, DataStorage, Model, ModelHealthHistory,
 		ModelHealthSnapshot, Project, Prompt, PromptProtectionRule,
-		ProviderQuotaStatus, Request, RequestExecution, Role, System, Thread, Trace,
-		UsageLog, User, UserProject, UserRole []ent.Interceptor
+		ProviderQuotaStatus, Request, RequestExecution, Role, RuntimeLog, System,
+		Thread, Trace, UsageLog, User, UserProject, UserRole []ent.Interceptor
 	}
 )

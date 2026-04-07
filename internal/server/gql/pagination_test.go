@@ -112,6 +112,13 @@ func TestQueryResolversRequirePagination(t *testing.T) {
 			},
 		},
 		{
+			name: "RuntimeLogs",
+			fn: func() error {
+				_, err := r.RuntimeLogs(t.Context(), nil, nil, nil, nil, nil, nil)
+				return err
+			},
+		},
+		{
 			name: "Systems",
 			fn: func() error {
 				_, err := r.Systems(t.Context(), nil, nil, nil, nil, nil, nil)

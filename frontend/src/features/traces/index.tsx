@@ -4,16 +4,20 @@ import { buildDateRangeWhereClause, type DateTimeRangeValue } from '@/utils/date
 import { useDebounce } from '@/hooks/use-debounce';
 import { usePaginationSearch } from '@/hooks/use-pagination-search';
 import useInterval from '@/hooks/useInterval';
-import { Header } from '@/components/layout/header';
-import { Main } from '@/components/layout/main';
 import { TracesTable } from './components';
 import { TracesProvider } from './context';
 import { useTraces } from './data';
+import { Header } from '@/components/layout/header';
+import { Main } from '@/components/layout/main';
 
-function TracesContent() {
+interface TracesContentProps {
+  pageSizeStorageKey?: string;
+}
+
+export function TracesContent({ pageSizeStorageKey = 'traces-table-page-size' }: TracesContentProps) {
   const { pageSize, setCursors, setPageSize, resetCursor, paginationArgs, cursorHistory } = usePaginationSearch({
     defaultPageSize: 20,
-    pageSizeStorageKey: 'traces-table-page-size',
+    pageSizeStorageKey,
   });
   const [dateRange, setDateRange] = useState<DateTimeRangeValue | undefined>();
   const [traceIdFilter, setTraceIdFilter] = useState<string>('');

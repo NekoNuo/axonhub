@@ -27,6 +27,7 @@ import (
 	"github.com/looplj/axonhub/internal/ent/request"
 	"github.com/looplj/axonhub/internal/ent/requestexecution"
 	"github.com/looplj/axonhub/internal/ent/role"
+	"github.com/looplj/axonhub/internal/ent/runtimelog"
 	"github.com/looplj/axonhub/internal/ent/system"
 	"github.com/looplj/axonhub/internal/ent/thread"
 	"github.com/looplj/axonhub/internal/ent/trace"
@@ -4475,6 +4476,155 @@ func newRolePaginateArgs(rv map[string]any) *rolePaginateArgs {
 	}
 	if v, ok := rv[whereField].(*RoleWhereInput); ok {
 		args.opts = append(args.opts, WithRoleFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (_q *RuntimeLogQuery) CollectFields(ctx context.Context, satisfies ...string) (*RuntimeLogQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return _q, nil
+	}
+	if err := _q.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return _q, nil
+}
+
+func (_q *RuntimeLogQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(runtimelog.Columns))
+		selectedFields = []string{runtimelog.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+		case "createdAt":
+			if _, ok := fieldSeen[runtimelog.FieldCreatedAt]; !ok {
+				selectedFields = append(selectedFields, runtimelog.FieldCreatedAt)
+				fieldSeen[runtimelog.FieldCreatedAt] = struct{}{}
+			}
+		case "updatedAt":
+			if _, ok := fieldSeen[runtimelog.FieldUpdatedAt]; !ok {
+				selectedFields = append(selectedFields, runtimelog.FieldUpdatedAt)
+				fieldSeen[runtimelog.FieldUpdatedAt] = struct{}{}
+			}
+		case "logger":
+			if _, ok := fieldSeen[runtimelog.FieldLogger]; !ok {
+				selectedFields = append(selectedFields, runtimelog.FieldLogger)
+				fieldSeen[runtimelog.FieldLogger] = struct{}{}
+			}
+		case "level":
+			if _, ok := fieldSeen[runtimelog.FieldLevel]; !ok {
+				selectedFields = append(selectedFields, runtimelog.FieldLevel)
+				fieldSeen[runtimelog.FieldLevel] = struct{}{}
+			}
+		case "message":
+			if _, ok := fieldSeen[runtimelog.FieldMessage]; !ok {
+				selectedFields = append(selectedFields, runtimelog.FieldMessage)
+				fieldSeen[runtimelog.FieldMessage] = struct{}{}
+			}
+		case "caller":
+			if _, ok := fieldSeen[runtimelog.FieldCaller]; !ok {
+				selectedFields = append(selectedFields, runtimelog.FieldCaller)
+				fieldSeen[runtimelog.FieldCaller] = struct{}{}
+			}
+		case "traceID":
+			if _, ok := fieldSeen[runtimelog.FieldTraceID]; !ok {
+				selectedFields = append(selectedFields, runtimelog.FieldTraceID)
+				fieldSeen[runtimelog.FieldTraceID] = struct{}{}
+			}
+		case "requestID":
+			if _, ok := fieldSeen[runtimelog.FieldRequestID]; !ok {
+				selectedFields = append(selectedFields, runtimelog.FieldRequestID)
+				fieldSeen[runtimelog.FieldRequestID] = struct{}{}
+			}
+		case "operationName":
+			if _, ok := fieldSeen[runtimelog.FieldOperationName]; !ok {
+				selectedFields = append(selectedFields, runtimelog.FieldOperationName)
+				fieldSeen[runtimelog.FieldOperationName] = struct{}{}
+			}
+		case "channelID":
+			if _, ok := fieldSeen[runtimelog.FieldChannelID]; !ok {
+				selectedFields = append(selectedFields, runtimelog.FieldChannelID)
+				fieldSeen[runtimelog.FieldChannelID] = struct{}{}
+			}
+		case "channelName":
+			if _, ok := fieldSeen[runtimelog.FieldChannelName]; !ok {
+				selectedFields = append(selectedFields, runtimelog.FieldChannelName)
+				fieldSeen[runtimelog.FieldChannelName] = struct{}{}
+			}
+		case "modelID":
+			if _, ok := fieldSeen[runtimelog.FieldModelID]; !ok {
+				selectedFields = append(selectedFields, runtimelog.FieldModelID)
+				fieldSeen[runtimelog.FieldModelID] = struct{}{}
+			}
+		case "fieldsJSON":
+			if _, ok := fieldSeen[runtimelog.FieldFieldsJSON]; !ok {
+				selectedFields = append(selectedFields, runtimelog.FieldFieldsJSON)
+				fieldSeen[runtimelog.FieldFieldsJSON] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		_q.Select(selectedFields...)
+	}
+	return nil
+}
+
+type runtimelogPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []RuntimeLogPaginateOption
+}
+
+func newRuntimeLogPaginateArgs(rv map[string]any) *runtimelogPaginateArgs {
+	args := &runtimelogPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case map[string]any:
+			var (
+				err1, err2 error
+				order      = &RuntimeLogOrder{Field: &RuntimeLogOrderField{}, Direction: entgql.OrderDirectionAsc}
+			)
+			if d, ok := v[directionField]; ok {
+				err1 = order.Direction.UnmarshalGQL(d)
+			}
+			if f, ok := v[fieldField]; ok {
+				err2 = order.Field.UnmarshalGQL(f)
+			}
+			if err1 == nil && err2 == nil {
+				args.opts = append(args.opts, WithRuntimeLogOrder(order))
+			}
+		case *RuntimeLogOrder:
+			if v != nil {
+				args.opts = append(args.opts, WithRuntimeLogOrder(v))
+			}
+		}
+	}
+	if v, ok := rv[whereField].(*RuntimeLogWhereInput); ok {
+		args.opts = append(args.opts, WithRuntimeLogFilter(v.Filter))
 	}
 	return args
 }

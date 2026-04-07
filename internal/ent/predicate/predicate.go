@@ -57,6 +57,9 @@ type RequestExecution func(*sql.Selector)
 // Role is the predicate function for role builders.
 type Role func(*sql.Selector)
 
+// RuntimeLog is the predicate function for runtimelog builders.
+type RuntimeLog func(*sql.Selector)
+
 // System is the predicate function for system builders.
 type System func(*sql.Selector)
 

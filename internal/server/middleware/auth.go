@@ -51,8 +51,8 @@ func WithAPIKeyConfig(auth *biz.AuthService, config *APIKeyConfig) gin.HandlerFu
 
 		ctx := contexts.WithAPIKey(c.Request.Context(), apiKey)
 
-		if apiKey.Edges.Project != nil {
-			ctx = contexts.WithProjectID(ctx, apiKey.Edges.Project.ID)
+		if apiKey.ProjectID != 0 {
+			ctx = contexts.WithProjectID(ctx, apiKey.ProjectID)
 		}
 
 		ctx, err = withAPIKeyPrincipal(ctx, apiKey)
@@ -134,8 +134,8 @@ func WithOpenAPIAuth(auth *biz.AuthService) gin.HandlerFunc {
 		}
 
 		ctx := contexts.WithAPIKey(c.Request.Context(), apiKey)
-		if apiKey.Edges.Project != nil {
-			ctx = contexts.WithProjectID(ctx, apiKey.Edges.Project.ID)
+		if apiKey.ProjectID != 0 {
+			ctx = contexts.WithProjectID(ctx, apiKey.ProjectID)
 		}
 
 		ctx, err = withAPIKeyPrincipal(ctx, apiKey)
@@ -178,8 +178,8 @@ func WithGeminiKeyAuth(auth *biz.AuthService) gin.HandlerFunc {
 		// 将 API key entity 保存到 context 中
 		ctx := contexts.WithAPIKey(c.Request.Context(), apiKey)
 
-		if apiKey.Edges.Project != nil {
-			ctx = contexts.WithProjectID(ctx, apiKey.Edges.Project.ID)
+		if apiKey.ProjectID != 0 {
+			ctx = contexts.WithProjectID(ctx, apiKey.ProjectID)
 		}
 
 		ctx, err = withAPIKeyPrincipal(ctx, apiKey)
@@ -210,8 +210,8 @@ func withUserPrincipal(ctx context.Context, user *ent.User) (context.Context, er
 
 func withAPIKeyPrincipal(ctx context.Context, key *ent.APIKey) (context.Context, error) {
 	principal := authz.Principal{Type: authz.PrincipalTypeAPIKey, APIKeyID: &key.ID}
-	if key.Edges.Project != nil {
-		projectID := key.Edges.Project.ID
+	if key.ProjectID != 0 {
+		projectID := key.ProjectID
 		principal.ProjectID = &projectID
 	}
 

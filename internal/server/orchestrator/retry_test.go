@@ -129,6 +129,51 @@ func TestDeriveLoadBalancerStrategy(t *testing.T) {
 	}
 }
 
+func TestNormalizeRetryBudget(t *testing.T) {
+	tests := []struct {
+		name                     string
+		policy                   *biz.RetryPolicy
+		expectedChannelRetries   int
+		expectedSameChannelRetry int
+	}{
+		{
+			name: "zero means disabled",
+			policy: &biz.RetryPolicy{
+				MaxChannelRetries:       0,
+				MaxSingleChannelRetries: 0,
+			},
+			expectedChannelRetries:   0,
+			expectedSameChannelRetry: 0,
+		},
+		{
+			name: "one means only the initial attempt",
+			policy: &biz.RetryPolicy{
+				MaxChannelRetries:       1,
+				MaxSingleChannelRetries: 1,
+			},
+			expectedChannelRetries:   0,
+			expectedSameChannelRetry: 0,
+		},
+		{
+			name: "two means one retry after the initial attempt",
+			policy: &biz.RetryPolicy{
+				MaxChannelRetries:       2,
+				MaxSingleChannelRetries: 2,
+			},
+			expectedChannelRetries:   1,
+			expectedSameChannelRetry: 1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			channelRetries, sameChannelRetries := normalizeRetryBudget(tt.policy)
+			assert.Equal(t, tt.expectedChannelRetries, channelRetries)
+			assert.Equal(t, tt.expectedSameChannelRetry, sameChannelRetries)
+		})
+	}
+}
+
 func TestExtractStatusCodeFromError(t *testing.T) {
 	tests := []struct {
 		name     string

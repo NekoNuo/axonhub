@@ -21,6 +21,7 @@ import (
 	"github.com/looplj/axonhub/internal/ent/request"
 	"github.com/looplj/axonhub/internal/ent/requestexecution"
 	"github.com/looplj/axonhub/internal/ent/role"
+	"github.com/looplj/axonhub/internal/ent/runtimelog"
 	"github.com/looplj/axonhub/internal/ent/system"
 	"github.com/looplj/axonhub/internal/ent/thread"
 	"github.com/looplj/axonhub/internal/ent/trace"
@@ -37,7 +38,7 @@ import (
 
 // schemaGraph holds a representation of ent/schema at runtime.
 var schemaGraph = func() *sqlgraph.Schema {
-	graph := &sqlgraph.Schema{Nodes: make([]*sqlgraph.Node, 24)}
+	graph := &sqlgraph.Schema{Nodes: make([]*sqlgraph.Node, 25)}
 	graph.Nodes[0] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   apikey.Table,
@@ -453,6 +454,32 @@ var schemaGraph = func() *sqlgraph.Schema {
 	}
 	graph.Nodes[17] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
+			Table:   runtimelog.Table,
+			Columns: runtimelog.Columns,
+			ID: &sqlgraph.FieldSpec{
+				Type:   field.TypeInt,
+				Column: runtimelog.FieldID,
+			},
+		},
+		Type: "RuntimeLog",
+		Fields: map[string]*sqlgraph.FieldSpec{
+			runtimelog.FieldCreatedAt:     {Type: field.TypeTime, Column: runtimelog.FieldCreatedAt},
+			runtimelog.FieldUpdatedAt:     {Type: field.TypeTime, Column: runtimelog.FieldUpdatedAt},
+			runtimelog.FieldLogger:        {Type: field.TypeString, Column: runtimelog.FieldLogger},
+			runtimelog.FieldLevel:         {Type: field.TypeEnum, Column: runtimelog.FieldLevel},
+			runtimelog.FieldMessage:       {Type: field.TypeString, Column: runtimelog.FieldMessage},
+			runtimelog.FieldCaller:        {Type: field.TypeString, Column: runtimelog.FieldCaller},
+			runtimelog.FieldTraceID:       {Type: field.TypeString, Column: runtimelog.FieldTraceID},
+			runtimelog.FieldRequestID:     {Type: field.TypeString, Column: runtimelog.FieldRequestID},
+			runtimelog.FieldOperationName: {Type: field.TypeString, Column: runtimelog.FieldOperationName},
+			runtimelog.FieldChannelID:     {Type: field.TypeInt, Column: runtimelog.FieldChannelID},
+			runtimelog.FieldChannelName:   {Type: field.TypeString, Column: runtimelog.FieldChannelName},
+			runtimelog.FieldModelID:       {Type: field.TypeString, Column: runtimelog.FieldModelID},
+			runtimelog.FieldFieldsJSON:    {Type: field.TypeJSON, Column: runtimelog.FieldFieldsJSON},
+		},
+	}
+	graph.Nodes[18] = &sqlgraph.Node{
+		NodeSpec: sqlgraph.NodeSpec{
 			Table:   system.Table,
 			Columns: system.Columns,
 			ID: &sqlgraph.FieldSpec{
@@ -469,7 +496,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			system.FieldValue:     {Type: field.TypeString, Column: system.FieldValue},
 		},
 	}
-	graph.Nodes[18] = &sqlgraph.Node{
+	graph.Nodes[19] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   thread.Table,
 			Columns: thread.Columns,
@@ -486,7 +513,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			thread.FieldThreadID:  {Type: field.TypeString, Column: thread.FieldThreadID},
 		},
 	}
-	graph.Nodes[19] = &sqlgraph.Node{
+	graph.Nodes[20] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   trace.Table,
 			Columns: trace.Columns,
@@ -504,7 +531,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			trace.FieldThreadID:  {Type: field.TypeInt, Column: trace.FieldThreadID},
 		},
 	}
-	graph.Nodes[20] = &sqlgraph.Node{
+	graph.Nodes[21] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   usagelog.Table,
 			Columns: usagelog.Columns,
@@ -541,7 +568,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			usagelog.FieldCostPriceReferenceID:               {Type: field.TypeString, Column: usagelog.FieldCostPriceReferenceID},
 		},
 	}
-	graph.Nodes[21] = &sqlgraph.Node{
+	graph.Nodes[22] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   user.Table,
 			Columns: user.Columns,
@@ -566,7 +593,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			user.FieldScopes:         {Type: field.TypeJSON, Column: user.FieldScopes},
 		},
 	}
-	graph.Nodes[22] = &sqlgraph.Node{
+	graph.Nodes[23] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   userproject.Table,
 			Columns: userproject.Columns,
@@ -585,7 +612,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			userproject.FieldScopes:    {Type: field.TypeJSON, Column: userproject.FieldScopes},
 		},
 	}
-	graph.Nodes[23] = &sqlgraph.Node{
+	graph.Nodes[24] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   userrole.Table,
 			Columns: userrole.Columns,
@@ -3612,6 +3639,111 @@ func (f *RoleFilter) WhereHasUserRolesWith(preds ...predicate.UserRole) {
 }
 
 // addPredicate implements the predicateAdder interface.
+func (_q *RuntimeLogQuery) addPredicate(pred func(s *sql.Selector)) {
+	_q.predicates = append(_q.predicates, pred)
+}
+
+// Filter returns a Filter implementation to apply filters on the RuntimeLogQuery builder.
+func (_q *RuntimeLogQuery) Filter() *RuntimeLogFilter {
+	return &RuntimeLogFilter{config: _q.config, predicateAdder: _q}
+}
+
+// addPredicate implements the predicateAdder interface.
+func (m *RuntimeLogMutation) addPredicate(pred func(s *sql.Selector)) {
+	m.predicates = append(m.predicates, pred)
+}
+
+// Filter returns an entql.Where implementation to apply filters on the RuntimeLogMutation builder.
+func (m *RuntimeLogMutation) Filter() *RuntimeLogFilter {
+	return &RuntimeLogFilter{config: m.config, predicateAdder: m}
+}
+
+// RuntimeLogFilter provides a generic filtering capability at runtime for RuntimeLogQuery.
+type RuntimeLogFilter struct {
+	predicateAdder
+	config
+}
+
+// Where applies the entql predicate on the query filter.
+func (f *RuntimeLogFilter) Where(p entql.P) {
+	f.addPredicate(func(s *sql.Selector) {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[17].Type, p, s); err != nil {
+			s.AddError(err)
+		}
+	})
+}
+
+// WhereID applies the entql int predicate on the id field.
+func (f *RuntimeLogFilter) WhereID(p entql.IntP) {
+	f.Where(p.Field(runtimelog.FieldID))
+}
+
+// WhereCreatedAt applies the entql time.Time predicate on the created_at field.
+func (f *RuntimeLogFilter) WhereCreatedAt(p entql.TimeP) {
+	f.Where(p.Field(runtimelog.FieldCreatedAt))
+}
+
+// WhereUpdatedAt applies the entql time.Time predicate on the updated_at field.
+func (f *RuntimeLogFilter) WhereUpdatedAt(p entql.TimeP) {
+	f.Where(p.Field(runtimelog.FieldUpdatedAt))
+}
+
+// WhereLogger applies the entql string predicate on the logger field.
+func (f *RuntimeLogFilter) WhereLogger(p entql.StringP) {
+	f.Where(p.Field(runtimelog.FieldLogger))
+}
+
+// WhereLevel applies the entql string predicate on the level field.
+func (f *RuntimeLogFilter) WhereLevel(p entql.StringP) {
+	f.Where(p.Field(runtimelog.FieldLevel))
+}
+
+// WhereMessage applies the entql string predicate on the message field.
+func (f *RuntimeLogFilter) WhereMessage(p entql.StringP) {
+	f.Where(p.Field(runtimelog.FieldMessage))
+}
+
+// WhereCaller applies the entql string predicate on the caller field.
+func (f *RuntimeLogFilter) WhereCaller(p entql.StringP) {
+	f.Where(p.Field(runtimelog.FieldCaller))
+}
+
+// WhereTraceID applies the entql string predicate on the trace_id field.
+func (f *RuntimeLogFilter) WhereTraceID(p entql.StringP) {
+	f.Where(p.Field(runtimelog.FieldTraceID))
+}
+
+// WhereRequestID applies the entql string predicate on the request_id field.
+func (f *RuntimeLogFilter) WhereRequestID(p entql.StringP) {
+	f.Where(p.Field(runtimelog.FieldRequestID))
+}
+
+// WhereOperationName applies the entql string predicate on the operation_name field.
+func (f *RuntimeLogFilter) WhereOperationName(p entql.StringP) {
+	f.Where(p.Field(runtimelog.FieldOperationName))
+}
+
+// WhereChannelID applies the entql int predicate on the channel_id field.
+func (f *RuntimeLogFilter) WhereChannelID(p entql.IntP) {
+	f.Where(p.Field(runtimelog.FieldChannelID))
+}
+
+// WhereChannelName applies the entql string predicate on the channel_name field.
+func (f *RuntimeLogFilter) WhereChannelName(p entql.StringP) {
+	f.Where(p.Field(runtimelog.FieldChannelName))
+}
+
+// WhereModelID applies the entql string predicate on the model_id field.
+func (f *RuntimeLogFilter) WhereModelID(p entql.StringP) {
+	f.Where(p.Field(runtimelog.FieldModelID))
+}
+
+// WhereFieldsJSON applies the entql json.RawMessage predicate on the fields_json field.
+func (f *RuntimeLogFilter) WhereFieldsJSON(p entql.BytesP) {
+	f.Where(p.Field(runtimelog.FieldFieldsJSON))
+}
+
+// addPredicate implements the predicateAdder interface.
 func (_q *SystemQuery) addPredicate(pred func(s *sql.Selector)) {
 	_q.predicates = append(_q.predicates, pred)
 }
@@ -3640,7 +3772,7 @@ type SystemFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *SystemFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[17].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[18].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -3705,7 +3837,7 @@ type ThreadFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *ThreadFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[18].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[19].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -3793,7 +3925,7 @@ type TraceFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *TraceFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[19].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[20].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -3900,7 +4032,7 @@ type UsageLogFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *UsageLogFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[20].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[21].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -4102,7 +4234,7 @@ type UserFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *UserFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[21].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[22].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -4286,7 +4418,7 @@ type UserProjectFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *UserProjectFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[22].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[23].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -4384,7 +4516,7 @@ type UserRoleFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *UserRoleFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[23].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[24].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})

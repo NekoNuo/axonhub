@@ -185,9 +185,9 @@ const (
 type RetryPolicy struct {
 	// Enabled controls whether retry policy is active
 	Enabled bool `json:"enabled"`
-	// MaxChannelRetries defines the maximum number of different channels to retry
+	// MaxChannelRetries defines the maximum total number of channel attempts, including the initial request.
 	MaxChannelRetries int `json:"max_channel_retries"`
-	// MaxSingleChannelRetries defines the maximum number of retries for a single channel
+	// MaxSingleChannelRetries defines the maximum total number of attempts on the same channel, including the initial request.
 	MaxSingleChannelRetries int `json:"max_single_channel_retries"`
 	// RetryDelayMs defines the delay between retries in milliseconds
 	RetryDelayMs int `json:"retry_delay_ms"`
