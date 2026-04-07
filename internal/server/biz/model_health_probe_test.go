@@ -637,9 +637,20 @@ func TestGetEffectiveModelHealthFromDB_FallsBackToDiscoveredSnapshot(t *testing.
 
 	ctx := authz.WithTestBypass(ent.NewContext(context.Background(), client))
 
-	_, err := client.ModelHealthSnapshot.Create().
+	channelEntity, err := client.Channel.Create().
+		SetType("openai").
+		SetBaseURL("https://api.openai.com/v1").
+		SetName("OpenAI Channel A").
+		SetStatus("enabled").
+		SetCredentials(objects.ChannelCredentials{APIKeys: []string{"test-key"}}).
+		SetSupportedModels([]string{"gpt-5-2-2026-04-01"}).
+		SetDefaultTestModel("gpt-5-2-2026-04-01").
+		Save(ctx)
+	require.NoError(t, err)
+
+	_, err = client.ModelHealthSnapshot.Create().
 		SetDisplayModel("gpt-5-2").
-		SetChannelID(1).
+		SetChannelID(channelEntity.ID).
 		SetActualModelID("gpt-5-2-2026-04-01").
 		SetSource(ModelHealthSourceDiscoveredRecentUsage).
 		SetIsHealthy(true).
@@ -648,7 +659,7 @@ func TestGetEffectiveModelHealthFromDB_FallsBackToDiscoveredSnapshot(t *testing.
 		Save(ctx)
 	require.NoError(t, err)
 
-	view, err := getEffectiveModelHealthFromDB(ctx, client, "gpt-5-2", 1, "gpt-5-2-2026-04-01")
+	view, err := getEffectiveModelHealthFromDB(ctx, client, "gpt-5-2", channelEntity.ID, "gpt-5-2-2026-04-01")
 	require.NoError(t, err)
 	require.NotNil(t, view)
 	require.True(t, view.IsHealthy)

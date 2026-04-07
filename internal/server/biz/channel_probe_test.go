@@ -1092,7 +1092,7 @@ func TestRunProbe_ActiveModelProbeLoadsDefaultTestModel(t *testing.T) {
 		return 80 * time.Millisecond, true, nil
 	}
 
-	svc.runProbe(ctx)
+	svc.RunProbeNow(ctx)
 
 	assert.Equal(t, 1, modelProbeCalls)
 }
@@ -1179,7 +1179,7 @@ func TestRunProbe_ActiveProbeAlsoProbesActiveChannels(t *testing.T) {
 		return 80 * time.Millisecond, true, nil
 	}
 
-	svc.runProbe(ctx)
+	svc.RunProbeNow(ctx)
 
 	assert.Equal(t, 1, probeCalls)
 

@@ -27,3 +27,21 @@ func TestChannelServiceStopStopsTokenProviders(t *testing.T) {
 
 	require.True(t, stopped)
 }
+
+func TestChannelServiceSetEnabledChannelsForTestStopsPreviousTokenProviders(t *testing.T) {
+	stopped := false
+	svc := &ChannelService{
+		enabledChannelsCache: live.NewCache(live.Options[[]*Channel]{
+			Name:            "channel_service_set_enabled_channels_test",
+			InitialValue:    []*Channel{{stopTokenProvider: func() { stopped = true }}},
+			RefreshInterval: time.Hour,
+			RefreshFunc: func(_ context.Context, current []*Channel, lastUpdate time.Time) ([]*Channel, time.Time, bool, error) {
+				return current, lastUpdate, false, nil
+			},
+		}),
+	}
+
+	svc.SetEnabledChannelsForTest([]*Channel{})
+
+	require.True(t, stopped)
+}

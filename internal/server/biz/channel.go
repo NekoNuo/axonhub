@@ -287,7 +287,10 @@ func (svc *ChannelService) GetEnabledChannel(id int) *Channel {
 }
 
 func (svc *ChannelService) SetEnabledChannelsForTest(channels []*Channel) {
-	svc.enabledChannelsCache.Stop()
+	if svc.enabledChannelsCache != nil {
+		svc.onEnabledChannelsSwap(svc.enabledChannelsCache.GetData(), nil)
+		svc.enabledChannelsCache.Stop()
+	}
 
 	svc.enabledChannelsCache = live.NewCache(live.Options[[]*Channel]{
 		Name:            "enabled_channels_test",
