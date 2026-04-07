@@ -136,6 +136,10 @@ func NewChannelService(params ChannelServiceParams) *ChannelService {
 }
 
 func (svc *ChannelService) Stop() {
+	if svc.enabledChannelsCache != nil {
+		svc.onEnabledChannelsSwap(svc.enabledChannelsCache.GetData(), nil)
+	}
+
 	svc.enabledChannelsCache.Stop()
 }
 

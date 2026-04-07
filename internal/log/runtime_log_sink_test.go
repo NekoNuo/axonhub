@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap/zapcore"
 )
 
 type testRuntimeLogSink struct {
@@ -77,4 +78,27 @@ func TestLoggerPublishesRuntimeLogRecord(t *testing.T) {
 	assert.Equal(t, RuntimeLogLevelError, sink.records[2].Level)
 	assert.Equal(t, "trace-999", sink.records[2].TraceID)
 	assert.NotEmpty(t, sink.records[2].Caller)
+}
+
+func TestRuntimeLogLevelFromZap(t *testing.T) {
+	tests := []struct {
+		name  string
+		level zapcore.Level
+		want  RuntimeLogLevel
+	}{
+		{name: "debug", level: DebugLevel, want: RuntimeLogLevelDebug},
+		{name: "info", level: InfoLevel, want: RuntimeLogLevelInfo},
+		{name: "warn", level: WarnLevel, want: RuntimeLogLevelWarn},
+		{name: "error", level: ErrorLevel, want: RuntimeLogLevelError},
+		{name: "dpanic", level: zapcore.DPanicLevel, want: RuntimeLogLevelError},
+		{name: "panic", level: PanicLevel, want: RuntimeLogLevelError},
+		{name: "fatal", level: FatalLevel, want: RuntimeLogLevelError},
+		{name: "invalid", level: zapcore.InvalidLevel, want: RuntimeLogLevelInfo},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, runtimeLogLevelFromZap(tt.level))
+		})
+	}
 }

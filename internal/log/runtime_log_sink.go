@@ -65,15 +65,13 @@ func runtimeLogLevelFromZap(level zapcore.Level) RuntimeLogLevel {
 		return RuntimeLogLevelInfo
 	case WarnLevel:
 		return RuntimeLogLevelWarn
-	default:
-		if level >= ErrorLevel {
-			return RuntimeLogLevelError
-		}
-		if level > WarnLevel {
-			return RuntimeLogLevelError
-		}
+	case ErrorLevel, zapcore.DPanicLevel, PanicLevel, FatalLevel:
+		return RuntimeLogLevelError
+	case zapcore.InvalidLevel:
 		return RuntimeLogLevelInfo
 	}
+
+	return RuntimeLogLevelInfo
 }
 
 func publishRuntimeLogRecord(ctx context.Context, loggerName string, level zapcore.Level, msg, caller string, fields []Field) {

@@ -57,6 +57,7 @@ func TestCodexRefreshPersistsChannelCredentials(t *testing.T) {
 	require.NoError(t, err)
 
 	svc := NewChannelServiceForTest(db)
+	t.Cleanup(svc.Stop)
 
 	ch, err := svc.buildChannelWithTransformer(created)
 	require.NoError(t, err)
