@@ -18,6 +18,10 @@ interface ModelHealthTreeProps {
   onProbeRow: (row: ModelHealthRow) => void;
 }
 
+export function getDefaultGroupExpanded() {
+  return false;
+}
+
 export function getLatestProbeMeta(snapshot: Pick<ModelHealthHistory, 'isHealthy' | 'probedAt'> | undefined, history?: ModelHealthHistory[]) {
   const latest = history?.[0] ?? snapshot;
   if (!latest) {
@@ -52,7 +56,7 @@ export function ModelHealthTree({ groups, histories, probingKeys, locale, onProb
     setExpandedGroups((current) => {
       const next = { ...current };
       groups.forEach((group) => {
-        if (next[group.displayModel] == null) next[group.displayModel] = true;
+        if (next[group.displayModel] == null) next[group.displayModel] = getDefaultGroupExpanded();
       });
       return next;
     });
@@ -63,14 +67,18 @@ export function ModelHealthTree({ groups, histories, probingKeys, locale, onProb
       {groups.map((group) => (
         <Collapsible
           key={group.displayModel}
-          open={expandedGroups[group.displayModel] ?? true}
+          open={expandedGroups[group.displayModel] ?? getDefaultGroupExpanded()}
           onOpenChange={(open) => setExpandedGroups((current) => ({ ...current, [group.displayModel]: open }))}
         >
           <section className='rounded-xl border'>
             <div className='flex items-center justify-between gap-4 p-4'>
               <CollapsibleTrigger asChild>
                 <button className='flex flex-1 items-center gap-3 text-left'>
-                  {(expandedGroups[group.displayModel] ?? true) ? <ChevronDown className='h-4 w-4' /> : <ChevronRight className='h-4 w-4' />}
+                  {(expandedGroups[group.displayModel] ?? getDefaultGroupExpanded()) ? (
+                    <ChevronDown className='h-4 w-4' />
+                  ) : (
+                    <ChevronRight className='h-4 w-4' />
+                  )}
                   <div>
                     <h2 className='text-lg font-medium'>{group.displayModel}</h2>
                     <div className='text-muted-foreground text-xs'>{t('models.healthPage.groupSummary', { count: group.channels.length })}</div>

@@ -5,7 +5,7 @@ import { Main } from '@/components/layout/main';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search } from 'lucide-react';
+import { Loader2, Radar, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useQueryChannels } from '@/features/channels/data/channels';
 import { useQueryAllModels, useQueryModelChannelConnections, type ModelAssociationInput, type ModelChannelConnection } from '@/features/models/data/models';
@@ -148,6 +148,18 @@ export function getGroupProbeTargets(group: ModelHealthGroup): ManualModelProbeI
   return group.channels.flatMap(getChannelProbeTargets);
 }
 
+export function collectVisiblePageProbeTargets(groups: ModelHealthGroup[], discoveredGroups: ModelHealthGroup[]): ManualModelProbeInput[] {
+  const deduped = new Map<string, ManualModelProbeInput>();
+
+  [...groups, ...discoveredGroups].forEach((group) => {
+    getGroupProbeTargets(group).forEach((target) => {
+      deduped.set(getConnectionKey(target.displayModel, target.channelID, target.actualModelID), target);
+    });
+  });
+
+  return Array.from(deduped.values());
+}
+
 function getConnectionKey(displayModel: string, channelID: string, actualModelID: string) {
   return `${displayModel}:${channelID}:${actualModelID}`;
 }
@@ -224,6 +236,7 @@ export function ModelHealthPage() {
   const [pendingConnectionModelIDs, setPendingConnectionModelIDs] = useState<Record<string, true>>({});
   const [isResetDiscoveredOpen, setIsResetDiscoveredOpen] = useState(false);
   const [isResettingDiscovered, setIsResettingDiscovered] = useState(false);
+  const [isSyncingAll, setIsSyncingAll] = useState(false);
   const { data: modelsData } = useQueryAllModels({
     where: {
       statusIn: ['enabled', 'disabled'],
@@ -370,6 +383,7 @@ export function ModelHealthPage() {
     [channelsByID, discoveredSnapshots, search, statusFilter]
   );
   const discoveredGroups = useMemo(() => buildModelHealthTree(discoveredRows), [discoveredRows]);
+  const visiblePageProbeTargets = useMemo(() => collectVisiblePageProbeTargets(groups, discoveredGroups), [discoveredGroups, groups]);
 
   const discoveredHistoryKeys = useMemo(
     () => new Set(discoveredRows.map((row) => getConnectionKey(row.displayModel, row.channelID, row.actualModelID))),
@@ -401,7 +415,7 @@ export function ModelHealthPage() {
     });
   }, [histories, rows]);
 
-  const runProbeTargets = async (scopeKey: string, targets: ManualModelProbeInput[]) => {
+  const runProbeTargets = async (scopeKey: string, targets: ManualModelProbeInput[], showItemSuccessToast = true) => {
     if (targets.length === 0) return;
 
     setProbingKeys((current) => ({ ...current, [scopeKey]: true }));
@@ -423,19 +437,21 @@ export function ModelHealthPage() {
           }));
 
           const latest = refreshed.history[0] ?? refreshed.snapshot;
-          if (latest) {
+          if (showItemSuccessToast && latest) {
             toast.success(
               latest.isHealthy ? t('models.healthPage.probeSuccessHealthy') : t('models.healthPage.probeSuccessUnhealthy'),
               {
                 description: `${latest.actualModelID} · ${latest.manualOverride ? t('models.healthPage.manualTag') : t('models.healthPage.autoTag')}`,
               }
             );
-          } else {
+          } else if (showItemSuccessToast) {
             toast.success(t('common.messages.success'));
           }
         });
+      return true;
     } catch (error) {
       toast.error(t('models.healthPage.probeError', { error: error instanceof Error ? error.message : String(error) }));
+      return false;
     } finally {
       setProbingKeys((current) => {
         const next = { ...current };
@@ -463,6 +479,20 @@ export function ModelHealthPage() {
       toast.error(t('models.healthPage.resetDiscoveredError', { error: error instanceof Error ? error.message : String(error) }));
     } finally {
       setIsResettingDiscovered(false);
+    }
+  };
+
+  const handleSyncAll = async () => {
+    if (visiblePageProbeTargets.length === 0) return;
+
+    setIsSyncingAll(true);
+    try {
+      const isSuccess = await runProbeTargets('page:all', visiblePageProbeTargets, false);
+      if (isSuccess) {
+        toast.success(t('models.healthPage.syncSuccess', { count: visiblePageProbeTargets.length }));
+      }
+    } finally {
+      setIsSyncingAll(false);
     }
   };
 
@@ -496,6 +526,10 @@ export function ModelHealthPage() {
               <SelectItem value='disabled'>{t('channels.status.disabled')}</SelectItem>
             </SelectContent>
           </Select>
+          <Button className='md:self-start' onClick={handleSyncAll} disabled={isSyncingAll || visiblePageProbeTargets.length === 0}>
+            {isSyncingAll ? <Loader2 className='mr-2 h-4 w-4 animate-spin' /> : <Radar className='mr-2 h-4 w-4' />}
+            {isSyncingAll ? t('models.healthPage.syncingAll') : t('models.healthPage.syncAll')}
+          </Button>
         </div>
 
         <ModelHealthTree

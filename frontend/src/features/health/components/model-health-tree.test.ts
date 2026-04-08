@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getLatestProbeMeta } from './model-health-tree';
+import { getDefaultGroupExpanded, getLatestProbeMeta } from './model-health-tree';
 
 describe('ModelHealthTree', () => {
   it('prefers latest history over snapshot for probe meta', () => {
@@ -37,5 +37,9 @@ describe('ModelHealthTree', () => {
       isHealthy: true,
       probedAt: 100,
     });
+  });
+
+  it('keeps display-model groups collapsed by default', () => {
+    expect(getDefaultGroupExpanded()).toBe(false);
   });
 });

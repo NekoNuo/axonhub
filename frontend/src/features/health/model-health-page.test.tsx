@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildModelHealthTree,
+  collectVisiblePageProbeTargets,
   buildDiscoveredModelHealthRows,
   runProbeTargetsWithLimit,
   getActualModelHistory,
@@ -361,6 +362,78 @@ describe('Task 12 Model Health Page', () => {
         displayModel: 'gpt-4o',
         channelID: 'Q2hhbm5lbDox',
         actualModelID: 'gpt-4o-2024-11-20',
+      },
+    ]);
+  });
+
+  it('collects visible page probe targets from configured and discovered groups', () => {
+    const configuredGroups = buildModelHealthTree([
+      {
+        channelName: 'Channel A',
+        channelStatus: 'enabled',
+        channelType: 'openai',
+        orderingWeight: 10,
+        priority: 1,
+        displayModel: 'gpt-4o',
+        channelID: 'channel-a',
+        actualModelID: 'gpt-4o-2024-11-20',
+        isHealthy: true,
+        manualOverride: false,
+        probedAt: 1712310000,
+      },
+      {
+        channelName: 'Channel B',
+        channelStatus: 'disabled',
+        channelType: 'openai',
+        orderingWeight: 5,
+        priority: 1,
+        displayModel: 'gpt-4o',
+        channelID: 'channel-b',
+        actualModelID: 'gpt-4o-2024-08-06',
+        isHealthy: false,
+        manualOverride: false,
+        probedAt: 1712310300,
+      },
+    ]);
+    const discoveredGroups = buildModelHealthTree([
+      {
+        channelName: 'Channel A',
+        channelStatus: 'enabled',
+        channelType: 'openai',
+        orderingWeight: 10,
+        priority: 0,
+        displayModel: 'gpt-4o',
+        channelID: 'channel-a',
+        actualModelID: 'gpt-4o-2024-11-20',
+        isHealthy: true,
+        manualOverride: false,
+        probedAt: 1712310400,
+      },
+      {
+        channelName: 'Channel C',
+        channelStatus: 'enabled',
+        channelType: 'openai',
+        orderingWeight: 8,
+        priority: 0,
+        displayModel: 'gpt-5',
+        channelID: 'channel-c',
+        actualModelID: 'gpt-5',
+        isHealthy: true,
+        manualOverride: false,
+        probedAt: 1712310500,
+      },
+    ]);
+
+    expect(collectVisiblePageProbeTargets(configuredGroups, discoveredGroups)).toEqual([
+      {
+        displayModel: 'gpt-4o',
+        channelID: 'channel-a',
+        actualModelID: 'gpt-4o-2024-11-20',
+      },
+      {
+        displayModel: 'gpt-5',
+        channelID: 'channel-c',
+        actualModelID: 'gpt-5',
       },
     ]);
   });
