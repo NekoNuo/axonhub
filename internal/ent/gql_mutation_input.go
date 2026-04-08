@@ -765,6 +765,8 @@ type CreateRequestInput struct {
 	ModelID                    string
 	Format                     *string
 	RequestHeaders             objects.JSONRawMessage
+	RequestPath                *string
+	UserAgent                  *string
 	RequestBody                objects.JSONRawMessage
 	ResponseBody               objects.JSONRawMessage
 	ResponseChunks             []objects.JSONRawMessage
@@ -796,6 +798,12 @@ func (i *CreateRequestInput) Mutate(m *RequestMutation) {
 	}
 	if v := i.RequestHeaders; v != nil {
 		m.SetRequestHeaders(v)
+	}
+	if v := i.RequestPath; v != nil {
+		m.SetRequestPath(*v)
+	}
+	if v := i.UserAgent; v != nil {
+		m.SetUserAgent(*v)
 	}
 	if v := i.RequestBody; v != nil {
 		m.SetRequestBody(v)

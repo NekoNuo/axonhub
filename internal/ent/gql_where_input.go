@@ -6666,6 +6666,36 @@ type RequestWhereInput struct {
 	FormatEqualFold    *string  `json:"formatEqualFold,omitempty"`
 	FormatContainsFold *string  `json:"formatContainsFold,omitempty"`
 
+	// "request_path" field predicates.
+	RequestPath             *string  `json:"requestPath,omitempty"`
+	RequestPathNEQ          *string  `json:"requestPathNEQ,omitempty"`
+	RequestPathIn           []string `json:"requestPathIn,omitempty"`
+	RequestPathNotIn        []string `json:"requestPathNotIn,omitempty"`
+	RequestPathGT           *string  `json:"requestPathGT,omitempty"`
+	RequestPathGTE          *string  `json:"requestPathGTE,omitempty"`
+	RequestPathLT           *string  `json:"requestPathLT,omitempty"`
+	RequestPathLTE          *string  `json:"requestPathLTE,omitempty"`
+	RequestPathContains     *string  `json:"requestPathContains,omitempty"`
+	RequestPathHasPrefix    *string  `json:"requestPathHasPrefix,omitempty"`
+	RequestPathHasSuffix    *string  `json:"requestPathHasSuffix,omitempty"`
+	RequestPathEqualFold    *string  `json:"requestPathEqualFold,omitempty"`
+	RequestPathContainsFold *string  `json:"requestPathContainsFold,omitempty"`
+
+	// "user_agent" field predicates.
+	UserAgent             *string  `json:"userAgent,omitempty"`
+	UserAgentNEQ          *string  `json:"userAgentNEQ,omitempty"`
+	UserAgentIn           []string `json:"userAgentIn,omitempty"`
+	UserAgentNotIn        []string `json:"userAgentNotIn,omitempty"`
+	UserAgentGT           *string  `json:"userAgentGT,omitempty"`
+	UserAgentGTE          *string  `json:"userAgentGTE,omitempty"`
+	UserAgentLT           *string  `json:"userAgentLT,omitempty"`
+	UserAgentLTE          *string  `json:"userAgentLTE,omitempty"`
+	UserAgentContains     *string  `json:"userAgentContains,omitempty"`
+	UserAgentHasPrefix    *string  `json:"userAgentHasPrefix,omitempty"`
+	UserAgentHasSuffix    *string  `json:"userAgentHasSuffix,omitempty"`
+	UserAgentEqualFold    *string  `json:"userAgentEqualFold,omitempty"`
+	UserAgentContainsFold *string  `json:"userAgentContainsFold,omitempty"`
+
 	// "channel_id" field predicates.
 	ChannelID       *int  `json:"channelID,omitempty"`
 	ChannelIDNEQ    *int  `json:"channelIDNEQ,omitempty"`
@@ -7112,6 +7142,84 @@ func (i *RequestWhereInput) P() (predicate.Request, error) {
 	}
 	if i.FormatContainsFold != nil {
 		predicates = append(predicates, request.FormatContainsFold(*i.FormatContainsFold))
+	}
+	if i.RequestPath != nil {
+		predicates = append(predicates, request.RequestPathEQ(*i.RequestPath))
+	}
+	if i.RequestPathNEQ != nil {
+		predicates = append(predicates, request.RequestPathNEQ(*i.RequestPathNEQ))
+	}
+	if len(i.RequestPathIn) > 0 {
+		predicates = append(predicates, request.RequestPathIn(i.RequestPathIn...))
+	}
+	if len(i.RequestPathNotIn) > 0 {
+		predicates = append(predicates, request.RequestPathNotIn(i.RequestPathNotIn...))
+	}
+	if i.RequestPathGT != nil {
+		predicates = append(predicates, request.RequestPathGT(*i.RequestPathGT))
+	}
+	if i.RequestPathGTE != nil {
+		predicates = append(predicates, request.RequestPathGTE(*i.RequestPathGTE))
+	}
+	if i.RequestPathLT != nil {
+		predicates = append(predicates, request.RequestPathLT(*i.RequestPathLT))
+	}
+	if i.RequestPathLTE != nil {
+		predicates = append(predicates, request.RequestPathLTE(*i.RequestPathLTE))
+	}
+	if i.RequestPathContains != nil {
+		predicates = append(predicates, request.RequestPathContains(*i.RequestPathContains))
+	}
+	if i.RequestPathHasPrefix != nil {
+		predicates = append(predicates, request.RequestPathHasPrefix(*i.RequestPathHasPrefix))
+	}
+	if i.RequestPathHasSuffix != nil {
+		predicates = append(predicates, request.RequestPathHasSuffix(*i.RequestPathHasSuffix))
+	}
+	if i.RequestPathEqualFold != nil {
+		predicates = append(predicates, request.RequestPathEqualFold(*i.RequestPathEqualFold))
+	}
+	if i.RequestPathContainsFold != nil {
+		predicates = append(predicates, request.RequestPathContainsFold(*i.RequestPathContainsFold))
+	}
+	if i.UserAgent != nil {
+		predicates = append(predicates, request.UserAgentEQ(*i.UserAgent))
+	}
+	if i.UserAgentNEQ != nil {
+		predicates = append(predicates, request.UserAgentNEQ(*i.UserAgentNEQ))
+	}
+	if len(i.UserAgentIn) > 0 {
+		predicates = append(predicates, request.UserAgentIn(i.UserAgentIn...))
+	}
+	if len(i.UserAgentNotIn) > 0 {
+		predicates = append(predicates, request.UserAgentNotIn(i.UserAgentNotIn...))
+	}
+	if i.UserAgentGT != nil {
+		predicates = append(predicates, request.UserAgentGT(*i.UserAgentGT))
+	}
+	if i.UserAgentGTE != nil {
+		predicates = append(predicates, request.UserAgentGTE(*i.UserAgentGTE))
+	}
+	if i.UserAgentLT != nil {
+		predicates = append(predicates, request.UserAgentLT(*i.UserAgentLT))
+	}
+	if i.UserAgentLTE != nil {
+		predicates = append(predicates, request.UserAgentLTE(*i.UserAgentLTE))
+	}
+	if i.UserAgentContains != nil {
+		predicates = append(predicates, request.UserAgentContains(*i.UserAgentContains))
+	}
+	if i.UserAgentHasPrefix != nil {
+		predicates = append(predicates, request.UserAgentHasPrefix(*i.UserAgentHasPrefix))
+	}
+	if i.UserAgentHasSuffix != nil {
+		predicates = append(predicates, request.UserAgentHasSuffix(*i.UserAgentHasSuffix))
+	}
+	if i.UserAgentEqualFold != nil {
+		predicates = append(predicates, request.UserAgentEqualFold(*i.UserAgentEqualFold))
+	}
+	if i.UserAgentContainsFold != nil {
+		predicates = append(predicates, request.UserAgentContainsFold(*i.UserAgentContainsFold))
 	}
 	if i.ChannelID != nil {
 		predicates = append(predicates, request.ChannelIDEQ(*i.ChannelID))

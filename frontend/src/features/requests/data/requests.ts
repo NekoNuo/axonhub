@@ -48,6 +48,8 @@ function buildRequestsQuery(permissions: { canViewApiKeys: boolean; canViewChann
             updatedAt${apiKeyFields}${channelFields}
             source
             modelID
+            requestPath
+            userAgent
             stream
             status
             clientIP
@@ -127,6 +129,8 @@ function buildRequestDetailQuery(permissions: { canViewApiKeys: boolean; canView
           updatedAt${apiKeyFields}${requestChannelFields}
           source
           modelID
+          requestPath
+          userAgent
           stream
           clientIP
           projectID

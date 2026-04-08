@@ -299,6 +299,26 @@ export default function RequestDetailPage() {
                   </div>
                   <p className='text-muted-foreground font-mono text-xs'>{request.apiKey?.name || t('requests.columns.unknown')}</p>
                 </div>
+
+                <div className='bg-muted/30 flex items-center justify-between gap-2 rounded-lg border px-3 py-2'>
+                  <div className='flex items-center gap-2'>
+                    <Terminal className='text-primary h-3.5 w-3.5' />
+                    <span className='text-xs font-medium'>{t('requests.columns.endpoint')}</span>
+                  </div>
+                  <p className='bg-background max-w-[60%] rounded border px-2 py-0.5 font-mono text-xs'>
+                    {request.requestPath || t('requests.columns.unknown')}
+                  </p>
+                </div>
+
+                <div className='bg-muted/30 flex items-center justify-between gap-2 rounded-lg border px-3 py-2 sm:col-span-2 lg:col-span-3'>
+                  <div className='flex items-center gap-2'>
+                    <Terminal className='text-primary h-3.5 w-3.5' />
+                    <span className='text-xs font-medium'>{t('requests.columns.userAgent')}</span>
+                  </div>
+                  <p className='bg-background max-w-[70%] rounded border px-2 py-0.5 font-mono text-xs break-all'>
+                    {request.userAgent || t('requests.columns.unknown')}
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>

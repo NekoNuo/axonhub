@@ -15308,6 +15308,8 @@ type RequestMutation struct {
 	format                            *string
 	request_headers                   *objects.JSONRawMessage
 	appendrequest_headers             objects.JSONRawMessage
+	request_path                      *string
+	user_agent                        *string
 	request_body                      *objects.JSONRawMessage
 	appendrequest_body                objects.JSONRawMessage
 	response_body                     *objects.JSONRawMessage
@@ -15873,6 +15875,78 @@ func (m *RequestMutation) ResetRequestHeaders() {
 	m.request_headers = nil
 	m.appendrequest_headers = nil
 	delete(m.clearedFields, request.FieldRequestHeaders)
+}
+
+// SetRequestPath sets the "request_path" field.
+func (m *RequestMutation) SetRequestPath(s string) {
+	m.request_path = &s
+}
+
+// RequestPath returns the value of the "request_path" field in the mutation.
+func (m *RequestMutation) RequestPath() (r string, exists bool) {
+	v := m.request_path
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRequestPath returns the old "request_path" field's value of the Request entity.
+// If the Request object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RequestMutation) OldRequestPath(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRequestPath is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRequestPath requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRequestPath: %w", err)
+	}
+	return oldValue.RequestPath, nil
+}
+
+// ResetRequestPath resets all changes to the "request_path" field.
+func (m *RequestMutation) ResetRequestPath() {
+	m.request_path = nil
+}
+
+// SetUserAgent sets the "user_agent" field.
+func (m *RequestMutation) SetUserAgent(s string) {
+	m.user_agent = &s
+}
+
+// UserAgent returns the value of the "user_agent" field in the mutation.
+func (m *RequestMutation) UserAgent() (r string, exists bool) {
+	v := m.user_agent
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserAgent returns the old "user_agent" field's value of the Request entity.
+// If the Request object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RequestMutation) OldUserAgent(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserAgent is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserAgent requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserAgent: %w", err)
+	}
+	return oldValue.UserAgent, nil
+}
+
+// ResetUserAgent resets all changes to the "user_agent" field.
+func (m *RequestMutation) ResetUserAgent() {
+	m.user_agent = nil
 }
 
 // SetRequestBody sets the "request_body" field.
@@ -16883,7 +16957,7 @@ func (m *RequestMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *RequestMutation) Fields() []string {
-	fields := make([]string, 0, 24)
+	fields := make([]string, 0, 26)
 	if m.created_at != nil {
 		fields = append(fields, request.FieldCreatedAt)
 	}
@@ -16913,6 +16987,12 @@ func (m *RequestMutation) Fields() []string {
 	}
 	if m.request_headers != nil {
 		fields = append(fields, request.FieldRequestHeaders)
+	}
+	if m.request_path != nil {
+		fields = append(fields, request.FieldRequestPath)
+	}
+	if m.user_agent != nil {
+		fields = append(fields, request.FieldUserAgent)
 	}
 	if m.request_body != nil {
 		fields = append(fields, request.FieldRequestBody)
@@ -16984,6 +17064,10 @@ func (m *RequestMutation) Field(name string) (ent.Value, bool) {
 		return m.Format()
 	case request.FieldRequestHeaders:
 		return m.RequestHeaders()
+	case request.FieldRequestPath:
+		return m.RequestPath()
+	case request.FieldUserAgent:
+		return m.UserAgent()
 	case request.FieldRequestBody:
 		return m.RequestBody()
 	case request.FieldResponseBody:
@@ -17041,6 +17125,10 @@ func (m *RequestMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldFormat(ctx)
 	case request.FieldRequestHeaders:
 		return m.OldRequestHeaders(ctx)
+	case request.FieldRequestPath:
+		return m.OldRequestPath(ctx)
+	case request.FieldUserAgent:
+		return m.OldUserAgent(ctx)
 	case request.FieldRequestBody:
 		return m.OldRequestBody(ctx)
 	case request.FieldResponseBody:
@@ -17147,6 +17235,20 @@ func (m *RequestMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetRequestHeaders(v)
+		return nil
+	case request.FieldRequestPath:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRequestPath(v)
+		return nil
+	case request.FieldUserAgent:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserAgent(v)
 		return nil
 	case request.FieldRequestBody:
 		v, ok := value.(objects.JSONRawMessage)
@@ -17444,6 +17546,12 @@ func (m *RequestMutation) ResetField(name string) error {
 		return nil
 	case request.FieldRequestHeaders:
 		m.ResetRequestHeaders()
+		return nil
+	case request.FieldRequestPath:
+		m.ResetRequestPath()
+		return nil
+	case request.FieldUserAgent:
+		m.ResetUserAgent()
 		return nil
 	case request.FieldRequestBody:
 		m.ResetRequestBody()

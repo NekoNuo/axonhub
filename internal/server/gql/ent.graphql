@@ -1600,6 +1600,14 @@ input CreateRequestInput {
   Request headers
   """
   requestHeaders: JSONRawMessageInput
+  """
+  Original inbound request path
+  """
+  requestPath: String
+  """
+  Original inbound request User-Agent header
+  """
+  userAgent: String
   requestBody: JSONRawMessageInput!
   responseBody: JSONRawMessageInput
   responseChunks: [JSONRawMessageInput!]
@@ -4268,6 +4276,14 @@ type Request implements Node {
   Request headers
   """
   requestHeaders: JSONRawMessage
+  """
+  Original inbound request path
+  """
+  requestPath: String!
+  """
+  Original inbound request User-Agent header
+  """
+  userAgent: String!
   requestBody: JSONRawMessage! @goField(forceResolver: true)
   responseBody: JSONRawMessage @goField(forceResolver: true)
   responseChunks: [JSONRawMessage!] @goField(forceResolver: true)
@@ -4850,6 +4866,38 @@ input RequestWhereInput {
   formatHasSuffix: String
   formatEqualFold: String
   formatContainsFold: String
+  """
+  request_path field predicates
+  """
+  requestPath: String
+  requestPathNEQ: String
+  requestPathIn: [String!]
+  requestPathNotIn: [String!]
+  requestPathGT: String
+  requestPathGTE: String
+  requestPathLT: String
+  requestPathLTE: String
+  requestPathContains: String
+  requestPathHasPrefix: String
+  requestPathHasSuffix: String
+  requestPathEqualFold: String
+  requestPathContainsFold: String
+  """
+  user_agent field predicates
+  """
+  userAgent: String
+  userAgentNEQ: String
+  userAgentIn: [String!]
+  userAgentNotIn: [String!]
+  userAgentGT: String
+  userAgentGTE: String
+  userAgentLT: String
+  userAgentLTE: String
+  userAgentContains: String
+  userAgentHasPrefix: String
+  userAgentHasSuffix: String
+  userAgentEqualFold: String
+  userAgentContainsFold: String
   """
   channel_id field predicates
   """

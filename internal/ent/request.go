@@ -44,6 +44,10 @@ type Request struct {
 	Format string `json:"format,omitempty"`
 	// Request headers
 	RequestHeaders objects.JSONRawMessage `json:"request_headers,omitempty"`
+	// Original inbound request path
+	RequestPath string `json:"request_path,omitempty"`
+	// Original inbound request User-Agent header
+	UserAgent string `json:"user_agent,omitempty"`
 	// RequestBody holds the value of the "request_body" field.
 	RequestBody objects.JSONRawMessage `json:"request_body,omitempty"`
 	// ResponseBody holds the value of the "response_body" field.
@@ -188,7 +192,7 @@ func (*Request) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case request.FieldID, request.FieldAPIKeyID, request.FieldProjectID, request.FieldTraceID, request.FieldDataStorageID, request.FieldChannelID, request.FieldMetricsLatencyMs, request.FieldMetricsFirstTokenLatencyMs, request.FieldContentStorageID:
 			values[i] = new(sql.NullInt64)
-		case request.FieldSource, request.FieldModelID, request.FieldFormat, request.FieldExternalID, request.FieldStatus, request.FieldClientIP, request.FieldContentStorageKey:
+		case request.FieldSource, request.FieldModelID, request.FieldFormat, request.FieldRequestPath, request.FieldUserAgent, request.FieldExternalID, request.FieldStatus, request.FieldClientIP, request.FieldContentStorageKey:
 			values[i] = new(sql.NullString)
 		case request.FieldCreatedAt, request.FieldUpdatedAt, request.FieldContentSavedAt:
 			values[i] = new(sql.NullTime)
@@ -274,6 +278,18 @@ func (_m *Request) assignValues(columns []string, values []any) error {
 				if err := json.Unmarshal(*value, &_m.RequestHeaders); err != nil {
 					return fmt.Errorf("unmarshal field request_headers: %w", err)
 				}
+			}
+		case request.FieldRequestPath:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field request_path", values[i])
+			} else if value.Valid {
+				_m.RequestPath = value.String
+			}
+		case request.FieldUserAgent:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field user_agent", values[i])
+			} else if value.Valid {
+				_m.UserAgent = value.String
 			}
 		case request.FieldRequestBody:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -470,6 +486,12 @@ func (_m *Request) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("request_headers=")
 	builder.WriteString(fmt.Sprintf("%v", _m.RequestHeaders))
+	builder.WriteString(", ")
+	builder.WriteString("request_path=")
+	builder.WriteString(_m.RequestPath)
+	builder.WriteString(", ")
+	builder.WriteString("user_agent=")
+	builder.WriteString(_m.UserAgent)
 	builder.WriteString(", ")
 	builder.WriteString("request_body=")
 	builder.WriteString(fmt.Sprintf("%v", _m.RequestBody))

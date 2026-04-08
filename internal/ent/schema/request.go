@@ -64,6 +64,14 @@ func (Request) Fields() []ent.Field {
 		field.JSON("request_headers", objects.JSONRawMessage{}).
 			Optional().
 			Comment("Request headers"),
+		field.String("request_path").
+			Default("").
+			Immutable().
+			Comment("Original inbound request path"),
+		field.String("user_agent").
+			Default("").
+			Immutable().
+			Comment("Original inbound request User-Agent header"),
 		// The original request from the user.
 		// e.g: the user request via OpenAI request format, but the actual request to the provider with Claude format, the request_body is the OpenAI request format.
 		field.JSON("request_body", objects.JSONRawMessage{}).

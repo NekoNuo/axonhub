@@ -154,6 +154,34 @@ func (_c *RequestCreate) SetRequestHeaders(v objects.JSONRawMessage) *RequestCre
 	return _c
 }
 
+// SetRequestPath sets the "request_path" field.
+func (_c *RequestCreate) SetRequestPath(v string) *RequestCreate {
+	_c.mutation.SetRequestPath(v)
+	return _c
+}
+
+// SetNillableRequestPath sets the "request_path" field if the given value is not nil.
+func (_c *RequestCreate) SetNillableRequestPath(v *string) *RequestCreate {
+	if v != nil {
+		_c.SetRequestPath(*v)
+	}
+	return _c
+}
+
+// SetUserAgent sets the "user_agent" field.
+func (_c *RequestCreate) SetUserAgent(v string) *RequestCreate {
+	_c.mutation.SetUserAgent(v)
+	return _c
+}
+
+// SetNillableUserAgent sets the "user_agent" field if the given value is not nil.
+func (_c *RequestCreate) SetNillableUserAgent(v *string) *RequestCreate {
+	if v != nil {
+		_c.SetUserAgent(*v)
+	}
+	return _c
+}
+
 // SetRequestBody sets the "request_body" field.
 func (_c *RequestCreate) SetRequestBody(v objects.JSONRawMessage) *RequestCreate {
 	_c.mutation.SetRequestBody(v)
@@ -436,6 +464,14 @@ func (_c *RequestCreate) defaults() error {
 		v := request.DefaultFormat
 		_c.mutation.SetFormat(v)
 	}
+	if _, ok := _c.mutation.RequestPath(); !ok {
+		v := request.DefaultRequestPath
+		_c.mutation.SetRequestPath(v)
+	}
+	if _, ok := _c.mutation.UserAgent(); !ok {
+		v := request.DefaultUserAgent
+		_c.mutation.SetUserAgent(v)
+	}
 	if _, ok := _c.mutation.Stream(); !ok {
 		v := request.DefaultStream
 		_c.mutation.SetStream(v)
@@ -469,6 +505,12 @@ func (_c *RequestCreate) check() error {
 	}
 	if _, ok := _c.mutation.Format(); !ok {
 		return &ValidationError{Name: "format", err: errors.New(`ent: missing required field "Request.format"`)}
+	}
+	if _, ok := _c.mutation.RequestPath(); !ok {
+		return &ValidationError{Name: "request_path", err: errors.New(`ent: missing required field "Request.request_path"`)}
+	}
+	if _, ok := _c.mutation.UserAgent(); !ok {
+		return &ValidationError{Name: "user_agent", err: errors.New(`ent: missing required field "Request.user_agent"`)}
 	}
 	if _, ok := _c.mutation.RequestBody(); !ok {
 		return &ValidationError{Name: "request_body", err: errors.New(`ent: missing required field "Request.request_body"`)}
@@ -543,6 +585,14 @@ func (_c *RequestCreate) createSpec() (*Request, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.RequestHeaders(); ok {
 		_spec.SetField(request.FieldRequestHeaders, field.TypeJSON, value)
 		_node.RequestHeaders = value
+	}
+	if value, ok := _c.mutation.RequestPath(); ok {
+		_spec.SetField(request.FieldRequestPath, field.TypeString, value)
+		_node.RequestPath = value
+	}
+	if value, ok := _c.mutation.UserAgent(); ok {
+		_spec.SetField(request.FieldUserAgent, field.TypeString, value)
+		_node.UserAgent = value
 	}
 	if value, ok := _c.mutation.RequestBody(); ok {
 		_spec.SetField(request.FieldRequestBody, field.TypeJSON, value)
@@ -1033,6 +1083,12 @@ func (u *RequestUpsertOne) UpdateNewValues() *RequestUpsertOne {
 		}
 		if _, exists := u.create.mutation.Format(); exists {
 			s.SetIgnore(request.FieldFormat)
+		}
+		if _, exists := u.create.mutation.RequestPath(); exists {
+			s.SetIgnore(request.FieldRequestPath)
+		}
+		if _, exists := u.create.mutation.UserAgent(); exists {
+			s.SetIgnore(request.FieldUserAgent)
 		}
 		if _, exists := u.create.mutation.RequestBody(); exists {
 			s.SetIgnore(request.FieldRequestBody)
@@ -1546,6 +1602,12 @@ func (u *RequestUpsertBulk) UpdateNewValues() *RequestUpsertBulk {
 			}
 			if _, exists := b.mutation.Format(); exists {
 				s.SetIgnore(request.FieldFormat)
+			}
+			if _, exists := b.mutation.RequestPath(); exists {
+				s.SetIgnore(request.FieldRequestPath)
+			}
+			if _, exists := b.mutation.UserAgent(); exists {
+				s.SetIgnore(request.FieldUserAgent)
 			}
 			if _, exists := b.mutation.RequestBody(); exists {
 				s.SetIgnore(request.FieldRequestBody)

@@ -3812,6 +3812,16 @@ func (_q *RequestQuery) collectField(ctx context.Context, oneNode bool, opCtx *g
 				selectedFields = append(selectedFields, request.FieldRequestHeaders)
 				fieldSeen[request.FieldRequestHeaders] = struct{}{}
 			}
+		case "requestPath":
+			if _, ok := fieldSeen[request.FieldRequestPath]; !ok {
+				selectedFields = append(selectedFields, request.FieldRequestPath)
+				fieldSeen[request.FieldRequestPath] = struct{}{}
+			}
+		case "userAgent":
+			if _, ok := fieldSeen[request.FieldUserAgent]; !ok {
+				selectedFields = append(selectedFields, request.FieldUserAgent)
+				fieldSeen[request.FieldUserAgent] = struct{}{}
+			}
 		case "requestBody":
 			if _, ok := fieldSeen[request.FieldRequestBody]; !ok {
 				selectedFields = append(selectedFields, request.FieldRequestBody)

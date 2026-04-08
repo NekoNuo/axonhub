@@ -15,6 +15,14 @@ interface DataTableViewOptionsProps<TData> {
   table: Table<TData>;
 }
 
+const requestColumnLabelKeyOverrides: Record<string, string> = {
+  requestPath: 'requests.columns.endpoint',
+};
+
+export function getRequestsColumnLabelKey(columnID: string) {
+  return requestColumnLabelKeyOverrides[columnID] || `requests.columns.${columnID}`;
+}
+
 export function DataTableViewOptions<TData>({ table }: DataTableViewOptionsProps<TData>) {
   const { t } = useTranslation();
 
@@ -45,7 +53,7 @@ export function DataTableViewOptions<TData>({ table }: DataTableViewOptionsProps
                 checked={column.getIsVisible()}
                 onCheckedChange={(value) => column.toggleVisibility(!!value)}
               >
-                {t(`requests.columns.${column.id}`, {
+                {t(getRequestsColumnLabelKey(column.id), {
                   defaultValue: t(`common.columns.${column.id}`),
                 })}
               </DropdownMenuCheckboxItem>

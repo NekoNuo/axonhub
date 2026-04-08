@@ -384,6 +384,8 @@ var schemaGraph = func() *sqlgraph.Schema {
 			request.FieldModelID:                    {Type: field.TypeString, Column: request.FieldModelID},
 			request.FieldFormat:                     {Type: field.TypeString, Column: request.FieldFormat},
 			request.FieldRequestHeaders:             {Type: field.TypeJSON, Column: request.FieldRequestHeaders},
+			request.FieldRequestPath:                {Type: field.TypeString, Column: request.FieldRequestPath},
+			request.FieldUserAgent:                  {Type: field.TypeString, Column: request.FieldUserAgent},
 			request.FieldRequestBody:                {Type: field.TypeJSON, Column: request.FieldRequestBody},
 			request.FieldResponseBody:               {Type: field.TypeJSON, Column: request.FieldResponseBody},
 			request.FieldResponseChunks:             {Type: field.TypeJSON, Column: request.FieldResponseChunks},
@@ -3174,6 +3176,16 @@ func (f *RequestFilter) WhereFormat(p entql.StringP) {
 // WhereRequestHeaders applies the entql json.RawMessage predicate on the request_headers field.
 func (f *RequestFilter) WhereRequestHeaders(p entql.BytesP) {
 	f.Where(p.Field(request.FieldRequestHeaders))
+}
+
+// WhereRequestPath applies the entql string predicate on the request_path field.
+func (f *RequestFilter) WhereRequestPath(p entql.StringP) {
+	f.Where(p.Field(request.FieldRequestPath))
+}
+
+// WhereUserAgent applies the entql string predicate on the user_agent field.
+func (f *RequestFilter) WhereUserAgent(p entql.StringP) {
+	f.Where(p.Field(request.FieldUserAgent))
 }
 
 // WhereRequestBody applies the entql json.RawMessage predicate on the request_body field.

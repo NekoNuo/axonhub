@@ -95,6 +95,16 @@ func Format(v string) predicate.Request {
 	return predicate.Request(sql.FieldEQ(FieldFormat, v))
 }
 
+// RequestPath applies equality check predicate on the "request_path" field. It's identical to RequestPathEQ.
+func RequestPath(v string) predicate.Request {
+	return predicate.Request(sql.FieldEQ(FieldRequestPath, v))
+}
+
+// UserAgent applies equality check predicate on the "user_agent" field. It's identical to UserAgentEQ.
+func UserAgent(v string) predicate.Request {
+	return predicate.Request(sql.FieldEQ(FieldUserAgent, v))
+}
+
 // ChannelID applies equality check predicate on the "channel_id" field. It's identical to ChannelIDEQ.
 func ChannelID(v int) predicate.Request {
 	return predicate.Request(sql.FieldEQ(FieldChannelID, v))
@@ -493,6 +503,136 @@ func RequestHeadersIsNil() predicate.Request {
 // RequestHeadersNotNil applies the NotNil predicate on the "request_headers" field.
 func RequestHeadersNotNil() predicate.Request {
 	return predicate.Request(sql.FieldNotNull(FieldRequestHeaders))
+}
+
+// RequestPathEQ applies the EQ predicate on the "request_path" field.
+func RequestPathEQ(v string) predicate.Request {
+	return predicate.Request(sql.FieldEQ(FieldRequestPath, v))
+}
+
+// RequestPathNEQ applies the NEQ predicate on the "request_path" field.
+func RequestPathNEQ(v string) predicate.Request {
+	return predicate.Request(sql.FieldNEQ(FieldRequestPath, v))
+}
+
+// RequestPathIn applies the In predicate on the "request_path" field.
+func RequestPathIn(vs ...string) predicate.Request {
+	return predicate.Request(sql.FieldIn(FieldRequestPath, vs...))
+}
+
+// RequestPathNotIn applies the NotIn predicate on the "request_path" field.
+func RequestPathNotIn(vs ...string) predicate.Request {
+	return predicate.Request(sql.FieldNotIn(FieldRequestPath, vs...))
+}
+
+// RequestPathGT applies the GT predicate on the "request_path" field.
+func RequestPathGT(v string) predicate.Request {
+	return predicate.Request(sql.FieldGT(FieldRequestPath, v))
+}
+
+// RequestPathGTE applies the GTE predicate on the "request_path" field.
+func RequestPathGTE(v string) predicate.Request {
+	return predicate.Request(sql.FieldGTE(FieldRequestPath, v))
+}
+
+// RequestPathLT applies the LT predicate on the "request_path" field.
+func RequestPathLT(v string) predicate.Request {
+	return predicate.Request(sql.FieldLT(FieldRequestPath, v))
+}
+
+// RequestPathLTE applies the LTE predicate on the "request_path" field.
+func RequestPathLTE(v string) predicate.Request {
+	return predicate.Request(sql.FieldLTE(FieldRequestPath, v))
+}
+
+// RequestPathContains applies the Contains predicate on the "request_path" field.
+func RequestPathContains(v string) predicate.Request {
+	return predicate.Request(sql.FieldContains(FieldRequestPath, v))
+}
+
+// RequestPathHasPrefix applies the HasPrefix predicate on the "request_path" field.
+func RequestPathHasPrefix(v string) predicate.Request {
+	return predicate.Request(sql.FieldHasPrefix(FieldRequestPath, v))
+}
+
+// RequestPathHasSuffix applies the HasSuffix predicate on the "request_path" field.
+func RequestPathHasSuffix(v string) predicate.Request {
+	return predicate.Request(sql.FieldHasSuffix(FieldRequestPath, v))
+}
+
+// RequestPathEqualFold applies the EqualFold predicate on the "request_path" field.
+func RequestPathEqualFold(v string) predicate.Request {
+	return predicate.Request(sql.FieldEqualFold(FieldRequestPath, v))
+}
+
+// RequestPathContainsFold applies the ContainsFold predicate on the "request_path" field.
+func RequestPathContainsFold(v string) predicate.Request {
+	return predicate.Request(sql.FieldContainsFold(FieldRequestPath, v))
+}
+
+// UserAgentEQ applies the EQ predicate on the "user_agent" field.
+func UserAgentEQ(v string) predicate.Request {
+	return predicate.Request(sql.FieldEQ(FieldUserAgent, v))
+}
+
+// UserAgentNEQ applies the NEQ predicate on the "user_agent" field.
+func UserAgentNEQ(v string) predicate.Request {
+	return predicate.Request(sql.FieldNEQ(FieldUserAgent, v))
+}
+
+// UserAgentIn applies the In predicate on the "user_agent" field.
+func UserAgentIn(vs ...string) predicate.Request {
+	return predicate.Request(sql.FieldIn(FieldUserAgent, vs...))
+}
+
+// UserAgentNotIn applies the NotIn predicate on the "user_agent" field.
+func UserAgentNotIn(vs ...string) predicate.Request {
+	return predicate.Request(sql.FieldNotIn(FieldUserAgent, vs...))
+}
+
+// UserAgentGT applies the GT predicate on the "user_agent" field.
+func UserAgentGT(v string) predicate.Request {
+	return predicate.Request(sql.FieldGT(FieldUserAgent, v))
+}
+
+// UserAgentGTE applies the GTE predicate on the "user_agent" field.
+func UserAgentGTE(v string) predicate.Request {
+	return predicate.Request(sql.FieldGTE(FieldUserAgent, v))
+}
+
+// UserAgentLT applies the LT predicate on the "user_agent" field.
+func UserAgentLT(v string) predicate.Request {
+	return predicate.Request(sql.FieldLT(FieldUserAgent, v))
+}
+
+// UserAgentLTE applies the LTE predicate on the "user_agent" field.
+func UserAgentLTE(v string) predicate.Request {
+	return predicate.Request(sql.FieldLTE(FieldUserAgent, v))
+}
+
+// UserAgentContains applies the Contains predicate on the "user_agent" field.
+func UserAgentContains(v string) predicate.Request {
+	return predicate.Request(sql.FieldContains(FieldUserAgent, v))
+}
+
+// UserAgentHasPrefix applies the HasPrefix predicate on the "user_agent" field.
+func UserAgentHasPrefix(v string) predicate.Request {
+	return predicate.Request(sql.FieldHasPrefix(FieldUserAgent, v))
+}
+
+// UserAgentHasSuffix applies the HasSuffix predicate on the "user_agent" field.
+func UserAgentHasSuffix(v string) predicate.Request {
+	return predicate.Request(sql.FieldHasSuffix(FieldUserAgent, v))
+}
+
+// UserAgentEqualFold applies the EqualFold predicate on the "user_agent" field.
+func UserAgentEqualFold(v string) predicate.Request {
+	return predicate.Request(sql.FieldEqualFold(FieldUserAgent, v))
+}
+
+// UserAgentContainsFold applies the ContainsFold predicate on the "user_agent" field.
+func UserAgentContainsFold(v string) predicate.Request {
+	return predicate.Request(sql.FieldContainsFold(FieldUserAgent, v))
 }
 
 // ResponseBodyIsNil applies the IsNil predicate on the "response_body" field.

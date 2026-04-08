@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/eko/gocache/lib/v4/store"
@@ -181,6 +182,8 @@ func (s *RequestService) CreateRequest(
 
 	if httpRequest != nil {
 		mut = mut.SetClientIP(httpRequest.ClientIP)
+		mut = mut.SetRequestPath(resolveRequestPath(httpRequest))
+		mut = mut.SetUserAgent(readUserAgent(httpRequest.Headers))
 	}
 
 	// Determine if we should store in database or external storage
@@ -236,6 +239,30 @@ func (s *RequestService) CreateRequest(
 	}
 
 	return req, nil
+}
+
+func resolveRequestPath(httpRequest *httpclient.Request) string {
+	if httpRequest == nil {
+		return ""
+	}
+
+	if httpRequest.Path != "" {
+		return httpRequest.Path
+	}
+
+	if httpRequest.RawRequest != nil && httpRequest.RawRequest.URL != nil {
+		return httpRequest.RawRequest.URL.Path
+	}
+
+	return ""
+}
+
+func readUserAgent(headers http.Header) string {
+	if headers == nil {
+		return ""
+	}
+
+	return headers.Get("User-Agent")
 }
 
 // CreateRequestExecution creates a new request execution record.

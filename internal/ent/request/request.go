@@ -38,6 +38,10 @@ const (
 	FieldFormat = "format"
 	// FieldRequestHeaders holds the string denoting the request_headers field in the database.
 	FieldRequestHeaders = "request_headers"
+	// FieldRequestPath holds the string denoting the request_path field in the database.
+	FieldRequestPath = "request_path"
+	// FieldUserAgent holds the string denoting the user_agent field in the database.
+	FieldUserAgent = "user_agent"
 	// FieldRequestBody holds the string denoting the request_body field in the database.
 	FieldRequestBody = "request_body"
 	// FieldResponseBody holds the string denoting the response_body field in the database.
@@ -146,6 +150,8 @@ var Columns = []string{
 	FieldModelID,
 	FieldFormat,
 	FieldRequestHeaders,
+	FieldRequestPath,
+	FieldUserAgent,
 	FieldRequestBody,
 	FieldResponseBody,
 	FieldResponseChunks,
@@ -190,6 +196,10 @@ var (
 	DefaultProjectID int
 	// DefaultFormat holds the default value on creation for the "format" field.
 	DefaultFormat string
+	// DefaultRequestPath holds the default value on creation for the "request_path" field.
+	DefaultRequestPath string
+	// DefaultUserAgent holds the default value on creation for the "user_agent" field.
+	DefaultUserAgent string
 	// DefaultStream holds the default value on creation for the "stream" field.
 	DefaultStream bool
 	// DefaultClientIP holds the default value on creation for the "client_ip" field.
@@ -302,6 +312,16 @@ func ByModelID(opts ...sql.OrderTermOption) OrderOption {
 // ByFormat orders the results by the format field.
 func ByFormat(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldFormat, opts...).ToFunc()
+}
+
+// ByRequestPath orders the results by the request_path field.
+func ByRequestPath(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRequestPath, opts...).ToFunc()
+}
+
+// ByUserAgent orders the results by the user_agent field.
+func ByUserAgent(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUserAgent, opts...).ToFunc()
 }
 
 // ByChannelID orders the results by the channel_id field.

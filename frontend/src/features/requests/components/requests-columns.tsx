@@ -154,6 +154,28 @@ export function useRequestsColumns(options?: UseRequestsColumnsOptions): ColumnD
         return <div className='font-mono text-xs'>{clientIP || '-'}</div>;
       },
     },
+    {
+      id: 'requestPath',
+      accessorKey: 'requestPath',
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('requests.columns.endpoint')} />,
+      enableSorting: false,
+      cell: ({ row }) => {
+        const requestPath = row.original.requestPath;
+        return <div className='font-mono text-xs'>{requestPath || '-'}</div>;
+      },
+      enableHiding: true,
+    },
+    {
+      id: 'userAgent',
+      accessorKey: 'userAgent',
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('requests.columns.userAgent')} />,
+      enableSorting: false,
+      cell: ({ row }) => {
+        const userAgent = row.original.userAgent;
+        return <div className='max-w-[280px] truncate font-mono text-xs'>{userAgent || '-'}</div>;
+      },
+      enableHiding: true,
+    },
     // Channel column - only show if user has permission to view channels
     ...(permissions.canViewChannels
       ? ([
