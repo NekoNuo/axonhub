@@ -80,18 +80,10 @@ func (svc *BackupService) triggerAutoBackup(ctx context.Context) {
 
 	startAt := time.Now()
 	err = svc.performBackup(ctx, settings)
-
-	var errMsg string
 	if err != nil {
-		errMsg = err.Error()
 		log.Error(ctx, "Auto backup failed", log.Cause(err))
 	} else {
-		log.Info(ctx, "Auto backup completed successfully",
-			log.String("cost", time.Since(startAt).String()))
-	}
-
-	if err := svc.systemService.UpdateAutoBackupLastRun(ctx, errMsg); err != nil {
-		log.Error(ctx, "Failed to update auto backup status", log.Cause(err))
+		log.Info(ctx, "Auto backup completed successfully", log.String("cost", time.Since(startAt).String()))
 	}
 }
 
@@ -110,11 +102,6 @@ func (svc *BackupService) shouldRunBackup(now time.Time, settings *biz.AutoBacku
 }
 
 func (svc *BackupService) performBackup(ctx context.Context, settings *biz.AutoBackupSettings) error {
-	ds, err := svc.dataStorageService.GetDataStorageByID(ctx, settings.DataStorageID)
-	if err != nil {
-		return fmt.Errorf("failed to get data storage: %w", err)
-	}
-
 	opts := BackupOptions{
 		IncludeChannels:    settings.IncludeChannels,
 		IncludeModels:      settings.IncludeModels,
@@ -130,19 +117,50 @@ func (svc *BackupService) performBackup(ctx context.Context, settings *biz.AutoB
 	timestamp := time.Now().Format("2006-01-02_15-04-05")
 	filename := fmt.Sprintf("axonhub-backup-%s.json", timestamp)
 
-	if _, err := svc.dataStorageService.SaveData(ctx, ds, filename, data); err != nil {
-		return fmt.Errorf("failed to write backup file: %w", err)
+	if len(settings.DataStorageIDs) == 0 {
+		return fmt.Errorf("data storage not configured for backup")
 	}
 
-	log.Info(ctx, "Backup uploaded to storage",
-		log.String("path", filename),
-		log.Int("size", len(data)),
-	)
-
-	if settings.RetentionDays > 0 {
-		if err := svc.cleanupOldBackups(ctx, ds, settings.RetentionDays); err != nil {
-			log.Warn(ctx, "Failed to cleanup old backups", log.Cause(err))
+	var errs []string
+	for _, dataStorageID := range settings.DataStorageIDs {
+		ds, dsErr := svc.dataStorageService.GetDataStorageByID(ctx, dataStorageID)
+		if dsErr != nil {
+			errMsg := fmt.Sprintf("failed to get data storage %d: %v", dataStorageID, dsErr)
+			errs = append(errs, errMsg)
+			if updateErr := svc.systemService.UpdateAutoBackupLastRun(ctx, dataStorageID, errMsg); updateErr != nil {
+				log.Error(ctx, "Failed to update auto backup status", log.Cause(updateErr))
+			}
+			continue
 		}
+
+		if _, saveErr := svc.dataStorageService.SaveData(ctx, ds, filename, data); saveErr != nil {
+			errMsg := fmt.Sprintf("failed to write backup file to data storage %d: %v", dataStorageID, saveErr)
+			errs = append(errs, errMsg)
+			if updateErr := svc.systemService.UpdateAutoBackupLastRun(ctx, dataStorageID, errMsg); updateErr != nil {
+				log.Error(ctx, "Failed to update auto backup status", log.Cause(updateErr))
+			}
+			continue
+		}
+
+		log.Info(ctx, "Backup uploaded to storage",
+			log.Int("dataStorageID", dataStorageID),
+			log.String("path", filename),
+			log.Int("size", len(data)),
+		)
+
+		if settings.RetentionDays > 0 {
+			if cleanupErr := svc.cleanupOldBackups(ctx, ds, settings.RetentionDays); cleanupErr != nil {
+				log.Warn(ctx, "Failed to cleanup old backups", log.Cause(cleanupErr))
+			}
+		}
+
+		if updateErr := svc.systemService.UpdateAutoBackupLastRun(ctx, dataStorageID, ""); updateErr != nil {
+			log.Error(ctx, "Failed to update auto backup status", log.Cause(updateErr))
+		}
+	}
+
+	if len(errs) > 0 {
+		return fmt.Errorf("%s", strings.Join(errs, "; "))
 	}
 
 	return nil
@@ -202,7 +220,7 @@ func (svc *BackupService) RunBackupNow(ctx context.Context) error {
 		return fmt.Errorf("failed to get auto backup settings: %w", err)
 	}
 
-	if settings.DataStorageID == 0 {
+	if len(settings.DataStorageIDs) == 0 {
 		return fmt.Errorf("data storage not configured for backup")
 	}
 

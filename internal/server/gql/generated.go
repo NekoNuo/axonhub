@@ -201,16 +201,21 @@ type ComplexityRoot struct {
 	}
 
 	AutoBackupSettings struct {
-		DataStorageID      func(childComplexity int) int
+		DataStorageIDs     func(childComplexity int) int
 		Enabled            func(childComplexity int) int
 		Frequency          func(childComplexity int) int
 		IncludeAPIKeys     func(childComplexity int) int
 		IncludeChannels    func(childComplexity int) int
 		IncludeModelPrices func(childComplexity int) int
 		IncludeModels      func(childComplexity int) int
-		LastBackupAt       func(childComplexity int) int
-		LastBackupError    func(childComplexity int) int
 		RetentionDays      func(childComplexity int) int
+		StorageStatuses    func(childComplexity int) int
+	}
+
+	AutoBackupStorageStatus struct {
+		DataStorageID   func(childComplexity int) int
+		LastBackupAt    func(childComplexity int) int
+		LastBackupError func(childComplexity int) int
 	}
 
 	AutoDisableAPIKey struct {
@@ -487,8 +492,8 @@ type ComplexityRoot struct {
 		ModelMappings            func(childComplexity int) int
 		PassThroughUserAgent     func(childComplexity int) int
 		Proxy                    func(childComplexity int) int
-		RateLimit                func(childComplexity int) int
 		RPM                      func(childComplexity int) int
+		RateLimit                func(childComplexity int) int
 		TransformOptions         func(childComplexity int) int
 	}
 
@@ -902,6 +907,7 @@ type ComplexityRoot struct {
 		BulkRecoverChannels                  func(childComplexity int, ids []*objects.GUID) int
 		BulkUpdateChannelOrdering            func(childComplexity int, input BulkUpdateChannelOrderingInput) int
 		CheckProviderQuotas                  func(childComplexity int) int
+		ClearAutoBackupStorageStatus         func(childComplexity int, dataStorageID int) int
 		CompleteAutoDisableChannelOnboarding func(childComplexity int, input CompleteAutoDisableChannelOnboardingInput) int
 		CompleteOnboarding                   func(childComplexity int, input CompleteOnboardingInput) int
 		CompleteSystemModelSettingOnboarding func(childComplexity int, input CompleteSystemModelSettingOnboardingInput) int
@@ -1171,77 +1177,77 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		APIKeyQuotaUsages            func(childComplexity int, apiKeyID objects.GUID) int
-		APIKeyTokenUsageStats        func(childComplexity int, input *APIKeyTokenUsageStatsInput) int
-		APIKeys                      func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.APIKeyOrder, where *ent.APIKeyWhereInput) int
-		AllChannelSummarys           func(childComplexity int, includeArchived *bool) int
-		AllChannelTags               func(childComplexity int) int
-		AllScopes                    func(childComplexity int, level *string) int
-		AutoBackupSettings           func(childComplexity int) int
-		BrandSettings                func(childComplexity int) int
-		ChannelOverrideTemplates     func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.ChannelOverrideTemplateOrder, where *ent.ChannelOverrideTemplateWhereInput) int
-		ChannelPerformanceStats      func(childComplexity int) int
-		ChannelProbeData             func(childComplexity int, input biz.GetChannelProbeDataInput) int
-		ChannelSuccessRates          func(childComplexity int) int
-		Channels                     func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.ChannelOrder, where *ent.ChannelWhereInput) int
-		CheckForUpdate               func(childComplexity int) int
-		CostStatsByAPIKey            func(childComplexity int, timeWindow *string) int
-		CostStatsByChannel           func(childComplexity int, timeWindow *string) int
-		CostStatsByModel             func(childComplexity int, timeWindow *string) int
-		CountChannelsByType          func(childComplexity int, input CountChannelsByTypeInput) int
-		DailyRequestStats            func(childComplexity int) int
-		DashboardOverview            func(childComplexity int) int
-		DataStorages                 func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.DataStorageOrder, where *ent.DataStorageWhereInput) int
-		DefaultDataStorageID         func(childComplexity int) int
+		APIKeyQuotaUsages              func(childComplexity int, apiKeyID objects.GUID) int
+		APIKeyTokenUsageStats          func(childComplexity int, input *APIKeyTokenUsageStatsInput) int
+		APIKeys                        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.APIKeyOrder, where *ent.APIKeyWhereInput) int
+		AllChannelSummarys             func(childComplexity int, includeArchived *bool) int
+		AllChannelTags                 func(childComplexity int) int
+		AllScopes                      func(childComplexity int, level *string) int
+		AutoBackupSettings             func(childComplexity int) int
+		BrandSettings                  func(childComplexity int) int
+		ChannelOverrideTemplates       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.ChannelOverrideTemplateOrder, where *ent.ChannelOverrideTemplateWhereInput) int
+		ChannelPerformanceStats        func(childComplexity int) int
+		ChannelProbeData               func(childComplexity int, input biz.GetChannelProbeDataInput) int
+		ChannelSuccessRates            func(childComplexity int) int
+		Channels                       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.ChannelOrder, where *ent.ChannelWhereInput) int
+		CheckForUpdate                 func(childComplexity int) int
+		CostStatsByAPIKey              func(childComplexity int, timeWindow *string) int
+		CostStatsByChannel             func(childComplexity int, timeWindow *string) int
+		CostStatsByModel               func(childComplexity int, timeWindow *string) int
+		CountChannelsByType            func(childComplexity int, input CountChannelsByTypeInput) int
+		DailyRequestStats              func(childComplexity int) int
+		DashboardOverview              func(childComplexity int) int
+		DataStorages                   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.DataStorageOrder, where *ent.DataStorageWhereInput) int
+		DefaultDataStorageID           func(childComplexity int) int
 		DiscoveredModelHealthSnapshots func(childComplexity int, input GetDiscoveredModelHealthSnapshotsInput) int
-		FastestChannels              func(childComplexity int, input FastestChannelsInput) int
-		FastestModels                func(childComplexity int, input FastestChannelsInput) int
-		FetchModels                  func(childComplexity int, input biz.FetchModelsInput) int
-		LatestChannelHealthSnapshots func(childComplexity int, input biz.GetChannelHealthSnapshotsInput) int
-		LoadBalancerPreview          func(childComplexity int, input *GetLoadBalancerPreviewInput) int
-		Me                           func(childComplexity int) int
-		ModelHealthHistory           func(childComplexity int, input GetModelHealthHistoryInput) int
-		ModelHealthSnapshots         func(childComplexity int, input GetModelHealthSnapshotsInput) int
-		ModelPerformanceStats        func(childComplexity int) int
-		Models                       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.ModelOrder, where *ent.ModelWhereInput) int
-		MyProjects                   func(childComplexity int) int
-		Node                         func(childComplexity int, id objects.GUID) int
-		Nodes                        func(childComplexity int, ids []*objects.GUID) int
-		OnboardingInfo               func(childComplexity int) int
-		Projects                     func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.ProjectOrder, where *ent.ProjectWhereInput) int
-		PromptProtectionRules        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.PromptProtectionRuleOrder, where *ent.PromptProtectionRuleWhereInput) int
-		Prompts                      func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.PromptOrder, where *ent.PromptWhereInput) int
-		ProxyPresets                 func(childComplexity int) int
-		QueryChannels                func(childComplexity int, input biz.QueryChannelsInput) int
-		QueryModelChannelConnections func(childComplexity int, associations []*objects.ModelAssociation) int
-		QueryModels                  func(childComplexity int, input QueryModelsInput) int
-		QueryUnassociatedChannels    func(childComplexity int) int
-		RequestStats                 func(childComplexity int) int
-		RequestStatsByAPIKey         func(childComplexity int, timeWindow *string) int
-		RequestStatsByChannel        func(childComplexity int, timeWindow *string) int
-		RequestStatsByModel          func(childComplexity int, timeWindow *string) int
-		Requests                     func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.RequestOrder, where *ent.RequestWhereInput) int
-		RetryPolicy                  func(childComplexity int) int
-		Roles                        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.RoleOrder, where *ent.RoleWhereInput) int
-		RuntimeLogs                  func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.RuntimeLogOrder, where *ent.RuntimeLogWhereInput) int
-		StoragePolicy                func(childComplexity int) int
-		SystemChannelSettings        func(childComplexity int) int
-		SystemGeneralSettings        func(childComplexity int) int
-		SystemModelSettings          func(childComplexity int) int
-		SystemStatus                 func(childComplexity int) int
-		SystemVersion                func(childComplexity int) int
-		Systems                      func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.SystemOrder, where *ent.SystemWhereInput) int
-		Threads                      func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.ThreadOrder, where *ent.ThreadWhereInput) int
-		TokenStats                   func(childComplexity int) int
-		TokenStatsByAPIKey           func(childComplexity int, timeWindow *string) int
-		TokenStatsByChannel          func(childComplexity int, timeWindow *string) int
-		TokenStatsByModel            func(childComplexity int, timeWindow *string) int
-		TopRequestsProjects          func(childComplexity int) int
-		Traces                       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.TraceOrder, where *ent.TraceWhereInput) int
-		UsageLogs                    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.UsageLogOrder, where *ent.UsageLogWhereInput) int
-		UserAgentPassThroughSettings func(childComplexity int) int
-		Users                        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.UserOrder, where *ent.UserWhereInput) int
-		VideoStorageSettings         func(childComplexity int) int
+		FastestChannels                func(childComplexity int, input FastestChannelsInput) int
+		FastestModels                  func(childComplexity int, input FastestChannelsInput) int
+		FetchModels                    func(childComplexity int, input biz.FetchModelsInput) int
+		LatestChannelHealthSnapshots   func(childComplexity int, input biz.GetChannelHealthSnapshotsInput) int
+		LoadBalancerPreview            func(childComplexity int, input *GetLoadBalancerPreviewInput) int
+		Me                             func(childComplexity int) int
+		ModelHealthHistory             func(childComplexity int, input GetModelHealthHistoryInput) int
+		ModelHealthSnapshots           func(childComplexity int, input GetModelHealthSnapshotsInput) int
+		ModelPerformanceStats          func(childComplexity int) int
+		Models                         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.ModelOrder, where *ent.ModelWhereInput) int
+		MyProjects                     func(childComplexity int) int
+		Node                           func(childComplexity int, id objects.GUID) int
+		Nodes                          func(childComplexity int, ids []*objects.GUID) int
+		OnboardingInfo                 func(childComplexity int) int
+		Projects                       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.ProjectOrder, where *ent.ProjectWhereInput) int
+		PromptProtectionRules          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.PromptProtectionRuleOrder, where *ent.PromptProtectionRuleWhereInput) int
+		Prompts                        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.PromptOrder, where *ent.PromptWhereInput) int
+		ProxyPresets                   func(childComplexity int) int
+		QueryChannels                  func(childComplexity int, input biz.QueryChannelsInput) int
+		QueryModelChannelConnections   func(childComplexity int, associations []*objects.ModelAssociation) int
+		QueryModels                    func(childComplexity int, input QueryModelsInput) int
+		QueryUnassociatedChannels      func(childComplexity int) int
+		RequestStats                   func(childComplexity int) int
+		RequestStatsByAPIKey           func(childComplexity int, timeWindow *string) int
+		RequestStatsByChannel          func(childComplexity int, timeWindow *string) int
+		RequestStatsByModel            func(childComplexity int, timeWindow *string) int
+		Requests                       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.RequestOrder, where *ent.RequestWhereInput) int
+		RetryPolicy                    func(childComplexity int) int
+		Roles                          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.RoleOrder, where *ent.RoleWhereInput) int
+		RuntimeLogs                    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.RuntimeLogOrder, where *ent.RuntimeLogWhereInput) int
+		StoragePolicy                  func(childComplexity int) int
+		SystemChannelSettings          func(childComplexity int) int
+		SystemGeneralSettings          func(childComplexity int) int
+		SystemModelSettings            func(childComplexity int) int
+		SystemStatus                   func(childComplexity int) int
+		SystemVersion                  func(childComplexity int) int
+		Systems                        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.SystemOrder, where *ent.SystemWhereInput) int
+		Threads                        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.ThreadOrder, where *ent.ThreadWhereInput) int
+		TokenStats                     func(childComplexity int) int
+		TokenStatsByAPIKey             func(childComplexity int, timeWindow *string) int
+		TokenStatsByChannel            func(childComplexity int, timeWindow *string) int
+		TokenStatsByModel              func(childComplexity int, timeWindow *string) int
+		TopRequestsProjects            func(childComplexity int) int
+		Traces                         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.TraceOrder, where *ent.TraceWhereInput) int
+		UsageLogs                      func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.UsageLogOrder, where *ent.UsageLogWhereInput) int
+		UserAgentPassThroughSettings   func(childComplexity int) int
+		Users                          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.UserOrder, where *ent.UserWhereInput) int
+		VideoStorageSettings           func(childComplexity int) int
 	}
 
 	RegexAssociation struct {
@@ -2024,6 +2030,7 @@ type MutationResolver interface {
 	Restore(ctx context.Context, file graphql.Upload, input backup.RestoreOptions) (*RestorePayload, error)
 	UpdateAutoBackupSettings(ctx context.Context, input UpdateAutoBackupSettingsInput) (bool, error)
 	TriggerAutoBackup(ctx context.Context) (*TriggerBackupPayload, error)
+	ClearAutoBackupStorageStatus(ctx context.Context, dataStorageID int) (bool, error)
 	CreatePrompt(ctx context.Context, input ent.CreatePromptInput) (*ent.Prompt, error)
 	UpdatePrompt(ctx context.Context, id objects.GUID, input ent.UpdatePromptInput) (*ent.Prompt, error)
 	DeletePrompt(ctx context.Context, id objects.GUID) (bool, error)
@@ -2607,12 +2614,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.ApplyChannelOverrideTemplatePayload.Updated(childComplexity), true
 
-	case "AutoBackupSettings.dataStorageID":
-		if e.complexity.AutoBackupSettings.DataStorageID == nil {
+	case "AutoBackupSettings.dataStorageIDs":
+		if e.complexity.AutoBackupSettings.DataStorageIDs == nil {
 			break
 		}
 
-		return e.complexity.AutoBackupSettings.DataStorageID(childComplexity), true
+		return e.complexity.AutoBackupSettings.DataStorageIDs(childComplexity), true
 	case "AutoBackupSettings.enabled":
 		if e.complexity.AutoBackupSettings.Enabled == nil {
 			break
@@ -2649,24 +2656,37 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.AutoBackupSettings.IncludeModels(childComplexity), true
-	case "AutoBackupSettings.lastBackupAt":
-		if e.complexity.AutoBackupSettings.LastBackupAt == nil {
-			break
-		}
-
-		return e.complexity.AutoBackupSettings.LastBackupAt(childComplexity), true
-	case "AutoBackupSettings.lastBackupError":
-		if e.complexity.AutoBackupSettings.LastBackupError == nil {
-			break
-		}
-
-		return e.complexity.AutoBackupSettings.LastBackupError(childComplexity), true
 	case "AutoBackupSettings.retentionDays":
 		if e.complexity.AutoBackupSettings.RetentionDays == nil {
 			break
 		}
 
 		return e.complexity.AutoBackupSettings.RetentionDays(childComplexity), true
+	case "AutoBackupSettings.storageStatuses":
+		if e.complexity.AutoBackupSettings.StorageStatuses == nil {
+			break
+		}
+
+		return e.complexity.AutoBackupSettings.StorageStatuses(childComplexity), true
+
+	case "AutoBackupStorageStatus.dataStorageID":
+		if e.complexity.AutoBackupStorageStatus.DataStorageID == nil {
+			break
+		}
+
+		return e.complexity.AutoBackupStorageStatus.DataStorageID(childComplexity), true
+	case "AutoBackupStorageStatus.lastBackupAt":
+		if e.complexity.AutoBackupStorageStatus.LastBackupAt == nil {
+			break
+		}
+
+		return e.complexity.AutoBackupStorageStatus.LastBackupAt(childComplexity), true
+	case "AutoBackupStorageStatus.lastBackupError":
+		if e.complexity.AutoBackupStorageStatus.LastBackupError == nil {
+			break
+		}
+
+		return e.complexity.AutoBackupStorageStatus.LastBackupError(childComplexity), true
 
 	case "AutoDisableAPIKey.enabled":
 		if e.complexity.AutoDisableAPIKey.Enabled == nil {
@@ -3743,18 +3763,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.ChannelSettings.Proxy(childComplexity), true
-	case "ChannelSettings.rateLimit":
-		if e.complexity.ChannelSettings.RateLimit == nil {
-			break
-		}
-
-		return e.complexity.ChannelSettings.RateLimit(childComplexity), true
 	case "ChannelSettings.rpm":
 		if e.complexity.ChannelSettings.RPM == nil {
 			break
 		}
 
 		return e.complexity.ChannelSettings.RPM(childComplexity), true
+	case "ChannelSettings.rateLimit":
+		if e.complexity.ChannelSettings.RateLimit == nil {
+			break
+		}
+
+		return e.complexity.ChannelSettings.RateLimit(childComplexity), true
 	case "ChannelSettings.transformOptions":
 		if e.complexity.ChannelSettings.TransformOptions == nil {
 			break
@@ -5438,6 +5458,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.CheckProviderQuotas(childComplexity), true
+	case "Mutation.clearAutoBackupStorageStatus":
+		if e.complexity.Mutation.ClearAutoBackupStorageStatus == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_clearAutoBackupStorageStatus_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ClearAutoBackupStorageStatus(childComplexity, args["dataStorageID"].(int)), true
 	case "Mutation.completeAutoDisableChannelOnboarding":
 		if e.complexity.Mutation.CompleteAutoDisableChannelOnboarding == nil {
 			break
@@ -10899,6 +10930,17 @@ func (ec *executionContext) field_Mutation_bulkUpdateChannelOrdering_args(ctx co
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_clearAutoBackupStorageStatus_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "dataStorageID", ec.unmarshalNInt2int)
+	if err != nil {
+		return nil, err
+	}
+	args["dataStorageID"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_completeAutoDisableChannelOnboarding_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -15340,23 +15382,23 @@ func (ec *executionContext) fieldContext_AutoBackupSettings_frequency(_ context.
 	return fc, nil
 }
 
-func (ec *executionContext) _AutoBackupSettings_dataStorageID(ctx context.Context, field graphql.CollectedField, obj *biz.AutoBackupSettings) (ret graphql.Marshaler) {
+func (ec *executionContext) _AutoBackupSettings_dataStorageIDs(ctx context.Context, field graphql.CollectedField, obj *biz.AutoBackupSettings) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_AutoBackupSettings_dataStorageID,
+		ec.fieldContext_AutoBackupSettings_dataStorageIDs,
 		func(ctx context.Context) (any, error) {
-			return obj.DataStorageID, nil
+			return obj.DataStorageIDs, nil
 		},
 		nil,
-		ec.marshalNInt2int,
+		ec.marshalNInt2ᚕintᚄ,
 		true,
 		true,
 	)
 }
 
-func (ec *executionContext) fieldContext_AutoBackupSettings_dataStorageID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AutoBackupSettings_dataStorageIDs(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AutoBackupSettings",
 		Field:      field,
@@ -15514,12 +15556,78 @@ func (ec *executionContext) fieldContext_AutoBackupSettings_retentionDays(_ cont
 	return fc, nil
 }
 
-func (ec *executionContext) _AutoBackupSettings_lastBackupAt(ctx context.Context, field graphql.CollectedField, obj *biz.AutoBackupSettings) (ret graphql.Marshaler) {
+func (ec *executionContext) _AutoBackupSettings_storageStatuses(ctx context.Context, field graphql.CollectedField, obj *biz.AutoBackupSettings) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_AutoBackupSettings_lastBackupAt,
+		ec.fieldContext_AutoBackupSettings_storageStatuses,
+		func(ctx context.Context) (any, error) {
+			return obj.StorageStatuses, nil
+		},
+		nil,
+		ec.marshalNAutoBackupStorageStatus2ᚕgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋbizᚐAutoBackupStorageStatusᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_AutoBackupSettings_storageStatuses(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AutoBackupSettings",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "dataStorageID":
+				return ec.fieldContext_AutoBackupStorageStatus_dataStorageID(ctx, field)
+			case "lastBackupAt":
+				return ec.fieldContext_AutoBackupStorageStatus_lastBackupAt(ctx, field)
+			case "lastBackupError":
+				return ec.fieldContext_AutoBackupStorageStatus_lastBackupError(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AutoBackupStorageStatus", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AutoBackupStorageStatus_dataStorageID(ctx context.Context, field graphql.CollectedField, obj *biz.AutoBackupStorageStatus) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AutoBackupStorageStatus_dataStorageID,
+		func(ctx context.Context) (any, error) {
+			return obj.DataStorageID, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_AutoBackupStorageStatus_dataStorageID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AutoBackupStorageStatus",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AutoBackupStorageStatus_lastBackupAt(ctx context.Context, field graphql.CollectedField, obj *biz.AutoBackupStorageStatus) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AutoBackupStorageStatus_lastBackupAt,
 		func(ctx context.Context) (any, error) {
 			return obj.LastBackupAt, nil
 		},
@@ -15530,9 +15638,9 @@ func (ec *executionContext) _AutoBackupSettings_lastBackupAt(ctx context.Context
 	)
 }
 
-func (ec *executionContext) fieldContext_AutoBackupSettings_lastBackupAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AutoBackupStorageStatus_lastBackupAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "AutoBackupSettings",
+		Object:     "AutoBackupStorageStatus",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -15543,12 +15651,12 @@ func (ec *executionContext) fieldContext_AutoBackupSettings_lastBackupAt(_ conte
 	return fc, nil
 }
 
-func (ec *executionContext) _AutoBackupSettings_lastBackupError(ctx context.Context, field graphql.CollectedField, obj *biz.AutoBackupSettings) (ret graphql.Marshaler) {
+func (ec *executionContext) _AutoBackupStorageStatus_lastBackupError(ctx context.Context, field graphql.CollectedField, obj *biz.AutoBackupStorageStatus) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_AutoBackupSettings_lastBackupError,
+		ec.fieldContext_AutoBackupStorageStatus_lastBackupError,
 		func(ctx context.Context) (any, error) {
 			return obj.LastBackupError, nil
 		},
@@ -15559,9 +15667,9 @@ func (ec *executionContext) _AutoBackupSettings_lastBackupError(ctx context.Cont
 	)
 }
 
-func (ec *executionContext) fieldContext_AutoBackupSettings_lastBackupError(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AutoBackupStorageStatus_lastBackupError(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "AutoBackupSettings",
+		Object:     "AutoBackupStorageStatus",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -32753,6 +32861,47 @@ func (ec *executionContext) fieldContext_Mutation_triggerAutoBackup(_ context.Co
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_clearAutoBackupStorageStatus(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_clearAutoBackupStorageStatus,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().ClearAutoBackupStorageStatus(ctx, fc.Args["dataStorageID"].(int))
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_clearAutoBackupStorageStatus(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_clearAutoBackupStorageStatus_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_createPrompt(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -38235,6 +38384,10 @@ func (ec *executionContext) fieldContext_Query_allChannelSummarys(ctx context.Co
 				return ec.fieldContext_Channel_usageLogs(ctx, field)
 			case "channelProbes":
 				return ec.fieldContext_Channel_channelProbes(ctx, field)
+			case "modelHealthSnapshots":
+				return ec.fieldContext_Channel_modelHealthSnapshots(ctx, field)
+			case "modelHealthHistories":
+				return ec.fieldContext_Channel_modelHealthHistories(ctx, field)
 			case "channelModelPrices":
 				return ec.fieldContext_Channel_channelModelPrices(ctx, field)
 			case "providerQuotaStatus":
@@ -40538,8 +40691,8 @@ func (ec *executionContext) fieldContext_Query_autoBackupSettings(_ context.Cont
 				return ec.fieldContext_AutoBackupSettings_enabled(ctx, field)
 			case "frequency":
 				return ec.fieldContext_AutoBackupSettings_frequency(ctx, field)
-			case "dataStorageID":
-				return ec.fieldContext_AutoBackupSettings_dataStorageID(ctx, field)
+			case "dataStorageIDs":
+				return ec.fieldContext_AutoBackupSettings_dataStorageIDs(ctx, field)
 			case "includeChannels":
 				return ec.fieldContext_AutoBackupSettings_includeChannels(ctx, field)
 			case "includeModels":
@@ -40550,10 +40703,8 @@ func (ec *executionContext) fieldContext_Query_autoBackupSettings(_ context.Cont
 				return ec.fieldContext_AutoBackupSettings_includeModelPrices(ctx, field)
 			case "retentionDays":
 				return ec.fieldContext_AutoBackupSettings_retentionDays(ctx, field)
-			case "lastBackupAt":
-				return ec.fieldContext_AutoBackupSettings_lastBackupAt(ctx, field)
-			case "lastBackupError":
-				return ec.fieldContext_AutoBackupSettings_lastBackupError(ctx, field)
+			case "storageStatuses":
+				return ec.fieldContext_AutoBackupSettings_storageStatuses(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type AutoBackupSettings", field.Name)
 		},
@@ -76002,7 +76153,7 @@ func (ec *executionContext) unmarshalInputUpdateAutoBackupSettingsInput(ctx cont
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"enabled", "frequency", "dataStorageID", "includeChannels", "includeModels", "includeAPIKeys", "includeModelPrices", "retentionDays"}
+	fieldsInOrder := [...]string{"enabled", "frequency", "dataStorageIDs", "includeChannels", "includeModels", "includeAPIKeys", "includeModelPrices", "retentionDays"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -76023,13 +76174,13 @@ func (ec *executionContext) unmarshalInputUpdateAutoBackupSettingsInput(ctx cont
 				return it, err
 			}
 			it.Frequency = data
-		case "dataStorageID":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dataStorageID"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+		case "dataStorageIDs":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dataStorageIDs"))
+			data, err := ec.unmarshalOInt2ᚕintᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.DataStorageID = data
+			it.DataStorageIDs = data
 		case "includeChannels":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("includeChannels"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -82370,8 +82521,8 @@ func (ec *executionContext) _AutoBackupSettings(ctx context.Context, sel ast.Sel
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "dataStorageID":
-			out.Values[i] = ec._AutoBackupSettings_dataStorageID(ctx, field, obj)
+		case "dataStorageIDs":
+			out.Values[i] = ec._AutoBackupSettings_dataStorageIDs(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -82400,10 +82551,54 @@ func (ec *executionContext) _AutoBackupSettings(ctx context.Context, sel ast.Sel
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "storageStatuses":
+			out.Values[i] = ec._AutoBackupSettings_storageStatuses(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var autoBackupStorageStatusImplementors = []string{"AutoBackupStorageStatus"}
+
+func (ec *executionContext) _AutoBackupStorageStatus(ctx context.Context, sel ast.SelectionSet, obj *biz.AutoBackupStorageStatus) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, autoBackupStorageStatusImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AutoBackupStorageStatus")
+		case "dataStorageID":
+			out.Values[i] = ec._AutoBackupStorageStatus_dataStorageID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "lastBackupAt":
-			out.Values[i] = ec._AutoBackupSettings_lastBackupAt(ctx, field, obj)
+			out.Values[i] = ec._AutoBackupStorageStatus_lastBackupAt(ctx, field, obj)
 		case "lastBackupError":
-			out.Values[i] = ec._AutoBackupSettings_lastBackupError(ctx, field, obj)
+			out.Values[i] = ec._AutoBackupStorageStatus_lastBackupError(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -89017,6 +89212,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "triggerAutoBackup":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_triggerAutoBackup(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "clearAutoBackupStorageStatus":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_clearAutoBackupStorageStatus(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -99839,6 +100041,54 @@ func (ec *executionContext) marshalNAutoBackupSettings2ᚖgithubᚗcomᚋlooplj�
 	return ec._AutoBackupSettings(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNAutoBackupStorageStatus2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋbizᚐAutoBackupStorageStatus(ctx context.Context, sel ast.SelectionSet, v biz.AutoBackupStorageStatus) graphql.Marshaler {
+	return ec._AutoBackupStorageStatus(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNAutoBackupStorageStatus2ᚕgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋbizᚐAutoBackupStorageStatusᚄ(ctx context.Context, sel ast.SelectionSet, v []biz.AutoBackupStorageStatus) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNAutoBackupStorageStatus2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋbizᚐAutoBackupStorageStatus(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) marshalNAutoDisableAPIKeyStatus2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋgqlᚐAutoDisableAPIKeyStatusᚄ(ctx context.Context, sel ast.SelectionSet, v []*AutoDisableAPIKeyStatus) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
@@ -101706,6 +101956,36 @@ func (ec *executionContext) marshalNInt2int64(ctx context.Context, sel ast.Selec
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNInt2ᚕintᚄ(ctx context.Context, v any) ([]int, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]int, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNInt2int(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNInt2ᚕintᚄ(ctx context.Context, sel ast.SelectionSet, v []int) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNInt2int(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalNJSONRawMessage2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐJSONRawMessage(ctx context.Context, v any) (objects.JSONRawMessage, error) {

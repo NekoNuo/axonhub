@@ -71,8 +71,8 @@ func (r *mutationResolver) UpdateAutoBackupSettings(ctx context.Context, input U
 		settings.Frequency = *input.Frequency
 	}
 
-	if input.DataStorageID != nil {
-		settings.DataStorageID = *input.DataStorageID
+	if input.DataStorageIDs != nil {
+		settings.DataStorageIDs = input.DataStorageIDs
 	}
 
 	if input.IncludeChannels != nil {
@@ -124,6 +124,20 @@ func (r *mutationResolver) TriggerAutoBackup(ctx context.Context) (*TriggerBacku
 		Success: true,
 		Message: lo.ToPtr("Backup completed successfully"),
 	}, nil
+}
+
+// ClearAutoBackupStorageStatus is the resolver for the clearAutoBackupStorageStatus field.
+func (r *mutationResolver) ClearAutoBackupStorageStatus(ctx context.Context, dataStorageID int) (bool, error) {
+	user, ok := contexts.GetUser(ctx)
+	if !ok || user == nil || !user.IsOwner {
+		return false, ErrNotOwner
+	}
+
+	if err := r.systemService.ClearAutoBackupStorageStatus(ctx, dataStorageID); err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 // AutoBackupSettings is the resolver for the autoBackupSettings field.

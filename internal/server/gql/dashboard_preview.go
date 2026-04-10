@@ -189,7 +189,7 @@ func buildStrategyPreview(
 	modelID string,
 ) (*loadBalancerPreviewStrategy, error) {
 	loadBalancer, scorers := newPreviewLoadBalancer(r, strategy)
-	sorted := loadBalancer.Sort(ctx, cloneCandidates(candidates), modelID)
+	sorted := loadBalancer.Sort(ctx, cloneCandidates(candidates), modelID, false)
 
 	item := &loadBalancerPreviewStrategy{
 		Strategy:   strategy,

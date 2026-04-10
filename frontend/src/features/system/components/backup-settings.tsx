@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Download, Upload, Loader2, AlertCircle, CheckCircle2, Clock, Play } from 'lucide-react';
+import { Download, Upload, Loader2, AlertCircle, CheckCircle2, Clock, Play, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { extractNumberID } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,7 @@ import {
   useAutoBackupSettings,
   useUpdateAutoBackupSettings,
   useTriggerAutoBackup,
+  useClearAutoBackupStorageStatus,
   BackupOptionsInput,
   RestoreOptionsInput,
   BackupFrequency,
@@ -30,6 +31,7 @@ export function BackupSettings() {
   const autoBackupSettings = useAutoBackupSettings();
   const updateAutoBackupSettings = useUpdateAutoBackupSettings();
   const triggerBackup = useTriggerAutoBackup();
+  const clearStorageStatus = useClearAutoBackupStorageStatus();
   const dataStorages = useDataStorages({ first: 100 });
   const availableStorages =
     dataStorages.data?.edges?.map((e) => e.node)?.filter((s) => s.status === 'active' && s.type !== 'database') ?? [];
@@ -57,7 +59,7 @@ export function BackupSettings() {
   const [autoBackupForm, setAutoBackupForm] = useState({
     enabled: false,
     frequency: 'daily' as BackupFrequency,
-    dataStorageID: 0,
+    dataStorageIDs: [] as number[],
     includeChannels: true,
     includeModels: true,
     includeAPIKeys: false,
@@ -65,13 +67,16 @@ export function BackupSettings() {
     retentionDays: 0,
   });
 
-  const isStorageSelected = autoBackupForm.dataStorageID > 0;
+  const isStorageSelected = autoBackupForm.dataStorageIDs.length > 0;
   const isDirty = React.useMemo(() => {
     if (!autoBackupSettings.data) return true;
+    const currentStorageIDs = [...autoBackupForm.dataStorageIDs].sort((a, b) => a - b);
+    const savedStorageIDs = [...autoBackupSettings.data.dataStorageIDs].sort((a, b) => a - b);
     return (
       autoBackupForm.enabled !== autoBackupSettings.data.enabled ||
       autoBackupForm.frequency !== autoBackupSettings.data.frequency ||
-      autoBackupForm.dataStorageID !== autoBackupSettings.data.dataStorageID ||
+      currentStorageIDs.length !== savedStorageIDs.length ||
+      currentStorageIDs.some((id, idx) => id !== savedStorageIDs[idx]) ||
       autoBackupForm.includeChannels !== autoBackupSettings.data.includeChannels ||
       autoBackupForm.includeModels !== autoBackupSettings.data.includeModels ||
       autoBackupForm.includeAPIKeys !== autoBackupSettings.data.includeAPIKeys ||
@@ -85,7 +90,7 @@ export function BackupSettings() {
       setAutoBackupForm({
         enabled: autoBackupSettings.data.enabled,
         frequency: autoBackupSettings.data.frequency,
-        dataStorageID: autoBackupSettings.data.dataStorageID,
+        dataStorageIDs: autoBackupSettings.data.dataStorageIDs,
         includeChannels: autoBackupSettings.data.includeChannels,
         includeModels: autoBackupSettings.data.includeModels,
         includeAPIKeys: autoBackupSettings.data.includeAPIKeys,
@@ -115,7 +120,7 @@ export function BackupSettings() {
     updateAutoBackupSettings.mutate({
       enabled: autoBackupForm.enabled,
       frequency: autoBackupForm.frequency,
-      dataStorageID: autoBackupForm.dataStorageID,
+      dataStorageIDs: autoBackupForm.dataStorageIDs,
       includeChannels: autoBackupForm.includeChannels,
       includeModels: autoBackupForm.includeModels,
       includeAPIKeys: autoBackupForm.includeAPIKeys,
@@ -385,8 +390,17 @@ export function BackupSettings() {
           <div className='space-y-2'>
             <Label htmlFor='data-storage'>{t('system.autoBackup.dataStorage.label')}</Label>
             <Select
-              value={autoBackupForm.dataStorageID ? String(autoBackupForm.dataStorageID) : ''}
-              onValueChange={(value) => setAutoBackupForm({ ...autoBackupForm, dataStorageID: parseInt(value) || 0 })}
+              value=''
+              onValueChange={(value) => {
+                const id = parseInt(value) || 0;
+                if (id <= 0) return;
+                setAutoBackupForm((prev) => {
+                  if (prev.dataStorageIDs.includes(id)) {
+                    return { ...prev, dataStorageIDs: prev.dataStorageIDs.filter((v) => v !== id) };
+                  }
+                  return { ...prev, dataStorageIDs: [...prev.dataStorageIDs, id] };
+                });
+              }}
             >
               <SelectTrigger id='data-storage'>
                 <SelectValue placeholder={t('system.autoBackup.dataStorage.placeholder')} />
@@ -400,6 +414,26 @@ export function BackupSettings() {
               </SelectContent>
             </Select>
             <p className='text-muted-foreground text-sm'>{t('system.autoBackup.dataStorage.description')}</p>
+            {autoBackupForm.dataStorageIDs.length > 0 && (
+              <div className='flex flex-wrap gap-2'>
+                {autoBackupForm.dataStorageIDs.map((id) => {
+                  const storage = availableStorages.find((item) => parseInt(extractNumberID(item.id)) === id);
+                  if (!storage) return null;
+                  return (
+                    <Button
+                      key={id}
+                      variant='secondary'
+                      size='sm'
+                      onClick={() =>
+                        setAutoBackupForm((prev) => ({ ...prev, dataStorageIDs: prev.dataStorageIDs.filter((v) => v !== id) }))
+                      }
+                    >
+                      {storage.name} ({storage.type})
+                    </Button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div className='space-y-4'>
@@ -451,21 +485,44 @@ export function BackupSettings() {
             <p className='text-muted-foreground text-sm'>{t('system.autoBackup.retentionDaysDescription')}</p>
           </div>
 
-          {autoBackupSettings.data?.lastBackupAt && (
-            <div className='bg-muted rounded-md p-3 text-sm'>
-              <div className='flex items-center gap-2'>
-                <CheckCircle2 className='h-4 w-4 text-green-500' />
-                <span>
-                  {t('system.autoBackup.lastBackup.time')}: {new Date(autoBackupSettings.data.lastBackupAt).toLocaleString()}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {autoBackupSettings.data?.lastBackupError && (
-            <div className='flex items-start gap-2 rounded-md bg-red-50 p-3 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-200'>
-              <AlertCircle className='mt-0.5 h-4 w-4 flex-shrink-0' />
-              <p>{autoBackupSettings.data.lastBackupError}</p>
+          {autoBackupSettings.data?.storageStatuses?.some((status) => autoBackupForm.dataStorageIDs.includes(status.dataStorageID)) && (
+            <div className='space-y-2'>
+              {autoBackupSettings.data.storageStatuses
+                .filter((status) => autoBackupForm.dataStorageIDs.includes(status.dataStorageID))
+                .map((status) => {
+                const storage = availableStorages.find((item) => parseInt(extractNumberID(item.id)) === status.dataStorageID);
+                return (
+                  <div key={status.dataStorageID} className='bg-muted space-y-1 rounded-md p-3 text-sm'>
+                    <div className='flex items-center justify-between gap-2'>
+                      <div className='font-medium'>
+                        {storage ? `${storage.name} (${storage.type})` : `ID: ${status.dataStorageID}`}
+                      </div>
+                      <Button
+                        variant='ghost'
+                        size='icon'
+                        onClick={() => clearStorageStatus.mutate(status.dataStorageID)}
+                        disabled={clearStorageStatus.isPending}
+                      >
+                        <Trash2 className='h-4 w-4' />
+                      </Button>
+                    </div>
+                    {status.lastBackupAt && (
+                      <div className='flex items-center gap-2'>
+                        <CheckCircle2 className='h-4 w-4 text-green-500' />
+                        <span>
+                          {t('system.autoBackup.lastBackup.time')}: {new Date(status.lastBackupAt).toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+                    {status.lastBackupError && (
+                      <div className='flex items-start gap-2 rounded-md bg-red-50 p-2 text-red-800 dark:bg-red-900/20 dark:text-red-200'>
+                        <AlertCircle className='mt-0.5 h-4 w-4 flex-shrink-0' />
+                        <p>{status.lastBackupError}</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
 

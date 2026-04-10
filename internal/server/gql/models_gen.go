@@ -482,7 +482,7 @@ type UpdateAPIKeyScopesInput struct {
 type UpdateAutoBackupSettingsInput struct {
 	Enabled            *bool                `json:"enabled,omitempty"`
 	Frequency          *biz.BackupFrequency `json:"frequency,omitempty"`
-	DataStorageID      *int                 `json:"dataStorageID,omitempty"`
+	DataStorageIDs     []int                `json:"dataStorageIDs,omitempty"`
 	IncludeChannels    *bool                `json:"includeChannels,omitempty"`
 	IncludeModels      *bool                `json:"includeModels,omitempty"`
 	IncludeAPIKeys     *bool                `json:"includeAPIKeys,omitempty"`

@@ -827,6 +827,87 @@ func TestSystemService_DefaultDataStorageID(t *testing.T) {
 	require.Equal(t, ds.ID, retrievedID)
 }
 
+func TestSystemService_AutoBackupSettings_MigrateLegacyDataStorageID(t *testing.T) {
+	cacheConfig := xcache.Config{Mode: xcache.ModeMemory}
+
+	service, client := setupTestSystemService(t, cacheConfig)
+	defer client.Close()
+
+	ctx := context.Background()
+	ctx = ent.NewContext(ctx, client)
+	ctx = authz.WithTestBypass(ctx)
+
+	legacyJSON := `{"enabled":true,"frequency":"daily","data_storage_id":7,"include_channels":true,"include_models":true,"include_api_keys":false,"include_model_prices":true,"retention_days":30,"last_backup_at":"2026-03-01T00:00:00Z","last_backup_error":"legacy error"}`
+	err := service.setSystemValue(ctx, SystemKeyAutoBackupSettings, legacyJSON)
+	require.NoError(t, err)
+
+	settings, err := service.AutoBackupSettings(ctx)
+	require.NoError(t, err)
+	require.Equal(t, []int{7}, settings.DataStorageIDs)
+	require.Len(t, settings.StorageStatuses, 1)
+	require.Equal(t, 7, settings.StorageStatuses[0].DataStorageID)
+	require.Equal(t, "legacy error", settings.StorageStatuses[0].LastBackupError)
+	require.NotNil(t, settings.StorageStatuses[0].LastBackupAt)
+}
+
+func TestSystemService_UpdateAutoBackupLastRun_ByStorageID(t *testing.T) {
+	cacheConfig := xcache.Config{Mode: xcache.ModeMemory}
+
+	service, client := setupTestSystemService(t, cacheConfig)
+	defer client.Close()
+
+	ctx := context.Background()
+	ctx = ent.NewContext(ctx, client)
+	ctx = authz.WithTestBypass(ctx)
+
+	ds1, err := client.DataStorage.Create().
+		SetName("Backup S3").
+		SetDescription("backup target 1").
+		SetPrimary(false).
+		SetType("s3").
+		SetSettings(&objects.DataStorageSettings{}).
+		SetStatus("active").
+		Save(ctx)
+	require.NoError(t, err)
+
+	ds2, err := client.DataStorage.Create().
+		SetName("Backup WebDAV").
+		SetDescription("backup target 2").
+		SetPrimary(false).
+		SetType("webdav").
+		SetSettings(&objects.DataStorageSettings{}).
+		SetStatus("active").
+		Save(ctx)
+	require.NoError(t, err)
+
+	err = service.SetAutoBackupSettings(ctx, AutoBackupSettings{
+		Enabled:        true,
+		Frequency:      BackupFrequencyDaily,
+		DataStorageIDs: []int{ds1.ID, ds2.ID},
+	})
+	require.NoError(t, err)
+
+	err = service.UpdateAutoBackupLastRun(ctx, ds1.ID, "")
+	require.NoError(t, err)
+
+	err = service.UpdateAutoBackupLastRun(ctx, ds2.ID, "write failed")
+	require.NoError(t, err)
+
+	settings, err := service.AutoBackupSettings(ctx)
+	require.NoError(t, err)
+
+	statusByStorage := map[int]AutoBackupStorageStatus{}
+	for _, status := range settings.StorageStatuses {
+		statusByStorage[status.DataStorageID] = status
+	}
+
+	require.Len(t, statusByStorage, 2)
+	require.NotNil(t, statusByStorage[ds1.ID].LastBackupAt)
+	require.Empty(t, statusByStorage[ds1.ID].LastBackupError)
+	require.NotNil(t, statusByStorage[ds2.ID].LastBackupAt)
+	require.Equal(t, "write failed", statusByStorage[ds2.ID].LastBackupError)
+}
+
 func TestSystemService_Initialize_TransactionRollback(t *testing.T) {
 	client := enttest.NewEntClient(t, "sqlite3", "file:ent?mode=memory&_fk=1")
 	defer client.Close()

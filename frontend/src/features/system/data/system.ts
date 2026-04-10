@@ -984,14 +984,17 @@ const AUTO_BACKUP_SETTINGS_QUERY = `
     autoBackupSettings {
       enabled
       frequency
-      dataStorageID
+      dataStorageIDs
       includeChannels
       includeModels
       includeAPIKeys
       includeModelPrices
       retentionDays
-      lastBackupAt
-      lastBackupError
+      storageStatuses {
+        dataStorageID
+        lastBackupAt
+        lastBackupError
+      }
     }
   }
 `;
@@ -1011,25 +1014,34 @@ const TRIGGER_AUTO_BACKUP_MUTATION = `
   }
 `;
 
+const CLEAR_AUTO_BACKUP_STORAGE_STATUS_MUTATION = `
+  mutation ClearAutoBackupStorageStatus($dataStorageID: Int!) {
+    clearAutoBackupStorageStatus(dataStorageID: $dataStorageID)
+  }
+`;
+
 export type BackupFrequency = 'daily' | 'weekly' | 'monthly';
 
 export interface AutoBackupSettings {
   enabled: boolean;
   frequency: BackupFrequency;
-  dataStorageID: number;
+  dataStorageIDs: number[];
   includeChannels: boolean;
   includeModels: boolean;
   includeAPIKeys: boolean;
   includeModelPrices: boolean;
   retentionDays: number;
-  lastBackupAt?: string;
-  lastBackupError?: string;
+  storageStatuses: {
+    dataStorageID: number;
+    lastBackupAt?: string;
+    lastBackupError?: string;
+  }[];
 }
 
 export interface UpdateAutoBackupSettingsInput {
   enabled?: boolean;
   frequency?: BackupFrequency;
-  dataStorageID?: number;
+  dataStorageIDs?: number[];
   includeChannels?: boolean;
   includeModels?: boolean;
   includeAPIKeys?: boolean;
@@ -1090,6 +1102,26 @@ export function useTriggerAutoBackup() {
     },
     onError: () => {
       toast.error(i18n.t('system.autoBackup.triggerFailed'));
+    },
+  });
+}
+
+export function useClearAutoBackupStorageStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (dataStorageID: number) => {
+      const data = await graphqlRequest<{ clearAutoBackupStorageStatus: boolean }>(CLEAR_AUTO_BACKUP_STORAGE_STATUS_MUTATION, {
+        dataStorageID,
+      });
+      return data.clearAutoBackupStorageStatus;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['autoBackupSettings'] });
+      toast.success(i18n.t('common.success.systemUpdated'));
+    },
+    onError: () => {
+      toast.error(i18n.t('common.errors.systemUpdateFailed'));
     },
   });
 }

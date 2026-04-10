@@ -49,12 +49,17 @@ enum BackupFrequency {
 type AutoBackupSettings {
   enabled: Boolean!
   frequency: BackupFrequency!
-  dataStorageID: Int!
+  dataStorageIDs: [Int!]!
   includeChannels: Boolean!
   includeModels: Boolean!
   includeAPIKeys: Boolean!
   includeModelPrices: Boolean!
   retentionDays: Int!
+  storageStatuses: [AutoBackupStorageStatus!]!
+}
+
+type AutoBackupStorageStatus {
+  dataStorageID: Int!
   lastBackupAt: Time
   lastBackupError: String
 }
@@ -62,7 +67,7 @@ type AutoBackupSettings {
 input UpdateAutoBackupSettingsInput {
   enabled: Boolean
   frequency: BackupFrequency
-  dataStorageID: Int
+  dataStorageIDs: [Int!]
   includeChannels: Boolean
   includeModels: Boolean
   includeAPIKeys: Boolean
@@ -82,4 +87,5 @@ extend type Query {
 extend type Mutation {
   updateAutoBackupSettings(input: UpdateAutoBackupSettingsInput!): Boolean!
   triggerAutoBackup: TriggerBackupPayload!
+  clearAutoBackupStorageStatus(dataStorageID: Int!): Boolean!
 }

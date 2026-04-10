@@ -125,8 +125,8 @@ type AutoBackupSettings struct {
 	Enabled bool `json:"enabled"`
 	// Frequency defines how often backups are created
 	Frequency BackupFrequency `json:"frequency"`
-	// DataStorageID is the ID of the data storage to backup to
-	DataStorageID int `json:"data_storage_id"`
+	// DataStorageIDs are the target data storage IDs to backup to
+	DataStorageIDs []int `json:"data_storage_ids"`
 	// BackupOptions defines what to include in the backup
 	IncludeChannels    bool `json:"include_channels"`
 	IncludeModels      bool `json:"include_models"`
@@ -134,10 +134,18 @@ type AutoBackupSettings struct {
 	IncludeModelPrices bool `json:"include_model_prices"`
 	// RetentionDays defines how many days to keep backups (0 = keep all)
 	RetentionDays int `json:"retention_days"`
-	// LastBackupAt is the timestamp of the last successful backup
-	LastBackupAt *time.Time `json:"last_backup_at,omitempty"`
-	// LastBackupError is the error message from the last backup attempt (if any)
-	LastBackupError string `json:"last_backup_error,omitempty"`
+	// StorageStatuses keeps the latest backup status of each data storage target.
+	StorageStatuses []AutoBackupStorageStatus `json:"storage_statuses,omitempty"`
+	// Legacy fields for compatibility with old persisted settings.
+	DataStorageID  int        `json:"data_storage_id,omitempty"`
+	LastBackupAt   *time.Time `json:"last_backup_at,omitempty"`
+	LastBackupError string    `json:"last_backup_error,omitempty"`
+}
+
+type AutoBackupStorageStatus struct {
+	DataStorageID  int        `json:"data_storage_id"`
+	LastBackupAt   *time.Time `json:"last_backup_at,omitempty"`
+	LastBackupError string    `json:"last_backup_error,omitempty"`
 }
 
 // StoragePolicy represents the storage policy configuration.
@@ -1035,11 +1043,31 @@ func (s *SystemService) AutoBackupSettings(ctx context.Context) (*AutoBackupSett
 		return nil, fmt.Errorf("failed to unmarshal auto backup settings: %w", err)
 	}
 
+	settings.migrateLegacyAutoBackupSettings()
+
 	return &settings, nil
 }
 
 // SetAutoBackupSettings sets the auto backup settings configuration.
 func (s *SystemService) SetAutoBackupSettings(ctx context.Context, settings AutoBackupSettings) error {
+	settings.migrateLegacyAutoBackupSettings()
+
+	if settings.Enabled {
+		if len(settings.DataStorageIDs) == 0 {
+			return fmt.Errorf("at least one data_storage_id is required when auto backup is enabled")
+		}
+
+		for _, dataStorageID := range settings.DataStorageIDs {
+			ds, err := s.entFromContext(ctx).DataStorage.Get(ctx, dataStorageID)
+			if err != nil {
+				return fmt.Errorf("failed to get data storage %d: %w", dataStorageID, err)
+			}
+			if ds.Primary || ds.Type == datastorage.TypeDatabase {
+				return fmt.Errorf("auto backup must use non-database data storage: %d", dataStorageID)
+			}
+		}
+	}
+
 	jsonBytes, err := json.Marshal(settings)
 	if err != nil {
 		return fmt.Errorf("failed to marshal auto backup settings: %w", err)
@@ -1142,14 +1170,104 @@ func (s *SystemService) SetUserAgentPassThrough(ctx context.Context, enabled boo
 }
 
 // UpdateAutoBackupLastRun updates the last backup timestamp and error status.
-func (s *SystemService) UpdateAutoBackupLastRun(ctx context.Context, lastError string) error {
+func (s *SystemService) UpdateAutoBackupLastRun(ctx context.Context, dataStorageID int, lastError string) error {
 	settings, err := s.AutoBackupSettings(ctx)
 	if err != nil {
 		return err
 	}
 
-	settings.LastBackupAt = lo.ToPtr(xtime.UTCNow())
-	settings.LastBackupError = lastError
+	now := lo.ToPtr(xtime.UTCNow())
+	updated := false
+	for i := range settings.StorageStatuses {
+		if settings.StorageStatuses[i].DataStorageID != dataStorageID {
+			continue
+		}
+		settings.StorageStatuses[i].LastBackupAt = now
+		settings.StorageStatuses[i].LastBackupError = lastError
+		updated = true
+		break
+	}
+	if !updated {
+		settings.StorageStatuses = append(settings.StorageStatuses, AutoBackupStorageStatus{
+			DataStorageID:  dataStorageID,
+			LastBackupAt:   now,
+			LastBackupError: lastError,
+		})
+	}
 
-	return s.SetAutoBackupSettings(ctx, *settings)
+	jsonBytes, err := json.Marshal(settings)
+	if err != nil {
+		return fmt.Errorf("failed to marshal auto backup settings: %w", err)
+	}
+
+	if err := s.setSystemValue(ctx, SystemKeyAutoBackupSettings, string(jsonBytes)); err != nil {
+		return fmt.Errorf("failed to set auto backup settings: %w", err)
+	}
+
+	return nil
+}
+
+func (s *SystemService) ClearAutoBackupStorageStatus(ctx context.Context, dataStorageID int) error {
+	settings, err := s.AutoBackupSettings(ctx)
+	if err != nil {
+		return err
+	}
+
+	settings.StorageStatuses = lo.Filter(settings.StorageStatuses, func(status AutoBackupStorageStatus, _ int) bool {
+		return status.DataStorageID != dataStorageID
+	})
+
+	jsonBytes, err := json.Marshal(settings)
+	if err != nil {
+		return fmt.Errorf("failed to marshal auto backup settings: %w", err)
+	}
+
+	if err := s.setSystemValue(ctx, SystemKeyAutoBackupSettings, string(jsonBytes)); err != nil {
+		return fmt.Errorf("failed to set auto backup settings: %w", err)
+	}
+
+	return nil
+}
+
+func (s *AutoBackupSettings) migrateLegacyAutoBackupSettings() {
+	ids := make([]int, 0, len(s.DataStorageIDs)+1)
+	ids = append(ids, s.DataStorageIDs...)
+	if s.DataStorageID > 0 {
+		ids = append(ids, s.DataStorageID)
+	}
+	ids = lo.Uniq(lo.Filter(ids, func(id int, _ int) bool { return id > 0 }))
+	s.DataStorageIDs = ids
+
+	statusMap := make(map[int]AutoBackupStorageStatus, len(s.StorageStatuses))
+	for _, status := range s.StorageStatuses {
+		if status.DataStorageID <= 0 {
+			continue
+		}
+		statusMap[status.DataStorageID] = status
+	}
+
+	if s.DataStorageID > 0 && (s.LastBackupAt != nil || s.LastBackupError != "") {
+		legacy := statusMap[s.DataStorageID]
+		legacy.DataStorageID = s.DataStorageID
+		if legacy.LastBackupAt == nil {
+			legacy.LastBackupAt = s.LastBackupAt
+		}
+		if legacy.LastBackupError == "" {
+			legacy.LastBackupError = s.LastBackupError
+		}
+		statusMap[s.DataStorageID] = legacy
+	}
+
+	s.StorageStatuses = make([]AutoBackupStorageStatus, 0, len(s.DataStorageIDs))
+	for _, id := range s.DataStorageIDs {
+		status, ok := statusMap[id]
+		if !ok {
+			status = AutoBackupStorageStatus{DataStorageID: id}
+		}
+		s.StorageStatuses = append(s.StorageStatuses, status)
+	}
+
+	s.DataStorageID = 0
+	s.LastBackupAt = nil
+	s.LastBackupError = ""
 }
