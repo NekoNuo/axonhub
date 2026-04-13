@@ -948,6 +948,45 @@ func TestSystemService_UpdateAutoBackupLastRun_ByStorageID(t *testing.T) {
 	require.Equal(t, "write failed", statusByStorage[ds2.ID].LastBackupError)
 }
 
+func TestSystemService_AutoBackupSettings_PrunesDeletedStorage(t *testing.T) {
+	cacheConfig := xcache.Config{Mode: xcache.ModeMemory}
+
+	service, client := setupTestSystemService(t, cacheConfig)
+	defer client.Close()
+
+	ctx := context.Background()
+	ctx = ent.NewContext(ctx, client)
+	ctx = authz.WithTestBypass(ctx)
+
+	ds, err := client.DataStorage.Create().
+		SetName("Backup FS").
+		SetDescription("backup target").
+		SetPrimary(false).
+		SetType("fs").
+		SetSettings(&objects.DataStorageSettings{}).
+		SetStatus("active").
+		Save(ctx)
+	require.NoError(t, err)
+
+	err = service.SetAutoBackupSettings(ctx, AutoBackupSettings{
+		Enabled:        true,
+		Frequency:      BackupFrequencyDaily,
+		DataStorageIDs: []int{ds.ID},
+	})
+	require.NoError(t, err)
+
+	err = service.UpdateAutoBackupLastRun(ctx, ds.ID, "write failed")
+	require.NoError(t, err)
+
+	err = client.DataStorage.DeleteOneID(ds.ID).Exec(ctx)
+	require.NoError(t, err)
+
+	settings, err := service.AutoBackupSettings(ctx)
+	require.NoError(t, err)
+	require.Empty(t, settings.DataStorageIDs)
+	require.Empty(t, settings.StorageStatuses)
+}
+
 func TestSystemService_Initialize_TransactionRollback(t *testing.T) {
 	client := enttest.NewEntClient(t, "sqlite3", "file:ent?mode=memory&_fk=1")
 	defer client.Close()

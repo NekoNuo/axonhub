@@ -142,15 +142,15 @@ type AutoBackupSettings struct {
 	// StorageStatuses keeps the latest backup status of each data storage target.
 	StorageStatuses []AutoBackupStorageStatus `json:"storage_statuses,omitempty"`
 	// Legacy fields for compatibility with old persisted settings.
-	DataStorageID  int        `json:"data_storage_id,omitempty"`
-	LastBackupAt   *time.Time `json:"last_backup_at,omitempty"`
-	LastBackupError string    `json:"last_backup_error,omitempty"`
+	DataStorageID   int        `json:"data_storage_id,omitempty"`
+	LastBackupAt    *time.Time `json:"last_backup_at,omitempty"`
+	LastBackupError string     `json:"last_backup_error,omitempty"`
 }
 
 type AutoBackupStorageStatus struct {
-	DataStorageID  int        `json:"data_storage_id"`
-	LastBackupAt   *time.Time `json:"last_backup_at,omitempty"`
-	LastBackupError string    `json:"last_backup_error,omitempty"`
+	DataStorageID   int        `json:"data_storage_id"`
+	LastBackupAt    *time.Time `json:"last_backup_at,omitempty"`
+	LastBackupError string     `json:"last_backup_error,omitempty"`
 }
 
 // StoragePolicy represents the storage policy configuration.
@@ -236,13 +236,13 @@ type WebhookNotifierConfig struct {
 }
 
 type WebhookTarget struct {
-	Name      string                `json:"name"`
-	Enabled   bool                  `json:"enabled"`
-	URL       string                `json:"url"`
+	Name      string                  `json:"name"`
+	Enabled   bool                    `json:"enabled"`
+	URL       string                  `json:"url"`
 	Proxy     *httpclient.ProxyConfig `json:"proxy,omitempty"`
-	TimeoutMs int                   `json:"timeout_ms"`
-	Headers   []objects.HeaderEntry `json:"headers"`
-	Body      string                `json:"body"`
+	TimeoutMs int                     `json:"timeout_ms"`
+	Headers   []objects.HeaderEntry   `json:"headers"`
+	Body      string                  `json:"body"`
 }
 
 type WebhookSubscription struct {
@@ -1151,6 +1151,9 @@ func (s *SystemService) AutoBackupSettings(ctx context.Context) (*AutoBackupSett
 	}
 
 	settings.migrateLegacyAutoBackupSettings()
+	if err := s.pruneDeletedAutoBackupStorages(ctx, &settings); err != nil {
+		return nil, err
+	}
 
 	return &settings, nil
 }
@@ -1296,8 +1299,8 @@ func (s *SystemService) UpdateAutoBackupLastRun(ctx context.Context, dataStorage
 	}
 	if !updated {
 		settings.StorageStatuses = append(settings.StorageStatuses, AutoBackupStorageStatus{
-			DataStorageID:  dataStorageID,
-			LastBackupAt:   now,
+			DataStorageID:   dataStorageID,
+			LastBackupAt:    now,
 			LastBackupError: lastError,
 		})
 	}
@@ -1332,6 +1335,50 @@ func (s *SystemService) ClearAutoBackupStorageStatus(ctx context.Context, dataSt
 	if err := s.setSystemValue(ctx, SystemKeyAutoBackupSettings, string(jsonBytes)); err != nil {
 		return fmt.Errorf("failed to set auto backup settings: %w", err)
 	}
+
+	return nil
+}
+
+func (s *SystemService) pruneDeletedAutoBackupStorages(ctx context.Context, settings *AutoBackupSettings) error {
+	if len(settings.DataStorageIDs) == 0 && len(settings.StorageStatuses) == 0 {
+		return nil
+	}
+
+	ids := make([]int, 0, len(settings.DataStorageIDs))
+	ids = append(ids, settings.DataStorageIDs...)
+	for _, status := range settings.StorageStatuses {
+		if status.DataStorageID > 0 {
+			ids = append(ids, status.DataStorageID)
+		}
+	}
+	ids = lo.Uniq(lo.Filter(ids, func(id int, _ int) bool { return id > 0 }))
+	if len(ids) == 0 {
+		settings.DataStorageIDs = nil
+		settings.StorageStatuses = nil
+		return nil
+	}
+
+	existingStorages, err := s.entFromContext(ctx).DataStorage.Query().
+		Where(datastorage.IDIn(ids...)).
+		Select(datastorage.FieldID).
+		All(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to query data storages: %w", err)
+	}
+
+	existingIDSet := make(map[int]struct{}, len(existingStorages))
+	for _, storage := range existingStorages {
+		existingIDSet[storage.ID] = struct{}{}
+	}
+
+	settings.DataStorageIDs = lo.Filter(settings.DataStorageIDs, func(id int, _ int) bool {
+		_, ok := existingIDSet[id]
+		return ok
+	})
+	settings.StorageStatuses = lo.Filter(settings.StorageStatuses, func(status AutoBackupStorageStatus, _ int) bool {
+		_, ok := existingIDSet[status.DataStorageID]
+		return ok
+	})
 
 	return nil
 }

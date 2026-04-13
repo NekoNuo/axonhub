@@ -35,6 +35,15 @@ export function BackupSettings() {
   const dataStorages = useDataStorages({ first: 100 });
   const availableStorages =
     dataStorages.data?.edges?.map((e) => e.node)?.filter((s) => s.status === 'active' && s.type !== 'database') ?? [];
+  const visibleStorageStatuses = React.useMemo(() => {
+    if (!autoBackupSettings.data?.storageStatuses?.length) {
+      return [];
+    }
+
+    return autoBackupSettings.data.storageStatuses.filter((status) =>
+      availableStorages.some((item) => parseInt(extractNumberID(item.id)) === status.dataStorageID),
+    );
+  }, [autoBackupSettings.data?.storageStatuses, availableStorages]);
 
   const [backupOptions, setBackupOptions] = useState<BackupOptionsInput>({
     includeChannels: true,
@@ -485,18 +494,16 @@ export function BackupSettings() {
             <p className='text-muted-foreground text-sm'>{t('system.autoBackup.retentionDaysDescription')}</p>
           </div>
 
-          {autoBackupSettings.data?.storageStatuses?.some((status) => autoBackupForm.dataStorageIDs.includes(status.dataStorageID)) && (
+          {visibleStorageStatuses.some((status) => autoBackupForm.dataStorageIDs.includes(status.dataStorageID)) && (
             <div className='space-y-2'>
-              {autoBackupSettings.data.storageStatuses
+              {visibleStorageStatuses
                 .filter((status) => autoBackupForm.dataStorageIDs.includes(status.dataStorageID))
                 .map((status) => {
                 const storage = availableStorages.find((item) => parseInt(extractNumberID(item.id)) === status.dataStorageID);
                 return (
                   <div key={status.dataStorageID} className='bg-muted space-y-1 rounded-md p-3 text-sm'>
                     <div className='flex items-center justify-between gap-2'>
-                      <div className='font-medium'>
-                        {storage ? `${storage.name} (${storage.type})` : `ID: ${status.dataStorageID}`}
-                      </div>
+                      <div className='font-medium'>{storage ? `${storage.name} (${storage.type})` : null}</div>
                       <Button
                         variant='ghost'
                         size='icon'
