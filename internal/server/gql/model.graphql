@@ -44,6 +44,7 @@ type ModelAssociation {
   type: String!
   priority: Int!
   disabled: Boolean!
+  when: ModelAssociationWhen
   channelModel: ChannelModelAssociation
   channelRegex: ChannelRegexAssociation
   regex: RegexAssociation
@@ -51,6 +52,11 @@ type ModelAssociation {
   channelTagsModel: ChannelTagsModelAssociation
   channelTagsRegex: ChannelTagsRegexAssociation
   provider: ProviderAssociation
+}
+
+type ModelAssociationWhen {
+  enabled: Boolean!
+  condition: FilterCondition
 }
 
 type ChannelModelAssociation {
@@ -138,6 +144,7 @@ input ModelAssociationInput {
   type: String!
   priority: Int
   disabled: Boolean
+  when: ModelAssociationWhenInput
   channelModel: ChannelModelAssociationInput
   channelRegex: ChannelRegexAssociationInput
   regex: RegexAssociationInput
@@ -145,6 +152,11 @@ input ModelAssociationInput {
   channelTagsModel: ChannelTagsModelAssociationInput
   channelTagsRegex: ChannelTagsRegexAssociationInput
   provider: ProviderAssociationInput
+}
+
+input ModelAssociationWhenInput {
+  enabled: Boolean
+  condition: FilterConditionInput
 }
 
 input ChannelModelAssociationInput {

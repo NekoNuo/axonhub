@@ -4,6 +4,7 @@ export interface ModelProbeSettingsState {
   enableModelProbe: boolean;
   fallbackToChannelsOnModelNotFound: boolean;
   queryAllChannelModels: boolean;
+  defaultModelAPIIncludeAll: boolean;
 }
 
 export interface ModelProbeSwitchSettings {
@@ -15,6 +16,7 @@ export function buildModelSettingsInput(state: ModelProbeSettingsState): UpdateM
     enableModelProbe: state.enableModelProbe,
     fallbackToChannelsOnModelNotFound: state.fallbackToChannelsOnModelNotFound,
     queryAllChannelModels: state.queryAllChannelModels,
+    defaultModelAPIIncludeAll: state.defaultModelAPIIncludeAll,
   };
 }
 

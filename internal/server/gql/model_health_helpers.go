@@ -102,11 +102,13 @@ func listProbeEnabledAssociatedActualModels(ctx context.Context, client *ent.Cli
 
 		connections := biz.MatchAssociations(modelEntity.Settings.Associations, channels)
 		for _, connection := range connections {
-			for _, matchedModel := range connection.Models {
-				keys[biz.ChannelModelKey{
-					ChannelID: connection.Channel.ID,
-					ModelID:   matchedModel.ActualModel,
-				}] = struct{}{}
+			for _, resolvedConnection := range connection.Connections {
+				for _, matchedModel := range resolvedConnection.Models {
+					keys[biz.ChannelModelKey{
+						ChannelID: resolvedConnection.Channel.ID,
+						ModelID:   matchedModel.ActualModel,
+					}] = struct{}{}
+				}
 			}
 		}
 	}

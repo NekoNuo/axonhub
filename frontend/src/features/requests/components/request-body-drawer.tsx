@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, ExternalLink, FileText, ChevronsDownUp, ChevronsUpDown, Copy, Terminal } from 'lucide-react';
+import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useSelectedProjectId } from '@/stores/projectStore';
@@ -33,6 +34,8 @@ interface RequestBodyDrawerProps {
   pageInfo?: RequestConnection['pageInfo'];
   /** Optional server-side filter currently applied to the table. */
   queryWhere?: Record<string, any>;
+  projectId?: string | null;
+  onViewDetail?: (requestId: string) => void;
 }
 
 export function RequestBodyDrawer({
@@ -43,11 +46,15 @@ export function RequestBodyDrawer({
   initialRequests,
   pageInfo: initialPageInfo,
   queryWhere,
+  projectId,
+  onViewDetail,
 }: RequestBodyDrawerProps) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { navigateWithSearch } = usePaginationSearch({ defaultPageSize: 20 });
   const permissions = useRequestPermissions();
   const selectedProjectId = useSelectedProjectId();
+  const effectiveProjectId = projectId !== undefined ? projectId : selectedProjectId;
 
   // ── internal navigation state ──────────────────────────────────────────────
   // The drawer manages its own growing list so it can cross page boundaries.
@@ -74,7 +81,7 @@ export function RequestBodyDrawer({
   const [globalExpanded, setGlobalExpanded] = useState(false);
 
   // ── fetch detail for current request ──────────────────────────────────────
-  const { data: request, isLoading, isFetching } = useRequest(currentRequestId ?? '');
+  const { data: request, isLoading, isFetching } = useRequest(currentRequestId ?? '', { projectId: effectiveProjectId });
 
   // Keep previous request data visible while loading the next one.
   const displayedRequestRef = useRef<Request | null>(null);
@@ -132,7 +139,7 @@ export function RequestBodyDrawer({
         pageSize: initialRequests.length || 20,
         where: queryWhere,
         permissions,
-        projectId: selectedProjectId,
+        projectId: effectiveProjectId,
       });
       setAllRequests((prev) => {
         const merged = [...prev, ...result.requests];
@@ -145,7 +152,7 @@ export function RequestBodyDrawer({
     } finally {
       setIsLoadingMore(false);
     }
-  }, [currentIndex, allRequests.length, navPageInfo, isLoadingMore, queryWhere, permissions, selectedProjectId, initialRequests.length]);
+  }, [currentIndex, allRequests.length, navPageInfo, isLoadingMore, queryWhere, permissions, effectiveProjectId, initialRequests.length]);
 
   const handleNext = useCallback(async () => {
     if (currentIndex > 0) {
@@ -162,7 +169,7 @@ export function RequestBodyDrawer({
         pageSize: initialRequests.length || 20,
         where: queryWhere,
         permissions,
-        projectId: selectedProjectId,
+        projectId: effectiveProjectId,
       });
       // Prepend newer items; adjust index for shift.
       setAllRequests((prev) => {
@@ -177,17 +184,26 @@ export function RequestBodyDrawer({
     } finally {
       setIsLoadingMore(false);
     }
-  }, [currentIndex, navPageInfo, isLoadingMore, queryWhere, permissions, selectedProjectId, initialRequests.length]);
+  }, [currentIndex, navPageInfo, isLoadingMore, queryWhere, permissions, effectiveProjectId, initialRequests.length]);
 
   const handleViewDetail = useCallback(() => {
     if (currentRequestId) {
-      navigateWithSearch({
-        to: '/project/requests/$requestId',
-        params: { requestId: currentRequestId },
-      });
+      if (onViewDetail) {
+        onViewDetail(currentRequestId);
+      } else if (effectiveProjectId) {
+        navigateWithSearch({
+          to: '/project/requests/$requestId',
+          params: { requestId: currentRequestId },
+        });
+      } else {
+        navigate({
+          to: '/requests/$requestId',
+          params: { requestId: currentRequestId },
+        });
+      }
       onOpenChange(false);
     }
-  }, [currentRequestId, navigateWithSearch, onOpenChange]);
+  }, [currentRequestId, onViewDetail, effectiveProjectId, navigateWithSearch, navigate, onOpenChange]);
 
   // ── render ─────────────────────────────────────────────────────────────────
   return (

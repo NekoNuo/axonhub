@@ -259,8 +259,7 @@ function JsonValue({ data }: { data: any }) {
 
   switch (dataType) {
     case 'string': {
-      const unescaped = unescapeJsonString(data);
-      const normalized = normalizeMultilineForDisplay(unescaped);
+      const normalized = normalizeMultilineForDisplay(data);
       const parsedJson = tryParseJson(data);
 
       if (parsedJson && showParsed) {

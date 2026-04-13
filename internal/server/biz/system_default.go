@@ -37,6 +37,7 @@ var defaultModelSettings = SystemModelSettings{
 	EnableModelProbe:                  false,
 	FallbackToChannelsOnModelNotFound: true,
 	QueryAllChannelModels:             true,
+	DefaultModelAPIIncludeAll:         false,
 }
 
 var defaultChannelSetting = SystemChannelSettings{

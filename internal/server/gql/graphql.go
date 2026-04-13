@@ -121,7 +121,7 @@ func NewGraphqlHandlers(deps Dependencies) *GraphqlHandler {
 		// They perform outbound API calls and can outlive the HTTP timeout budget;
 		// wrapping them in a request-scoped transaction causes the tx to roll back
 		// before the follow-up persistence step can complete.
-		SkipTxFunc: entgql.SkipOperations("TestChannel", "ManualModelProbe"),
+		SkipTxFunc: entgql.SkipOperations("TestChannel", "ManualModelProbe", "TestChannelAPIKeys"),
 	})
 
 	// Set error presenter to handle CodedError and add extensions.code

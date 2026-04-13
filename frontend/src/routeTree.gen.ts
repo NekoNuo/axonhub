@@ -42,6 +42,7 @@ import { Route as AuthenticatedSettingsDisplayRouteImport } from './routes/_auth
 import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_authenticated/settings/appearance'
 import { Route as AuthenticatedHealthModelsRouteImport } from './routes/_authenticated/health/models'
 import { Route as AuthenticatedHealthChannelsRouteImport } from './routes/_authenticated/health/channels'
+import { Route as AuthenticatedRequestsRequestIdRouteImport } from './routes/_authenticated/requests/$requestId'
 import { Route as AuthenticatedProjectUsersIndexRouteImport } from './routes/_authenticated/project/users/index'
 import { Route as AuthenticatedProjectTracesIndexRouteImport } from './routes/_authenticated/project/traces/index'
 import { Route as AuthenticatedProjectThreadsIndexRouteImport } from './routes/_authenticated/project/threads/index'
@@ -236,6 +237,12 @@ const AuthenticatedHealthChannelsRoute =
     path: '/channels',
     getParentRoute: () => AuthenticatedHealthRouteRoute,
   } as any)
+const AuthenticatedRequestsRequestIdRoute =
+  AuthenticatedRequestsRequestIdRouteImport.update({
+    id: '/requests/$requestId',
+    path: '/requests/$requestId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedProjectUsersIndexRoute =
   AuthenticatedProjectUsersIndexRouteImport.update({
     id: '/project/users/',
@@ -319,6 +326,7 @@ export interface FileRoutesByFullPath {
   '/permission': typeof AuthenticatedPermissionRoute
   '/health/channels': typeof AuthenticatedHealthChannelsRoute
   '/health/models': typeof AuthenticatedHealthModelsRoute
+  '/requests/$requestId': typeof AuthenticatedRequestsRequestIdRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
@@ -363,6 +371,7 @@ export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/health/channels': typeof AuthenticatedHealthChannelsRoute
   '/health/models': typeof AuthenticatedHealthModelsRoute
+  '/requests/$requestId': typeof AuthenticatedRequestsRequestIdRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
@@ -410,6 +419,7 @@ export interface FileRoutesById {
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/health/channels': typeof AuthenticatedHealthChannelsRoute
   '/_authenticated/health/models': typeof AuthenticatedHealthModelsRoute
+  '/_authenticated/requests/$requestId': typeof AuthenticatedRequestsRequestIdRoute
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/_authenticated/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
@@ -457,6 +467,7 @@ export interface FileRouteTypes {
     | '/permission'
     | '/health/channels'
     | '/health/models'
+    | '/requests/$requestId'
     | '/settings/appearance'
     | '/settings/display'
     | '/settings/notifications'
@@ -501,6 +512,7 @@ export interface FileRouteTypes {
     | '/'
     | '/health/channels'
     | '/health/models'
+    | '/requests/$requestId'
     | '/settings/appearance'
     | '/settings/display'
     | '/settings/notifications'
@@ -547,6 +559,7 @@ export interface FileRouteTypes {
     | '/_authenticated/'
     | '/_authenticated/health/channels'
     | '/_authenticated/health/models'
+    | '/_authenticated/requests/$requestId'
     | '/_authenticated/settings/appearance'
     | '/_authenticated/settings/display'
     | '/_authenticated/settings/notifications'
@@ -823,6 +836,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHealthChannelsRouteImport
       parentRoute: typeof AuthenticatedHealthRouteRoute
     }
+    '/_authenticated/requests/$requestId': {
+      id: '/_authenticated/requests/$requestId'
+      path: '/requests/$requestId'
+      fullPath: '/requests/$requestId'
+      preLoaderRoute: typeof AuthenticatedRequestsRequestIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/project/users/': {
       id: '/_authenticated/project/users/'
       path: '/project/users'
@@ -947,6 +967,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedPermissionRoute: typeof AuthenticatedPermissionRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedRequestsRequestIdRoute: typeof AuthenticatedRequestsRequestIdRoute
   AuthenticatedApiKeysIndexRoute: typeof AuthenticatedApiKeysIndexRoute
   AuthenticatedChannelsIndexRoute: typeof AuthenticatedChannelsIndexRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
@@ -977,6 +998,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
   AuthenticatedPermissionRoute: AuthenticatedPermissionRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedRequestsRequestIdRoute: AuthenticatedRequestsRequestIdRoute,
   AuthenticatedApiKeysIndexRoute: AuthenticatedApiKeysIndexRoute,
   AuthenticatedChannelsIndexRoute: AuthenticatedChannelsIndexRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
