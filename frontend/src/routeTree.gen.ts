@@ -40,9 +40,9 @@ import { Route as AuthenticatedSettingsProfileRouteImport } from './routes/_auth
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
 import { Route as AuthenticatedSettingsDisplayRouteImport } from './routes/_authenticated/settings/display'
 import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_authenticated/settings/appearance'
+import { Route as AuthenticatedRequestsRequestIdRouteImport } from './routes/_authenticated/requests/$requestId'
 import { Route as AuthenticatedHealthModelsRouteImport } from './routes/_authenticated/health/models'
 import { Route as AuthenticatedHealthChannelsRouteImport } from './routes/_authenticated/health/channels'
-import { Route as AuthenticatedRequestsRequestIdRouteImport } from './routes/_authenticated/requests/$requestId'
 import { Route as AuthenticatedProjectUsersIndexRouteImport } from './routes/_authenticated/project/users/index'
 import { Route as AuthenticatedProjectTracesIndexRouteImport } from './routes/_authenticated/project/traces/index'
 import { Route as AuthenticatedProjectThreadsIndexRouteImport } from './routes/_authenticated/project/threads/index'
@@ -225,6 +225,12 @@ const AuthenticatedSettingsAppearanceRoute =
     path: '/appearance',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
+const AuthenticatedRequestsRequestIdRoute =
+  AuthenticatedRequestsRequestIdRouteImport.update({
+    id: '/requests/$requestId',
+    path: '/requests/$requestId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedHealthModelsRoute =
   AuthenticatedHealthModelsRouteImport.update({
     id: '/models',
@@ -236,12 +242,6 @@ const AuthenticatedHealthChannelsRoute =
     id: '/channels',
     path: '/channels',
     getParentRoute: () => AuthenticatedHealthRouteRoute,
-  } as any)
-const AuthenticatedRequestsRequestIdRoute =
-  AuthenticatedRequestsRequestIdRouteImport.update({
-    id: '/requests/$requestId',
-    path: '/requests/$requestId',
-    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedProjectUsersIndexRoute =
   AuthenticatedProjectUsersIndexRouteImport.update({
@@ -822,6 +822,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsAppearanceRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
+    '/_authenticated/requests/$requestId': {
+      id: '/_authenticated/requests/$requestId'
+      path: '/requests/$requestId'
+      fullPath: '/requests/$requestId'
+      preLoaderRoute: typeof AuthenticatedRequestsRequestIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/health/models': {
       id: '/_authenticated/health/models'
       path: '/models'
@@ -835,13 +842,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/health/channels'
       preLoaderRoute: typeof AuthenticatedHealthChannelsRouteImport
       parentRoute: typeof AuthenticatedHealthRouteRoute
-    }
-    '/_authenticated/requests/$requestId': {
-      id: '/_authenticated/requests/$requestId'
-      path: '/requests/$requestId'
-      fullPath: '/requests/$requestId'
-      preLoaderRoute: typeof AuthenticatedRequestsRequestIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/project/users/': {
       id: '/_authenticated/project/users/'

@@ -124,14 +124,16 @@ func resolveAssociatedModelHealthTargets(item *ent.Model, channelEntities []*ent
 	targets := make([]ModelHealthProbeTarget, 0)
 
 	for _, connection := range connections {
-		for _, matchedModel := range connection.Models {
-			targets = append(targets, ModelHealthProbeTarget{
-				DisplayModel:  item.ModelID,
-				ActualModelID: matchedModel.ActualModel,
-				ChannelID:     connection.Channel.ID,
-				Sources:       []string{ModelHealthTargetSourceRecent},
-				Source:        ModelHealthSourceAssociated,
-			})
+		for _, resolvedConnection := range connection.Connections {
+			for _, matchedModel := range resolvedConnection.Models {
+				targets = append(targets, ModelHealthProbeTarget{
+					DisplayModel:  item.ModelID,
+					ActualModelID: matchedModel.ActualModel,
+					ChannelID:     resolvedConnection.Channel.ID,
+					Sources:       []string{ModelHealthTargetSourceRecent},
+					Source:        ModelHealthSourceAssociated,
+				})
+			}
 		}
 	}
 
