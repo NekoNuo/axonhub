@@ -776,6 +776,7 @@ type CreateRequestInput struct {
 	ClientIP                   *string
 	MetricsLatencyMs           *int64
 	MetricsFirstTokenLatencyMs *int64
+	MetricsReasoningDurationMs *int64
 	ContentSaved               *bool
 	ContentStorageID           *int
 	ContentStorageKey          *string
@@ -830,6 +831,9 @@ func (i *CreateRequestInput) Mutate(m *RequestMutation) {
 	if v := i.MetricsFirstTokenLatencyMs; v != nil {
 		m.SetMetricsFirstTokenLatencyMs(*v)
 	}
+	if v := i.MetricsReasoningDurationMs; v != nil {
+		m.SetMetricsReasoningDurationMs(*v)
+	}
 	if v := i.ContentSaved; v != nil {
 		m.SetContentSaved(*v)
 	}
@@ -881,6 +885,8 @@ type UpdateRequestInput struct {
 	MetricsLatencyMs                *int64
 	ClearMetricsFirstTokenLatencyMs bool
 	MetricsFirstTokenLatencyMs      *int64
+	ClearMetricsReasoningDurationMs bool
+	MetricsReasoningDurationMs      *int64
 	ContentSaved                    *bool
 	ClearContentStorageID           bool
 	ContentStorageID                *int
@@ -941,6 +947,12 @@ func (i *UpdateRequestInput) Mutate(m *RequestMutation) {
 	}
 	if v := i.MetricsFirstTokenLatencyMs; v != nil {
 		m.SetMetricsFirstTokenLatencyMs(*v)
+	}
+	if i.ClearMetricsReasoningDurationMs {
+		m.ClearMetricsReasoningDurationMs()
+	}
+	if v := i.MetricsReasoningDurationMs; v != nil {
+		m.SetMetricsReasoningDurationMs(*v)
 	}
 	if v := i.ContentSaved; v != nil {
 		m.SetContentSaved(*v)

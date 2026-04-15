@@ -8,9 +8,11 @@ package gql
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/looplj/axonhub/internal/authz"
 	"github.com/looplj/axonhub/internal/build"
+	"github.com/looplj/axonhub/internal/contexts"
 	"github.com/looplj/axonhub/internal/objects"
 	"github.com/looplj/axonhub/internal/scopes"
 	"github.com/looplj/axonhub/internal/server/biz"
@@ -233,6 +235,33 @@ func (r *mutationResolver) UpdateUserAgentPassThroughSettings(ctx context.Contex
 	return true, nil
 }
 
+// ClearCache is the resolver for the clearCache field.
+func (r *mutationResolver) ClearCache(ctx context.Context, input ClearCacheInput) (*ClearCachePayload, error) {
+	user, ok := contexts.GetUser(ctx)
+	if !ok || user == nil || !user.IsOwner {
+		return nil, ErrNotOwner
+	}
+
+	targets := normalizeDiagnosticsTargets(input.Targets)
+
+	for _, target := range targets {
+		switch target {
+		case DiagnosticsTargetChannelCache:
+			if err := r.channelService.ReloadEnabledChannelsCache(ctx); err != nil {
+				return nil, fmt.Errorf("failed to clear cache for %s: %w", target, err)
+			}
+		default:
+			return nil, fmt.Errorf("unsupported cache target: %s", target)
+		}
+	}
+
+	return &ClearCachePayload{
+		Success: true,
+		Message: "cache cleared successfully",
+		Targets: targets,
+	}, nil
+}
+
 // SystemStatus is the resolver for the systemStatus field.
 func (r *queryResolver) SystemStatus(ctx context.Context) (*SystemStatus, error) {
 	isInitialized, err := r.systemService.IsInitialized(ctx)
@@ -400,9 +429,55 @@ func (r *queryResolver) UserAgentPassThroughSettings(ctx context.Context) (*User
 	}, nil
 }
 
+// GetCacheDiagnostics is the resolver for the getCacheDiagnostics field.
+func (r *queryResolver) GetCacheDiagnostics(ctx context.Context, input *GetCacheDiagnosticsInput) (*GetCacheDiagnosticsPayload, error) {
+	user, ok := contexts.GetUser(ctx)
+	if !ok || user == nil || !user.IsOwner {
+		return nil, ErrNotOwner
+	}
+
+	var targets []DiagnosticsTarget
+	if input != nil {
+		targets = input.Targets
+	}
+
+	data, err := buildChannelModelCacheDiagnosticsExport(
+		ctx,
+		r.client,
+		r.channelService,
+		r.modelService,
+		r.systemService,
+		r.defaultSelector,
+		r.candidateSelectorDiagnostics,
+		targets,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build cache diagnostics export: %w", err)
+	}
+
+	content, err := marshalChannelModelCacheDiagnosticsExport(data)
+	if err != nil {
+		return nil, err
+	}
+
+	return &GetCacheDiagnosticsPayload{
+		FileName: fmt.Sprintf("axonhub-channel-model-cache-diagnostics-%s.json", time.Now().UTC().Format("20060102T150405Z")),
+		Content:  content,
+		Targets:  normalizeDiagnosticsTargets(targets),
+	}, nil
+}
+
 // IdleDbMaintenance is the resolver for the idleDbMaintenance field.
 func (r *updateStoragePolicyInputResolver) IdleDbMaintenance(ctx context.Context, obj *biz.StoragePolicy, data *IdleDBMaintenanceInput) error {
-	panic(fmt.Errorf("not implemented: IdleDbMaintenance - idleDbMaintenance"))
+	obj.IdleDBMaintenance = biz.IdleDBMaintenance{
+		Enabled:         data.Enabled,
+		IdleMinutes:     data.IdleMinutes,
+		MinFreePages:    data.MinFreePages,
+		MinDBSizeMB:     data.MinDbSizeMb,
+		CooldownMinutes: data.CooldownMinutes,
+	}
+
+	return nil
 }
 
 // UpdateStoragePolicyInput returns UpdateStoragePolicyInputResolver implementation.

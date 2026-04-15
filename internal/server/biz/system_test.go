@@ -187,6 +187,7 @@ func TestSystemService_StoragePolicy(t *testing.T) {
 	// First set a default storage policy to avoid JSON unmarshaling error
 	defaultPolicy := &StoragePolicy{
 		StoreChunks:       false,
+		LivePreview:       false,
 		StoreRequestBody:  true,
 		StoreResponseBody: true,
 		IdleDBMaintenance: IdleDBMaintenance{
@@ -217,6 +218,7 @@ func TestSystemService_StoragePolicy(t *testing.T) {
 	policy, err := service.StoragePolicy(ctx)
 	require.NoError(t, err)
 	require.False(t, policy.StoreChunks)
+	require.False(t, policy.LivePreview)
 	require.True(t, policy.StoreRequestBody)
 	require.True(t, policy.StoreResponseBody)
 	require.False(t, policy.IdleDBMaintenance.Enabled)
@@ -229,6 +231,7 @@ func TestSystemService_StoragePolicy(t *testing.T) {
 	// Test setting custom storage policy
 	customPolicy := &StoragePolicy{
 		StoreChunks:       true,
+		LivePreview:       true,
 		StoreRequestBody:  false,
 		StoreResponseBody: true,
 		IdleDBMaintenance: IdleDBMaintenance{
@@ -253,6 +256,7 @@ func TestSystemService_StoragePolicy(t *testing.T) {
 	retrievedPolicy, err := service.StoragePolicy(ctx)
 	require.NoError(t, err)
 	require.Equal(t, customPolicy.StoreChunks, retrievedPolicy.StoreChunks)
+	require.Equal(t, customPolicy.LivePreview, retrievedPolicy.LivePreview)
 	require.Equal(t, customPolicy.StoreRequestBody, retrievedPolicy.StoreRequestBody)
 	require.Equal(t, customPolicy.StoreResponseBody, retrievedPolicy.StoreResponseBody)
 	require.Equal(t, customPolicy.IdleDBMaintenance, retrievedPolicy.IdleDBMaintenance)

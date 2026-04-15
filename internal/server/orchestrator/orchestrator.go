@@ -19,7 +19,7 @@ import (
 
 func NewChatCompletionOrchestrator(
 	channelService *biz.ChannelService,
-	modelService *biz.ModelService,
+	defaultSelector *DefaultSelector,
 	requestService *biz.RequestService,
 	httpClient *httpclient.HttpClient,
 	inbound transformer.Inbound,
@@ -76,7 +76,7 @@ func NewChatCompletionOrchestrator(
 		},
 		PipelineFactory:              pipeline.NewFactory(httpClient),
 		ModelMapper:                  NewModelMapper(),
-		channelSelector:              NewDefaultSelector(channelService, modelService, systemService),
+		channelSelector:              defaultSelector,
 		selectedChannelIds:           []int{},
 		connectionTracker:            connectionTracker,
 		rateLimitTracker:             rateLimitTracker,
@@ -161,6 +161,7 @@ func (processor *ChatCompletionOrchestrator) Process(ctx context.Context, reques
 
 	// Get retry policy from system settings
 	retryPolicy := processor.SystemService.RetryPolicyOrDefault(ctx)
+	storagePolicy := processor.SystemService.StoragePolicyOrDefault(ctx)
 
 	strategy := deriveLoadBalancerStrategy(retryPolicy, apiKey)
 	if log.DebugEnabled(ctx) {
@@ -203,6 +204,8 @@ func (processor *ChatCompletionOrchestrator) Process(ctx context.Context, reques
 		ConnectionTracker:     processor.connectionTracker,
 		ModelMapper:           processor.ModelMapper,
 		Proxy:                 processor.proxy,
+		LivePreview:           storagePolicy.LivePreview,
+		StoreChunks:           storagePolicy.StoreChunks,
 		CurrentCandidateIndex: 0,
 	}
 
