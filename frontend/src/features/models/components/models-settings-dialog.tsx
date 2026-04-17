@@ -50,13 +50,13 @@ export function ModelSettingsDialog() {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className='sm:max-w-[720px]'>
+      <DialogContent className='w-full max-w-full sm:max-w-[720px]'>
         <DialogHeader>
-          <DialogTitle className='flex items-center gap-2'>
+          <DialogTitle className='flex items-center gap-2 text-lg sm:text-xl'>
             <Settings2 className='h-5 w-5' />
             {t('models.dialogs.settings.title')}
           </DialogTitle>
-          <DialogDescription>{t('models.dialogs.settings.description')}</DialogDescription>
+          <DialogDescription className='text-sm sm:text-base'>{t('models.dialogs.settings.description')}</DialogDescription>
         </DialogHeader>
 
         {isLoading ? (
@@ -67,7 +67,7 @@ export function ModelSettingsDialog() {
           <div className='space-y-4'>
             <Card>
               <CardHeader className='pb-0'>
-                <CardTitle className='flex items-center gap-2 text-sm'>
+                <CardTitle className='flex items-center gap-2 text-sm sm:text-base'>
                   <RefreshCcw className='text-muted-foreground h-4 w-4' />
                   {t('models.dialogs.settings.enableModelProbe.label')}
                 </CardTitle>
@@ -100,6 +100,7 @@ export function ModelSettingsDialog() {
                     checked={fallbackEnabled}
                     onCheckedChange={setFallbackEnabled}
                     disabled={updateModelSettings.isPending}
+                    className='scale-100 sm:scale-75'
                   />
                 </div>
               </CardContent>
@@ -107,7 +108,7 @@ export function ModelSettingsDialog() {
 
             <Card>
               <CardHeader className='pb-0'>
-                <CardTitle className='flex items-center gap-2 text-sm'>
+                <CardTitle className='flex items-center gap-2 text-sm sm:text-base'>
                   <Layers className='text-muted-foreground h-4 w-4' />
                   {t('models.dialogs.settings.queryAllChannelModels.label')}
                 </CardTitle>
@@ -120,6 +121,7 @@ export function ModelSettingsDialog() {
                     checked={queryAllChannelModels}
                     onCheckedChange={setQueryAllChannelModels}
                     disabled={updateModelSettings.isPending}
+                    className='scale-100 sm:scale-75'
                   />
                 </div>
               </CardContent>
@@ -127,7 +129,7 @@ export function ModelSettingsDialog() {
 
             <Card>
               <CardHeader className='pb-0'>
-                <CardTitle className='flex items-center gap-2 text-sm'>
+                <CardTitle className='flex items-center gap-2 text-sm sm:text-base'>
                   <ListTree className='text-muted-foreground h-4 w-4' />
                   {t('models.dialogs.settings.defaultModelAPIIncludeAll.label')}
                 </CardTitle>
@@ -140,6 +142,7 @@ export function ModelSettingsDialog() {
                     checked={defaultModelAPIIncludeAll}
                     onCheckedChange={setDefaultModelAPIIncludeAll}
                     disabled={updateModelSettings.isPending}
+                    className='scale-100 sm:scale-75'
                   />
                 </div>
               </CardContent>
@@ -147,11 +150,11 @@ export function ModelSettingsDialog() {
           </div>
         )}
 
-        <DialogFooter>
-          <Button variant='outline' onClick={handleClose} disabled={updateModelSettings.isPending}>
+        <DialogFooter className='flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-2'>
+          <Button variant='outline' onClick={handleClose} disabled={updateModelSettings.isPending} className='w-full sm:w-auto h-10 sm:h-9'>
             {t('common.buttons.cancel')}
           </Button>
-          <Button onClick={handleSave} disabled={updateModelSettings.isPending || isLoading}>
+          <Button onClick={handleSave} disabled={updateModelSettings.isPending || isLoading} className='w-full sm:w-auto h-10 sm:h-9'>
             {updateModelSettings.isPending ? (
               <>
                 <Loader2 className='mr-2 h-4 w-4 animate-spin' />

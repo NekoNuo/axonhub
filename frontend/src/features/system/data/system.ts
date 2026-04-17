@@ -103,6 +103,7 @@ const RETRY_POLICY_QUERY = `
       retryDelayMs
       loadBalancerStrategy
       enabled
+      emptyResponseDetection
       autoDisableChannel {
         enabled
         statuses {
@@ -330,6 +331,7 @@ export interface RetryPolicy {
   loadBalancerStrategy: string;
   enabled: boolean;
   autoDisableChannel: AutoDisableChannel;
+  emptyResponseDetection: boolean;
 }
 
 export interface AutoDisableChannelStatusInput {
@@ -349,6 +351,7 @@ export interface RetryPolicyInput {
   loadBalancerStrategy?: string;
   enabled?: boolean;
   autoDisableChannel?: AutoDisableChannelInput;
+  emptyResponseDetection?: boolean;
 }
 
 export interface UpdateDefaultDataStorageInput {

@@ -141,6 +141,7 @@ type RetryPolicy {
   loadBalancerStrategy: String!
   enabled: Boolean!
   autoDisableChannel: AutoDisableChannel!
+  emptyResponseDetection: Boolean!
 }
 
 input AutoDisableChannelStatusInput {
@@ -160,6 +161,7 @@ input UpdateRetryPolicyInput {
   loadBalancerStrategy: String
   enabled: Boolean
   autoDisableChannel: AutoDisableChannelInput
+  emptyResponseDetection: Boolean
 }
 
 type SystemModelSettings {

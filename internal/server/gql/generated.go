@@ -1412,6 +1412,7 @@ type ComplexityRoot struct {
 
 	RetryPolicy struct {
 		AutoDisableChannel      func(childComplexity int) int
+		EmptyResponseDetection  func(childComplexity int) int
 		Enabled                 func(childComplexity int) int
 		LoadBalancerStrategy    func(childComplexity int) int
 		MaxChannelRetries       func(childComplexity int) int
@@ -8408,6 +8409,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.RetryPolicy.AutoDisableChannel(childComplexity), true
+	case "RetryPolicy.emptyResponseDetection":
+		if e.complexity.RetryPolicy.EmptyResponseDetection == nil {
+			break
+		}
+
+		return e.complexity.RetryPolicy.EmptyResponseDetection(childComplexity), true
 	case "RetryPolicy.enabled":
 		if e.complexity.RetryPolicy.Enabled == nil {
 			break
@@ -40964,6 +40971,8 @@ func (ec *executionContext) fieldContext_Query_retryPolicy(_ context.Context, fi
 				return ec.fieldContext_RetryPolicy_enabled(ctx, field)
 			case "autoDisableChannel":
 				return ec.fieldContext_RetryPolicy_autoDisableChannel(ctx, field)
+			case "emptyResponseDetection":
+				return ec.fieldContext_RetryPolicy_emptyResponseDetection(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type RetryPolicy", field.Name)
 		},
@@ -45361,6 +45370,35 @@ func (ec *executionContext) fieldContext_RetryPolicy_autoDisableChannel(_ contex
 				return ec.fieldContext_AutoDisableChannel_statuses(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type AutoDisableChannel", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RetryPolicy_emptyResponseDetection(ctx context.Context, field graphql.CollectedField, obj *biz.RetryPolicy) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_RetryPolicy_emptyResponseDetection,
+		func(ctx context.Context) (any, error) {
+			return obj.EmptyResponseDetection, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_RetryPolicy_emptyResponseDetection(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RetryPolicy",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -79604,7 +79642,7 @@ func (ec *executionContext) unmarshalInputUpdateRetryPolicyInput(ctx context.Con
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"maxChannelRetries", "maxSingleChannelRetries", "retryDelayMs", "loadBalancerStrategy", "enabled", "autoDisableChannel"}
+	fieldsInOrder := [...]string{"maxChannelRetries", "maxSingleChannelRetries", "retryDelayMs", "loadBalancerStrategy", "enabled", "autoDisableChannel", "emptyResponseDetection"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -79653,6 +79691,13 @@ func (ec *executionContext) unmarshalInputUpdateRetryPolicyInput(ctx context.Con
 				return it, err
 			}
 			it.AutoDisableChannel = data
+		case "emptyResponseDetection":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("emptyResponseDetection"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EmptyResponseDetection = data
 		}
 	}
 
@@ -97057,6 +97102,11 @@ func (ec *executionContext) _RetryPolicy(ctx context.Context, sel ast.SelectionS
 			}
 		case "autoDisableChannel":
 			out.Values[i] = ec._RetryPolicy_autoDisableChannel(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "emptyResponseDetection":
+			out.Values[i] = ec._RetryPolicy_emptyResponseDetection(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
