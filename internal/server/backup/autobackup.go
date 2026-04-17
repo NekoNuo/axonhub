@@ -133,7 +133,7 @@ func (svc *BackupService) performBackup(ctx context.Context, settings *biz.AutoB
 			continue
 		}
 
-		if _, saveErr := svc.dataStorageService.SaveData(ctx, ds, filename, data); saveErr != nil {
+		if saveErr := svc.dataStorageService.SaveData(ctx, ds, filename, data); saveErr != nil {
 			errMsg := fmt.Sprintf("failed to write backup file to data storage %d: %v", dataStorageID, saveErr)
 			errs = append(errs, errMsg)
 			if updateErr := svc.systemService.UpdateAutoBackupLastRun(ctx, dataStorageID, errMsg); updateErr != nil {
