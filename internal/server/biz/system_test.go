@@ -1,6 +1,7 @@
 package biz
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -416,6 +417,28 @@ func TestSystemService_ChannelSetting_NormalizesLegacyAutoSyncFrequency(t *testi
 	setting, err := service.ChannelSetting(ctx)
 	require.NoError(t, err)
 	require.Equal(t, AutoSyncFrequencyOneHour, setting.AutoSync.Frequency)
+}
+
+func TestChannelProbeSetting_LongProbeFrequencies(t *testing.T) {
+	t.Run("interval minutes", func(t *testing.T) {
+		setting := ChannelProbeSetting{Frequency: ProbeFrequency12Hour}
+		require.Equal(t, 720, setting.GetIntervalMinutes())
+	})
+
+	t.Run("query range minutes", func(t *testing.T) {
+		setting := ChannelProbeSetting{Frequency: ProbeFrequency1Day}
+		require.Equal(t, 10080, setting.GetQueryRangeMinutes())
+	})
+
+	t.Run("graphql round trip", func(t *testing.T) {
+		var frequency ProbeFrequency
+		require.NoError(t, frequency.UnmarshalGQL("SIX_HOURS"))
+		require.Equal(t, ProbeFrequency6Hour, frequency)
+
+		var buf bytes.Buffer
+		ProbeFrequency12Hour.MarshalGQL(&buf)
+		require.Equal(t, `"TWELVE_HOURS"`, buf.String())
+	})
 }
 
 func TestSystemService_Initialize_WithCache(t *testing.T) {

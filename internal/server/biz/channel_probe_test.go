@@ -37,6 +37,16 @@ func TestShouldRunProbe(t *testing.T) {
 		lastExecution := time.Date(2026, 4, 7, 0, 0, 0, 0, time.UTC)
 		assert.True(t, shouldRunProbe(ProbeFrequency1Hour, now, lastExecution))
 	})
+
+	t.Run("skip when six-hour bucket already executed", func(t *testing.T) {
+		lastExecution := time.Date(2026, 4, 7, 0, 0, 0, 0, time.UTC)
+		assert.False(t, shouldRunProbe(ProbeFrequency6Hour, now, lastExecution))
+	})
+
+	t.Run("run when entering next day bucket", func(t *testing.T) {
+		lastExecution := time.Date(2026, 4, 6, 0, 0, 0, 0, time.UTC)
+		assert.True(t, shouldRunProbe(ProbeFrequency1Day, now, lastExecution))
+	})
 }
 
 // TestTPSCalculation_RetryScenario tests that only successful executions are counted

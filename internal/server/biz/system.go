@@ -361,6 +361,9 @@ const (
 	ProbeFrequency5Min  ProbeFrequency = "5m"
 	ProbeFrequency30Min ProbeFrequency = "30m"
 	ProbeFrequency1Hour ProbeFrequency = "1h"
+	ProbeFrequency6Hour ProbeFrequency = "6h"
+	ProbeFrequency12Hour ProbeFrequency = "12h"
+	ProbeFrequency1Day  ProbeFrequency = "1d"
 )
 
 // ChannelProbeSetting represents the channel probe configuration.
@@ -376,7 +379,7 @@ type ChannelProbeSetting struct {
 }
 
 // GetQueryRangeMinutes returns the query range in minutes based on the probe frequency.
-// 1m -> 10min, 5m -> 60min, 30m -> 720min (12h), 1h -> 1440min (24h).
+// Shorter intervals use wider windows to keep enough samples; longer intervals use a 7-day window.
 func (c *ChannelProbeSetting) GetQueryRangeMinutes() int {
 	switch c.Frequency {
 	case ProbeFrequency1Min:
@@ -387,6 +390,8 @@ func (c *ChannelProbeSetting) GetQueryRangeMinutes() int {
 		return 720
 	case ProbeFrequency1Hour:
 		return 1440
+	case ProbeFrequency6Hour, ProbeFrequency12Hour, ProbeFrequency1Day:
+		return 10080
 	default:
 		return 10
 	}
@@ -403,6 +408,12 @@ func (c *ChannelProbeSetting) GetIntervalMinutes() int {
 		return 30
 	case ProbeFrequency1Hour:
 		return 60
+	case ProbeFrequency6Hour:
+		return 360
+	case ProbeFrequency12Hour:
+		return 720
+	case ProbeFrequency1Day:
+		return 1440
 	default:
 		return 1
 	}
@@ -421,6 +432,12 @@ func (p ProbeFrequency) MarshalGQL(w io.Writer) {
 		s = "THIRTY_MINUTES"
 	case ProbeFrequency1Hour:
 		s = "ONE_HOUR"
+	case ProbeFrequency6Hour:
+		s = "SIX_HOURS"
+	case ProbeFrequency12Hour:
+		s = "TWELVE_HOURS"
+	case ProbeFrequency1Day:
+		s = "ONE_DAY"
 	default:
 		s = "ONE_MINUTE"
 	}
@@ -444,6 +461,12 @@ func (p *ProbeFrequency) UnmarshalGQL(v any) error {
 		*p = ProbeFrequency30Min
 	case "ONE_HOUR":
 		*p = ProbeFrequency1Hour
+	case "SIX_HOURS":
+		*p = ProbeFrequency6Hour
+	case "TWELVE_HOURS":
+		*p = ProbeFrequency12Hour
+	case "ONE_DAY":
+		*p = ProbeFrequency1Day
 	default:
 		return fmt.Errorf("invalid ProbeFrequency: %s", str)
 	}

@@ -158,6 +158,12 @@ func getIntervalMinutesFromFrequency(frequency ProbeFrequency) int {
 		return 30
 	case ProbeFrequency1Hour:
 		return 60
+	case ProbeFrequency6Hour:
+		return 360
+	case ProbeFrequency12Hour:
+		return 720
+	case ProbeFrequency1Day:
+		return 1440
 	default:
 		return 1
 	}

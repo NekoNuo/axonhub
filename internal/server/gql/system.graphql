@@ -214,6 +214,9 @@ enum ProbeFrequency {
   FIVE_MINUTES
   THIRTY_MINUTES
   ONE_HOUR
+  SIX_HOURS
+  TWELVE_HOURS
+  ONE_DAY
 }
 
 enum AutoSyncFrequency {
