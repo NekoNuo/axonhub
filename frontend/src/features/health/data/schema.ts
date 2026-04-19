@@ -33,3 +33,28 @@ export const modelSettingsSchema = z.object({
   enableModelProbe: z.boolean(),
 });
 export type ModelProbeSettings = z.infer<typeof modelSettingsSchema>;
+
+export const modelProbeConfigSchema = z.object({
+  displayModel: z.string(),
+  channelID: z.string(),
+  actualModelID: z.string(),
+  probeEnabled: z.boolean(),
+  consecutiveFailures: z.number(),
+  autoDisabledAt: z.number().nullable().optional(),
+});
+export type ModelProbeConfig = z.infer<typeof modelProbeConfigSchema>;
+
+export const setModelProbeEnabledInputSchema = z.object({
+  displayModel: z.string(),
+  channelID: z.string(),
+  actualModelID: z.string(),
+  enabled: z.boolean(),
+});
+export type SetModelProbeEnabledInput = z.infer<typeof setModelProbeEnabledInputSchema>;
+
+export const batchSetChannelProbeEnabledInputSchema = z.object({
+  displayModel: z.string(),
+  channelID: z.string(),
+  enabled: z.boolean(),
+});
+export type BatchSetChannelProbeEnabledInput = z.infer<typeof batchSetChannelProbeEnabledInputSchema>;
