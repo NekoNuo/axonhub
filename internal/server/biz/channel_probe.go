@@ -122,6 +122,12 @@ func (svc *ChannelProbeService) withManualModelProbeChannelLock(channelID int, f
 
 // Start starts the channel probe service with scheduled task.
 func (svc *ChannelProbeService) Start(ctx context.Context) error {
+	if svc.ModelProbeConfigService != nil {
+		if err := svc.ModelProbeConfigService.BackfillFromSnapshots(ctx); err != nil {
+			log.Warn(ctx, "backfill model probe configs failed", log.Cause(err))
+		}
+	}
+
 	_, err := svc.Executor.ScheduleFuncAtCronRate(
 		svc.runProbePeriodically,
 		executors.CRONRule{Expr: "* * * * *"},

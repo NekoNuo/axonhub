@@ -251,3 +251,44 @@ func (s *ModelProbeConfigService) lookupAutoDisableThreshold(ctx context.Context
 
 	return m.Settings.ProbeAutoDisableAfterConsecutiveFailures, nil
 }
+
+// BackfillFromSnapshots ensures every pre-existing ModelHealthSnapshot has a
+// corresponding ModelProbeConfig row with probe_enabled=true. Triples the
+// user already explicitly disabled (or that have any config row at all) are
+// left untouched. This is what makes upgrades invisible: after deploying
+// the new code, existing probe behavior continues unchanged until operators
+// choose to toggle triples.
+func (s *ModelProbeConfigService) BackfillFromSnapshots(ctx context.Context) error {
+	existing, err := s.db.ModelProbeConfig.Query().All(ctx)
+	if err != nil {
+		return fmt.Errorf("list probe configs: %w", err)
+	}
+
+	have := make(map[string]struct{}, len(existing))
+	for _, c := range existing {
+		have[probeConfigKey(c.DisplayModel, c.ChannelID, c.ActualModelID)] = struct{}{}
+	}
+
+	snaps, err := s.db.ModelHealthSnapshot.Query().All(ctx)
+	if err != nil {
+		return fmt.Errorf("list snapshots: %w", err)
+	}
+
+	for _, sn := range snaps {
+		if _, ok := have[probeConfigKey(sn.DisplayModel, sn.ChannelID, sn.ActualModelID)]; ok {
+			continue
+		}
+
+		_, err := s.db.ModelProbeConfig.Create().
+			SetDisplayModel(sn.DisplayModel).
+			SetChannelID(sn.ChannelID).
+			SetActualModelID(sn.ActualModelID).
+			SetProbeEnabled(true).
+			Save(ctx)
+		if err != nil {
+			return fmt.Errorf("backfill (%s,%d,%s): %w", sn.DisplayModel, sn.ChannelID, sn.ActualModelID, err)
+		}
+	}
+
+	return nil
+}
