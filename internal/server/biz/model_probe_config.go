@@ -1,0 +1,189 @@
+package biz
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/looplj/axonhub/internal/ent"
+	"github.com/looplj/axonhub/internal/ent/channel"
+	"github.com/looplj/axonhub/internal/ent/model"
+	"github.com/looplj/axonhub/internal/ent/modelprobeconfig"
+)
+
+// ModelProbeConfigService manages per-triple probe configuration rows that
+// record whether (displayModel, channelID, actualModelID) should be probed
+// automatically, its consecutive unhealthy-probe count, and whether it has
+// been auto-disabled.
+type ModelProbeConfigService struct {
+	db *ent.Client
+}
+
+func NewModelProbeConfigService(db *ent.Client) *ModelProbeConfigService {
+	return &ModelProbeConfigService{db: db}
+}
+
+// GetByDisplayModels returns config rows filtered by displayModel. Empty
+// input returns every row.
+func (s *ModelProbeConfigService) GetByDisplayModels(ctx context.Context, displayModels []string) ([]*ent.ModelProbeConfig, error) {
+	q := s.db.ModelProbeConfig.Query()
+	if len(displayModels) > 0 {
+		q = q.Where(modelprobeconfig.DisplayModelIn(displayModels...))
+	}
+
+	return q.All(ctx)
+}
+
+// Get returns the config row for a triple, or nil if it does not exist.
+func (s *ModelProbeConfigService) Get(ctx context.Context, displayModel string, channelID int, actualModelID string) (*ent.ModelProbeConfig, error) {
+	cfg, err := s.db.ModelProbeConfig.Query().
+		Where(
+			modelprobeconfig.DisplayModelEQ(displayModel),
+			modelprobeconfig.ChannelIDEQ(channelID),
+			modelprobeconfig.ActualModelIDEQ(actualModelID),
+		).
+		Only(ctx)
+	if ent.IsNotFound(err) {
+		return nil, nil
+	}
+
+	return cfg, err
+}
+
+// SetProbeEnabled upserts the triple's config. Enabling resets the
+// consecutive-failure counter and clears auto_disabled_at so the triple
+// gets a fresh window before any auto-disable can fire again. Disabling
+// leaves counters intact — that's a user-intent disable, not a recovery.
+func (s *ModelProbeConfigService) SetProbeEnabled(ctx context.Context, displayModel string, channelID int, actualModelID string, enabled bool) (*ent.ModelProbeConfig, error) {
+	existing, err := s.Get(ctx, displayModel, channelID, actualModelID)
+	if err != nil {
+		return nil, fmt.Errorf("get probe config: %w", err)
+	}
+
+	if existing == nil {
+		return s.db.ModelProbeConfig.Create().
+			SetDisplayModel(displayModel).
+			SetChannelID(channelID).
+			SetActualModelID(actualModelID).
+			SetProbeEnabled(enabled).
+			Save(ctx)
+	}
+
+	upd := existing.Update().SetProbeEnabled(enabled)
+	if enabled {
+		upd = upd.SetConsecutiveFailures(0).ClearAutoDisabledAt()
+	}
+
+	return upd.Save(ctx)
+}
+
+// BatchSetChannelProbeEnabled upserts every triple under
+// (displayModel, channelID) as resolved from the model's associations.
+// Runs inside one transaction; on error nothing is committed.
+func (s *ModelProbeConfigService) BatchSetChannelProbeEnabled(ctx context.Context, displayModel string, channelID int, enabled bool) ([]*ent.ModelProbeConfig, error) {
+	actualModels, err := s.resolveChannelActualModels(ctx, displayModel, channelID)
+	if err != nil {
+		return nil, err
+	}
+
+	tx, err := s.db.Tx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]*ent.ModelProbeConfig, 0, len(actualModels))
+
+	for _, am := range actualModels {
+		cfg, err := upsertProbeConfigTx(ctx, tx, displayModel, channelID, am, enabled)
+		if err != nil {
+			_ = tx.Rollback()
+			return nil, fmt.Errorf("upsert (%s,%d,%s): %w", displayModel, channelID, am, err)
+		}
+
+		out = append(out, cfg)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+// resolveChannelActualModels returns the distinct actualModelIDs a model's
+// associations expose on a single channel. Used by BatchSetChannelProbeEnabled
+// so channel-level UI toggles touch every triple the user sees in the tree.
+func (s *ModelProbeConfigService) resolveChannelActualModels(ctx context.Context, displayModel string, channelID int) ([]string, error) {
+	m, err := s.db.Model.Query().
+		Where(model.ModelIDEQ(displayModel), model.StatusEQ(model.StatusEnabled)).
+		Only(ctx)
+	if ent.IsNotFound(err) {
+		return nil, nil
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("load model %q: %w", displayModel, err)
+	}
+
+	if m.Settings == nil || len(m.Settings.Associations) == 0 {
+		return nil, nil
+	}
+
+	channels, err := s.db.Channel.Query().Where(channel.StatusEQ(channel.StatusEnabled)).All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("load channels: %w", err)
+	}
+
+	targets := resolveAssociatedModelHealthTargets(m, channels)
+	seen := make(map[string]struct{}, len(targets))
+	actuals := make([]string, 0, len(targets))
+
+	for _, t := range targets {
+		if t.ChannelID != channelID {
+			continue
+		}
+
+		if _, ok := seen[t.ActualModelID]; ok {
+			continue
+		}
+
+		seen[t.ActualModelID] = struct{}{}
+		actuals = append(actuals, t.ActualModelID)
+	}
+
+	return actuals, nil
+}
+
+func upsertProbeConfigTx(ctx context.Context, tx *ent.Tx, displayModel string, channelID int, actualModelID string, enabled bool) (*ent.ModelProbeConfig, error) {
+	existing, err := tx.ModelProbeConfig.Query().
+		Where(
+			modelprobeconfig.DisplayModelEQ(displayModel),
+			modelprobeconfig.ChannelIDEQ(channelID),
+			modelprobeconfig.ActualModelIDEQ(actualModelID),
+		).
+		Only(ctx)
+	if err != nil && !ent.IsNotFound(err) {
+		return nil, err
+	}
+
+	if ent.IsNotFound(err) {
+		return tx.ModelProbeConfig.Create().
+			SetDisplayModel(displayModel).
+			SetChannelID(channelID).
+			SetActualModelID(actualModelID).
+			SetProbeEnabled(enabled).
+			Save(ctx)
+	}
+
+	upd := existing.Update().SetProbeEnabled(enabled)
+	if enabled {
+		upd = upd.SetConsecutiveFailures(0).ClearAutoDisabledAt()
+	}
+
+	return upd.Save(ctx)
+}
+
+// probeConfigKey builds the canonical string key for a probe-config triple.
+// Shared with the probe loop so filters and lookups agree on the key shape.
+func probeConfigKey(displayModel string, channelID int, actualModelID string) string {
+	return fmt.Sprintf("%s:%d:%s", displayModel, channelID, actualModelID)
+}
