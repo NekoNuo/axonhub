@@ -139,7 +139,7 @@ func TestUpdateOnProbeResult_ThresholdZero_NeverAutoDisables(t *testing.T) {
 	require.True(t, cfg.ProbeEnabled)
 }
 
-func TestUpdateOnProbeResult_CreatesRowIfMissing(t *testing.T) {
+func TestUpdateOnProbeResult_NoOpWhenConfigMissing(t *testing.T) {
 	client, ctx := setupProbeConfigTestClient(t)
 	ch := createProbeTestChannel(t, ctx, client, "ch-a")
 
@@ -149,9 +149,7 @@ func TestUpdateOnProbeResult_CreatesRowIfMissing(t *testing.T) {
 
 	cfg, err := svc.Get(ctx, "gpt-4o", ch.ID, "gpt-4o-2024-11-20")
 	require.NoError(t, err)
-	require.NotNil(t, cfg)
-	require.Equal(t, 1, cfg.ConsecutiveFailures)
-	require.True(t, cfg.ProbeEnabled)
+	require.Nil(t, cfg, "no config must be auto-created — discovered triples keep their default-disabled stance")
 }
 
 func TestPersistModelHealthResult_ManualProbe_DoesNotUpdateCounter(t *testing.T) {

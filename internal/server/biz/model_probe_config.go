@@ -194,6 +194,12 @@ func probeConfigKey(displayModel string, channelID int, actualModelID string) st
 // Model.settings.probeAutoDisableAfterConsecutiveFailures. Threshold 0 or a
 // missing/undefined model means never auto-disable. Manual probe results do
 // not call this — the counter is only moved by automatic runs.
+//
+// If no config row exists for the triple, this function is a no-op: the
+// automatic probe pipeline only reaches triples that are already enabled
+// (the skip filter guarantees config existence there), and the discovered
+// snapshot refresh path writes probe results for triples that must keep
+// their "default disabled" stance until the operator opts in.
 func (s *ModelProbeConfigService) UpdateOnProbeResult(ctx context.Context, displayModel string, channelID int, actualModelID string, healthy bool, probedAt int64) error {
 	cfg, err := s.Get(ctx, displayModel, channelID, actualModelID)
 	if err != nil {
@@ -201,15 +207,7 @@ func (s *ModelProbeConfigService) UpdateOnProbeResult(ctx context.Context, displ
 	}
 
 	if cfg == nil {
-		cfg, err = s.db.ModelProbeConfig.Create().
-			SetDisplayModel(displayModel).
-			SetChannelID(channelID).
-			SetActualModelID(actualModelID).
-			SetProbeEnabled(true).
-			Save(ctx)
-		if err != nil {
-			return fmt.Errorf("create probe config: %w", err)
-		}
+		return nil
 	}
 
 	if healthy {
