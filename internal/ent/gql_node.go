@@ -24,6 +24,7 @@ import (
 	"github.com/looplj/axonhub/internal/ent/model"
 	"github.com/looplj/axonhub/internal/ent/modelhealthhistory"
 	"github.com/looplj/axonhub/internal/ent/modelhealthsnapshot"
+	"github.com/looplj/axonhub/internal/ent/modelprobeconfig"
 	"github.com/looplj/axonhub/internal/ent/project"
 	"github.com/looplj/axonhub/internal/ent/prompt"
 	"github.com/looplj/axonhub/internal/ent/promptprotectionrule"
@@ -97,6 +98,11 @@ var modelhealthsnapshotImplementors = []string{"ModelHealthSnapshot", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
 func (*ModelHealthSnapshot) IsNode() {}
+
+var modelprobeconfigImplementors = []string{"ModelProbeConfig", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*ModelProbeConfig) IsNode() {}
 
 var projectImplementors = []string{"Project", "Node"}
 
@@ -317,6 +323,15 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 			Where(modelhealthsnapshot.ID(id))
 		if fc := graphql.GetFieldContext(ctx); fc != nil {
 			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, modelhealthsnapshotImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
+	case modelprobeconfig.Table:
+		query := c.ModelProbeConfig.Query().
+			Where(modelprobeconfig.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, modelprobeconfigImplementors...); err != nil {
 				return nil, err
 			}
 		}
@@ -677,6 +692,22 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		query := c.ModelHealthSnapshot.Query().
 			Where(modelhealthsnapshot.IDIn(ids...))
 		query, err := query.CollectFields(ctx, modelhealthsnapshotImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case modelprobeconfig.Table:
+		query := c.ModelProbeConfig.Query().
+			Where(modelprobeconfig.IDIn(ids...))
+		query, err := query.CollectFields(ctx, modelprobeconfigImplementors...)
 		if err != nil {
 			return nil, err
 		}

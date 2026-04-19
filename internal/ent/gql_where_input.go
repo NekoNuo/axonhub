@@ -17,6 +17,7 @@ import (
 	"github.com/looplj/axonhub/internal/ent/model"
 	"github.com/looplj/axonhub/internal/ent/modelhealthhistory"
 	"github.com/looplj/axonhub/internal/ent/modelhealthsnapshot"
+	"github.com/looplj/axonhub/internal/ent/modelprobeconfig"
 	"github.com/looplj/axonhub/internal/ent/predicate"
 	"github.com/looplj/axonhub/internal/ent/project"
 	"github.com/looplj/axonhub/internal/ent/prompt"
@@ -666,6 +667,10 @@ type ChannelWhereInput struct {
 	HasModelHealthHistories     *bool                           `json:"hasModelHealthHistories,omitempty"`
 	HasModelHealthHistoriesWith []*ModelHealthHistoryWhereInput `json:"hasModelHealthHistoriesWith,omitempty"`
 
+	// "model_probe_configs" edge predicates.
+	HasModelProbeConfigs     *bool                         `json:"hasModelProbeConfigs,omitempty"`
+	HasModelProbeConfigsWith []*ModelProbeConfigWhereInput `json:"hasModelProbeConfigsWith,omitempty"`
+
 	// "channel_model_prices" edge predicates.
 	HasChannelModelPrices     *bool                          `json:"hasChannelModelPrices,omitempty"`
 	HasChannelModelPricesWith []*ChannelModelPriceWhereInput `json:"hasChannelModelPricesWith,omitempty"`
@@ -1238,6 +1243,24 @@ func (i *ChannelWhereInput) P() (predicate.Channel, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, channel.HasModelHealthHistoriesWith(with...))
+	}
+	if i.HasModelProbeConfigs != nil {
+		p := channel.HasModelProbeConfigs()
+		if !*i.HasModelProbeConfigs {
+			p = channel.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasModelProbeConfigsWith) > 0 {
+		with := make([]predicate.ModelProbeConfig, 0, len(i.HasModelProbeConfigsWith))
+		for _, w := range i.HasModelProbeConfigsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasModelProbeConfigsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, channel.HasModelProbeConfigsWith(with...))
 	}
 	if i.HasChannelModelPrices != nil {
 		p := channel.HasChannelModelPrices()
@@ -4802,6 +4825,432 @@ func (i *ModelHealthSnapshotWhereInput) P() (predicate.ModelHealthSnapshot, erro
 		return predicates[0], nil
 	default:
 		return modelhealthsnapshot.And(predicates...), nil
+	}
+}
+
+// ModelProbeConfigWhereInput represents a where input for filtering ModelProbeConfig queries.
+type ModelProbeConfigWhereInput struct {
+	Predicates []predicate.ModelProbeConfig  `json:"-"`
+	Not        *ModelProbeConfigWhereInput   `json:"not,omitempty"`
+	Or         []*ModelProbeConfigWhereInput `json:"or,omitempty"`
+	And        []*ModelProbeConfigWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "created_at" field predicates.
+	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdAtNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdAtIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdAtNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdAtGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdAtGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdAtLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdAtLTE,omitempty"`
+
+	// "updated_at" field predicates.
+	UpdatedAt      *time.Time  `json:"updatedAt,omitempty"`
+	UpdatedAtNEQ   *time.Time  `json:"updatedAtNEQ,omitempty"`
+	UpdatedAtIn    []time.Time `json:"updatedAtIn,omitempty"`
+	UpdatedAtNotIn []time.Time `json:"updatedAtNotIn,omitempty"`
+	UpdatedAtGT    *time.Time  `json:"updatedAtGT,omitempty"`
+	UpdatedAtGTE   *time.Time  `json:"updatedAtGTE,omitempty"`
+	UpdatedAtLT    *time.Time  `json:"updatedAtLT,omitempty"`
+	UpdatedAtLTE   *time.Time  `json:"updatedAtLTE,omitempty"`
+
+	// "display_model" field predicates.
+	DisplayModel             *string  `json:"displayModel,omitempty"`
+	DisplayModelNEQ          *string  `json:"displayModelNEQ,omitempty"`
+	DisplayModelIn           []string `json:"displayModelIn,omitempty"`
+	DisplayModelNotIn        []string `json:"displayModelNotIn,omitempty"`
+	DisplayModelGT           *string  `json:"displayModelGT,omitempty"`
+	DisplayModelGTE          *string  `json:"displayModelGTE,omitempty"`
+	DisplayModelLT           *string  `json:"displayModelLT,omitempty"`
+	DisplayModelLTE          *string  `json:"displayModelLTE,omitempty"`
+	DisplayModelContains     *string  `json:"displayModelContains,omitempty"`
+	DisplayModelHasPrefix    *string  `json:"displayModelHasPrefix,omitempty"`
+	DisplayModelHasSuffix    *string  `json:"displayModelHasSuffix,omitempty"`
+	DisplayModelEqualFold    *string  `json:"displayModelEqualFold,omitempty"`
+	DisplayModelContainsFold *string  `json:"displayModelContainsFold,omitempty"`
+
+	// "channel_id" field predicates.
+	ChannelID      *int  `json:"channelID,omitempty"`
+	ChannelIDNEQ   *int  `json:"channelIDNEQ,omitempty"`
+	ChannelIDIn    []int `json:"channelIDIn,omitempty"`
+	ChannelIDNotIn []int `json:"channelIDNotIn,omitempty"`
+
+	// "actual_model_id" field predicates.
+	ActualModelID             *string  `json:"actualModelID,omitempty"`
+	ActualModelIDNEQ          *string  `json:"actualModelIDNEQ,omitempty"`
+	ActualModelIDIn           []string `json:"actualModelIDIn,omitempty"`
+	ActualModelIDNotIn        []string `json:"actualModelIDNotIn,omitempty"`
+	ActualModelIDGT           *string  `json:"actualModelIDGT,omitempty"`
+	ActualModelIDGTE          *string  `json:"actualModelIDGTE,omitempty"`
+	ActualModelIDLT           *string  `json:"actualModelIDLT,omitempty"`
+	ActualModelIDLTE          *string  `json:"actualModelIDLTE,omitempty"`
+	ActualModelIDContains     *string  `json:"actualModelIDContains,omitempty"`
+	ActualModelIDHasPrefix    *string  `json:"actualModelIDHasPrefix,omitempty"`
+	ActualModelIDHasSuffix    *string  `json:"actualModelIDHasSuffix,omitempty"`
+	ActualModelIDEqualFold    *string  `json:"actualModelIDEqualFold,omitempty"`
+	ActualModelIDContainsFold *string  `json:"actualModelIDContainsFold,omitempty"`
+
+	// "probe_enabled" field predicates.
+	ProbeEnabled    *bool `json:"probeEnabled,omitempty"`
+	ProbeEnabledNEQ *bool `json:"probeEnabledNEQ,omitempty"`
+
+	// "consecutive_failures" field predicates.
+	ConsecutiveFailures      *int  `json:"consecutiveFailures,omitempty"`
+	ConsecutiveFailuresNEQ   *int  `json:"consecutiveFailuresNEQ,omitempty"`
+	ConsecutiveFailuresIn    []int `json:"consecutiveFailuresIn,omitempty"`
+	ConsecutiveFailuresNotIn []int `json:"consecutiveFailuresNotIn,omitempty"`
+	ConsecutiveFailuresGT    *int  `json:"consecutiveFailuresGT,omitempty"`
+	ConsecutiveFailuresGTE   *int  `json:"consecutiveFailuresGTE,omitempty"`
+	ConsecutiveFailuresLT    *int  `json:"consecutiveFailuresLT,omitempty"`
+	ConsecutiveFailuresLTE   *int  `json:"consecutiveFailuresLTE,omitempty"`
+
+	// "auto_disabled_at" field predicates.
+	AutoDisabledAt       *int64  `json:"autoDisabledAt,omitempty"`
+	AutoDisabledAtNEQ    *int64  `json:"autoDisabledAtNEQ,omitempty"`
+	AutoDisabledAtIn     []int64 `json:"autoDisabledAtIn,omitempty"`
+	AutoDisabledAtNotIn  []int64 `json:"autoDisabledAtNotIn,omitempty"`
+	AutoDisabledAtGT     *int64  `json:"autoDisabledAtGT,omitempty"`
+	AutoDisabledAtGTE    *int64  `json:"autoDisabledAtGTE,omitempty"`
+	AutoDisabledAtLT     *int64  `json:"autoDisabledAtLT,omitempty"`
+	AutoDisabledAtLTE    *int64  `json:"autoDisabledAtLTE,omitempty"`
+	AutoDisabledAtIsNil  bool    `json:"autoDisabledAtIsNil,omitempty"`
+	AutoDisabledAtNotNil bool    `json:"autoDisabledAtNotNil,omitempty"`
+
+	// "channel" edge predicates.
+	HasChannel     *bool                `json:"hasChannel,omitempty"`
+	HasChannelWith []*ChannelWhereInput `json:"hasChannelWith,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *ModelProbeConfigWhereInput) AddPredicates(predicates ...predicate.ModelProbeConfig) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the ModelProbeConfigWhereInput filter on the ModelProbeConfigQuery builder.
+func (i *ModelProbeConfigWhereInput) Filter(q *ModelProbeConfigQuery) (*ModelProbeConfigQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyModelProbeConfigWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyModelProbeConfigWhereInput is returned in case the ModelProbeConfigWhereInput is empty.
+var ErrEmptyModelProbeConfigWhereInput = errors.New("ent: empty predicate ModelProbeConfigWhereInput")
+
+// P returns a predicate for filtering modelprobeconfigs.
+// An error is returned if the input is empty or invalid.
+func (i *ModelProbeConfigWhereInput) P() (predicate.ModelProbeConfig, error) {
+	var predicates []predicate.ModelProbeConfig
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, modelprobeconfig.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.ModelProbeConfig, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, modelprobeconfig.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.ModelProbeConfig, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, modelprobeconfig.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, modelprobeconfig.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, modelprobeconfig.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, modelprobeconfig.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, modelprobeconfig.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, modelprobeconfig.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, modelprobeconfig.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, modelprobeconfig.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, modelprobeconfig.IDLTE(*i.IDLTE))
+	}
+	if i.CreatedAt != nil {
+		predicates = append(predicates, modelprobeconfig.CreatedAtEQ(*i.CreatedAt))
+	}
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, modelprobeconfig.CreatedAtNEQ(*i.CreatedAtNEQ))
+	}
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, modelprobeconfig.CreatedAtIn(i.CreatedAtIn...))
+	}
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, modelprobeconfig.CreatedAtNotIn(i.CreatedAtNotIn...))
+	}
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, modelprobeconfig.CreatedAtGT(*i.CreatedAtGT))
+	}
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, modelprobeconfig.CreatedAtGTE(*i.CreatedAtGTE))
+	}
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, modelprobeconfig.CreatedAtLT(*i.CreatedAtLT))
+	}
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, modelprobeconfig.CreatedAtLTE(*i.CreatedAtLTE))
+	}
+	if i.UpdatedAt != nil {
+		predicates = append(predicates, modelprobeconfig.UpdatedAtEQ(*i.UpdatedAt))
+	}
+	if i.UpdatedAtNEQ != nil {
+		predicates = append(predicates, modelprobeconfig.UpdatedAtNEQ(*i.UpdatedAtNEQ))
+	}
+	if len(i.UpdatedAtIn) > 0 {
+		predicates = append(predicates, modelprobeconfig.UpdatedAtIn(i.UpdatedAtIn...))
+	}
+	if len(i.UpdatedAtNotIn) > 0 {
+		predicates = append(predicates, modelprobeconfig.UpdatedAtNotIn(i.UpdatedAtNotIn...))
+	}
+	if i.UpdatedAtGT != nil {
+		predicates = append(predicates, modelprobeconfig.UpdatedAtGT(*i.UpdatedAtGT))
+	}
+	if i.UpdatedAtGTE != nil {
+		predicates = append(predicates, modelprobeconfig.UpdatedAtGTE(*i.UpdatedAtGTE))
+	}
+	if i.UpdatedAtLT != nil {
+		predicates = append(predicates, modelprobeconfig.UpdatedAtLT(*i.UpdatedAtLT))
+	}
+	if i.UpdatedAtLTE != nil {
+		predicates = append(predicates, modelprobeconfig.UpdatedAtLTE(*i.UpdatedAtLTE))
+	}
+	if i.DisplayModel != nil {
+		predicates = append(predicates, modelprobeconfig.DisplayModelEQ(*i.DisplayModel))
+	}
+	if i.DisplayModelNEQ != nil {
+		predicates = append(predicates, modelprobeconfig.DisplayModelNEQ(*i.DisplayModelNEQ))
+	}
+	if len(i.DisplayModelIn) > 0 {
+		predicates = append(predicates, modelprobeconfig.DisplayModelIn(i.DisplayModelIn...))
+	}
+	if len(i.DisplayModelNotIn) > 0 {
+		predicates = append(predicates, modelprobeconfig.DisplayModelNotIn(i.DisplayModelNotIn...))
+	}
+	if i.DisplayModelGT != nil {
+		predicates = append(predicates, modelprobeconfig.DisplayModelGT(*i.DisplayModelGT))
+	}
+	if i.DisplayModelGTE != nil {
+		predicates = append(predicates, modelprobeconfig.DisplayModelGTE(*i.DisplayModelGTE))
+	}
+	if i.DisplayModelLT != nil {
+		predicates = append(predicates, modelprobeconfig.DisplayModelLT(*i.DisplayModelLT))
+	}
+	if i.DisplayModelLTE != nil {
+		predicates = append(predicates, modelprobeconfig.DisplayModelLTE(*i.DisplayModelLTE))
+	}
+	if i.DisplayModelContains != nil {
+		predicates = append(predicates, modelprobeconfig.DisplayModelContains(*i.DisplayModelContains))
+	}
+	if i.DisplayModelHasPrefix != nil {
+		predicates = append(predicates, modelprobeconfig.DisplayModelHasPrefix(*i.DisplayModelHasPrefix))
+	}
+	if i.DisplayModelHasSuffix != nil {
+		predicates = append(predicates, modelprobeconfig.DisplayModelHasSuffix(*i.DisplayModelHasSuffix))
+	}
+	if i.DisplayModelEqualFold != nil {
+		predicates = append(predicates, modelprobeconfig.DisplayModelEqualFold(*i.DisplayModelEqualFold))
+	}
+	if i.DisplayModelContainsFold != nil {
+		predicates = append(predicates, modelprobeconfig.DisplayModelContainsFold(*i.DisplayModelContainsFold))
+	}
+	if i.ChannelID != nil {
+		predicates = append(predicates, modelprobeconfig.ChannelIDEQ(*i.ChannelID))
+	}
+	if i.ChannelIDNEQ != nil {
+		predicates = append(predicates, modelprobeconfig.ChannelIDNEQ(*i.ChannelIDNEQ))
+	}
+	if len(i.ChannelIDIn) > 0 {
+		predicates = append(predicates, modelprobeconfig.ChannelIDIn(i.ChannelIDIn...))
+	}
+	if len(i.ChannelIDNotIn) > 0 {
+		predicates = append(predicates, modelprobeconfig.ChannelIDNotIn(i.ChannelIDNotIn...))
+	}
+	if i.ActualModelID != nil {
+		predicates = append(predicates, modelprobeconfig.ActualModelIDEQ(*i.ActualModelID))
+	}
+	if i.ActualModelIDNEQ != nil {
+		predicates = append(predicates, modelprobeconfig.ActualModelIDNEQ(*i.ActualModelIDNEQ))
+	}
+	if len(i.ActualModelIDIn) > 0 {
+		predicates = append(predicates, modelprobeconfig.ActualModelIDIn(i.ActualModelIDIn...))
+	}
+	if len(i.ActualModelIDNotIn) > 0 {
+		predicates = append(predicates, modelprobeconfig.ActualModelIDNotIn(i.ActualModelIDNotIn...))
+	}
+	if i.ActualModelIDGT != nil {
+		predicates = append(predicates, modelprobeconfig.ActualModelIDGT(*i.ActualModelIDGT))
+	}
+	if i.ActualModelIDGTE != nil {
+		predicates = append(predicates, modelprobeconfig.ActualModelIDGTE(*i.ActualModelIDGTE))
+	}
+	if i.ActualModelIDLT != nil {
+		predicates = append(predicates, modelprobeconfig.ActualModelIDLT(*i.ActualModelIDLT))
+	}
+	if i.ActualModelIDLTE != nil {
+		predicates = append(predicates, modelprobeconfig.ActualModelIDLTE(*i.ActualModelIDLTE))
+	}
+	if i.ActualModelIDContains != nil {
+		predicates = append(predicates, modelprobeconfig.ActualModelIDContains(*i.ActualModelIDContains))
+	}
+	if i.ActualModelIDHasPrefix != nil {
+		predicates = append(predicates, modelprobeconfig.ActualModelIDHasPrefix(*i.ActualModelIDHasPrefix))
+	}
+	if i.ActualModelIDHasSuffix != nil {
+		predicates = append(predicates, modelprobeconfig.ActualModelIDHasSuffix(*i.ActualModelIDHasSuffix))
+	}
+	if i.ActualModelIDEqualFold != nil {
+		predicates = append(predicates, modelprobeconfig.ActualModelIDEqualFold(*i.ActualModelIDEqualFold))
+	}
+	if i.ActualModelIDContainsFold != nil {
+		predicates = append(predicates, modelprobeconfig.ActualModelIDContainsFold(*i.ActualModelIDContainsFold))
+	}
+	if i.ProbeEnabled != nil {
+		predicates = append(predicates, modelprobeconfig.ProbeEnabledEQ(*i.ProbeEnabled))
+	}
+	if i.ProbeEnabledNEQ != nil {
+		predicates = append(predicates, modelprobeconfig.ProbeEnabledNEQ(*i.ProbeEnabledNEQ))
+	}
+	if i.ConsecutiveFailures != nil {
+		predicates = append(predicates, modelprobeconfig.ConsecutiveFailuresEQ(*i.ConsecutiveFailures))
+	}
+	if i.ConsecutiveFailuresNEQ != nil {
+		predicates = append(predicates, modelprobeconfig.ConsecutiveFailuresNEQ(*i.ConsecutiveFailuresNEQ))
+	}
+	if len(i.ConsecutiveFailuresIn) > 0 {
+		predicates = append(predicates, modelprobeconfig.ConsecutiveFailuresIn(i.ConsecutiveFailuresIn...))
+	}
+	if len(i.ConsecutiveFailuresNotIn) > 0 {
+		predicates = append(predicates, modelprobeconfig.ConsecutiveFailuresNotIn(i.ConsecutiveFailuresNotIn...))
+	}
+	if i.ConsecutiveFailuresGT != nil {
+		predicates = append(predicates, modelprobeconfig.ConsecutiveFailuresGT(*i.ConsecutiveFailuresGT))
+	}
+	if i.ConsecutiveFailuresGTE != nil {
+		predicates = append(predicates, modelprobeconfig.ConsecutiveFailuresGTE(*i.ConsecutiveFailuresGTE))
+	}
+	if i.ConsecutiveFailuresLT != nil {
+		predicates = append(predicates, modelprobeconfig.ConsecutiveFailuresLT(*i.ConsecutiveFailuresLT))
+	}
+	if i.ConsecutiveFailuresLTE != nil {
+		predicates = append(predicates, modelprobeconfig.ConsecutiveFailuresLTE(*i.ConsecutiveFailuresLTE))
+	}
+	if i.AutoDisabledAt != nil {
+		predicates = append(predicates, modelprobeconfig.AutoDisabledAtEQ(*i.AutoDisabledAt))
+	}
+	if i.AutoDisabledAtNEQ != nil {
+		predicates = append(predicates, modelprobeconfig.AutoDisabledAtNEQ(*i.AutoDisabledAtNEQ))
+	}
+	if len(i.AutoDisabledAtIn) > 0 {
+		predicates = append(predicates, modelprobeconfig.AutoDisabledAtIn(i.AutoDisabledAtIn...))
+	}
+	if len(i.AutoDisabledAtNotIn) > 0 {
+		predicates = append(predicates, modelprobeconfig.AutoDisabledAtNotIn(i.AutoDisabledAtNotIn...))
+	}
+	if i.AutoDisabledAtGT != nil {
+		predicates = append(predicates, modelprobeconfig.AutoDisabledAtGT(*i.AutoDisabledAtGT))
+	}
+	if i.AutoDisabledAtGTE != nil {
+		predicates = append(predicates, modelprobeconfig.AutoDisabledAtGTE(*i.AutoDisabledAtGTE))
+	}
+	if i.AutoDisabledAtLT != nil {
+		predicates = append(predicates, modelprobeconfig.AutoDisabledAtLT(*i.AutoDisabledAtLT))
+	}
+	if i.AutoDisabledAtLTE != nil {
+		predicates = append(predicates, modelprobeconfig.AutoDisabledAtLTE(*i.AutoDisabledAtLTE))
+	}
+	if i.AutoDisabledAtIsNil {
+		predicates = append(predicates, modelprobeconfig.AutoDisabledAtIsNil())
+	}
+	if i.AutoDisabledAtNotNil {
+		predicates = append(predicates, modelprobeconfig.AutoDisabledAtNotNil())
+	}
+
+	if i.HasChannel != nil {
+		p := modelprobeconfig.HasChannel()
+		if !*i.HasChannel {
+			p = modelprobeconfig.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasChannelWith) > 0 {
+		with := make([]predicate.Channel, 0, len(i.HasChannelWith))
+		for _, w := range i.HasChannelWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasChannelWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, modelprobeconfig.HasChannelWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyModelProbeConfigWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return modelprobeconfig.And(predicates...), nil
 	}
 }
 

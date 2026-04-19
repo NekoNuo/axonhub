@@ -232,6 +232,16 @@ func (r *modelHealthSnapshotResolver) ChannelID(ctx context.Context, obj *ent.Mo
 }
 
 // ID is the resolver for the id field.
+func (r *modelProbeConfigResolver) ID(ctx context.Context, obj *ent.ModelProbeConfig) (*objects.GUID, error) {
+	panic(fmt.Errorf("not implemented: ID - id"))
+}
+
+// ChannelID is the resolver for the channelID field.
+func (r *modelProbeConfigResolver) ChannelID(ctx context.Context, obj *ent.ModelProbeConfig) (*objects.GUID, error) {
+	panic(fmt.Errorf("not implemented: ChannelID - channelID"))
+}
+
+// ID is the resolver for the id field.
 func (r *projectResolver) ID(ctx context.Context, obj *ent.Project) (*objects.GUID, error) {
 	return &objects.GUID{
 		Type: ent.TypeProject,
@@ -936,6 +946,9 @@ func (r *Resolver) ModelHealthSnapshot() ModelHealthSnapshotResolver {
 	return &modelHealthSnapshotResolver{r}
 }
 
+// ModelProbeConfig returns ModelProbeConfigResolver implementation.
+func (r *Resolver) ModelProbeConfig() ModelProbeConfigResolver { return &modelProbeConfigResolver{r} }
+
 // Project returns ProjectResolver implementation.
 func (r *Resolver) Project() ProjectResolver { return &projectResolver{r} }
 
@@ -998,6 +1011,7 @@ type dataStorageResolver struct{ *Resolver }
 type modelResolver struct{ *Resolver }
 type modelHealthHistoryResolver struct{ *Resolver }
 type modelHealthSnapshotResolver struct{ *Resolver }
+type modelProbeConfigResolver struct{ *Resolver }
 type projectResolver struct{ *Resolver }
 type promptResolver struct{ *Resolver }
 type promptProtectionRuleResolver struct{ *Resolver }

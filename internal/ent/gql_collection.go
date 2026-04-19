@@ -20,6 +20,7 @@ import (
 	"github.com/looplj/axonhub/internal/ent/model"
 	"github.com/looplj/axonhub/internal/ent/modelhealthhistory"
 	"github.com/looplj/axonhub/internal/ent/modelhealthsnapshot"
+	"github.com/looplj/axonhub/internal/ent/modelprobeconfig"
 	"github.com/looplj/axonhub/internal/ent/project"
 	"github.com/looplj/axonhub/internal/ent/prompt"
 	"github.com/looplj/axonhub/internal/ent/promptprotectionrule"
@@ -615,6 +616,19 @@ func (_q *ChannelQuery) collectField(ctx context.Context, oneNode bool, opCtx *g
 				return err
 			}
 			_q.WithNamedModelHealthHistories(alias, func(wq *ModelHealthHistoryQuery) {
+				*wq = *query
+			})
+
+		case "modelProbeConfigs":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ModelProbeConfigClient{config: _q.config}).Query()
+			)
+			if err := query.collectField(ctx, false, opCtx, field, path, mayAddCondition(satisfies, modelprobeconfigImplementors)...); err != nil {
+				return err
+			}
+			_q.WithNamedModelProbeConfigs(alias, func(wq *ModelProbeConfigQuery) {
 				*wq = *query
 			})
 
@@ -2071,6 +2085,145 @@ func newModelHealthSnapshotPaginateArgs(rv map[string]any) *modelhealthsnapshotP
 	}
 	if v, ok := rv[whereField].(*ModelHealthSnapshotWhereInput); ok {
 		args.opts = append(args.opts, WithModelHealthSnapshotFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (_q *ModelProbeConfigQuery) CollectFields(ctx context.Context, satisfies ...string) (*ModelProbeConfigQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return _q, nil
+	}
+	if err := _q.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return _q, nil
+}
+
+func (_q *ModelProbeConfigQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(modelprobeconfig.Columns))
+		selectedFields = []string{modelprobeconfig.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+
+		case "channel":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ChannelClient{config: _q.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, channelImplementors)...); err != nil {
+				return err
+			}
+			_q.withChannel = query
+			if _, ok := fieldSeen[modelprobeconfig.FieldChannelID]; !ok {
+				selectedFields = append(selectedFields, modelprobeconfig.FieldChannelID)
+				fieldSeen[modelprobeconfig.FieldChannelID] = struct{}{}
+			}
+		case "createdAt":
+			if _, ok := fieldSeen[modelprobeconfig.FieldCreatedAt]; !ok {
+				selectedFields = append(selectedFields, modelprobeconfig.FieldCreatedAt)
+				fieldSeen[modelprobeconfig.FieldCreatedAt] = struct{}{}
+			}
+		case "updatedAt":
+			if _, ok := fieldSeen[modelprobeconfig.FieldUpdatedAt]; !ok {
+				selectedFields = append(selectedFields, modelprobeconfig.FieldUpdatedAt)
+				fieldSeen[modelprobeconfig.FieldUpdatedAt] = struct{}{}
+			}
+		case "displayModel":
+			if _, ok := fieldSeen[modelprobeconfig.FieldDisplayModel]; !ok {
+				selectedFields = append(selectedFields, modelprobeconfig.FieldDisplayModel)
+				fieldSeen[modelprobeconfig.FieldDisplayModel] = struct{}{}
+			}
+		case "channelID":
+			if _, ok := fieldSeen[modelprobeconfig.FieldChannelID]; !ok {
+				selectedFields = append(selectedFields, modelprobeconfig.FieldChannelID)
+				fieldSeen[modelprobeconfig.FieldChannelID] = struct{}{}
+			}
+		case "actualModelID":
+			if _, ok := fieldSeen[modelprobeconfig.FieldActualModelID]; !ok {
+				selectedFields = append(selectedFields, modelprobeconfig.FieldActualModelID)
+				fieldSeen[modelprobeconfig.FieldActualModelID] = struct{}{}
+			}
+		case "probeEnabled":
+			if _, ok := fieldSeen[modelprobeconfig.FieldProbeEnabled]; !ok {
+				selectedFields = append(selectedFields, modelprobeconfig.FieldProbeEnabled)
+				fieldSeen[modelprobeconfig.FieldProbeEnabled] = struct{}{}
+			}
+		case "consecutiveFailures":
+			if _, ok := fieldSeen[modelprobeconfig.FieldConsecutiveFailures]; !ok {
+				selectedFields = append(selectedFields, modelprobeconfig.FieldConsecutiveFailures)
+				fieldSeen[modelprobeconfig.FieldConsecutiveFailures] = struct{}{}
+			}
+		case "autoDisabledAt":
+			if _, ok := fieldSeen[modelprobeconfig.FieldAutoDisabledAt]; !ok {
+				selectedFields = append(selectedFields, modelprobeconfig.FieldAutoDisabledAt)
+				fieldSeen[modelprobeconfig.FieldAutoDisabledAt] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		_q.Select(selectedFields...)
+	}
+	return nil
+}
+
+type modelprobeconfigPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []ModelProbeConfigPaginateOption
+}
+
+func newModelProbeConfigPaginateArgs(rv map[string]any) *modelprobeconfigPaginateArgs {
+	args := &modelprobeconfigPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case map[string]any:
+			var (
+				err1, err2 error
+				order      = &ModelProbeConfigOrder{Field: &ModelProbeConfigOrderField{}, Direction: entgql.OrderDirectionAsc}
+			)
+			if d, ok := v[directionField]; ok {
+				err1 = order.Direction.UnmarshalGQL(d)
+			}
+			if f, ok := v[fieldField]; ok {
+				err2 = order.Field.UnmarshalGQL(f)
+			}
+			if err1 == nil && err2 == nil {
+				args.opts = append(args.opts, WithModelProbeConfigOrder(order))
+			}
+		case *ModelProbeConfigOrder:
+			if v != nil {
+				args.opts = append(args.opts, WithModelProbeConfigOrder(v))
+			}
+		}
+	}
+	if v, ok := rv[whereField].(*ModelProbeConfigWhereInput); ok {
+		args.opts = append(args.opts, WithModelProbeConfigFilter(v.Filter))
 	}
 	return args
 }

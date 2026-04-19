@@ -17,6 +17,7 @@ import (
 	"github.com/looplj/axonhub/internal/ent/channelprobe"
 	"github.com/looplj/axonhub/internal/ent/modelhealthhistory"
 	"github.com/looplj/axonhub/internal/ent/modelhealthsnapshot"
+	"github.com/looplj/axonhub/internal/ent/modelprobeconfig"
 	"github.com/looplj/axonhub/internal/ent/predicate"
 	"github.com/looplj/axonhub/internal/ent/providerquotastatus"
 	"github.com/looplj/axonhub/internal/ent/request"
@@ -439,6 +440,21 @@ func (_u *ChannelUpdate) AddModelHealthHistories(v ...*ModelHealthHistory) *Chan
 	return _u.AddModelHealthHistoryIDs(ids...)
 }
 
+// AddModelProbeConfigIDs adds the "model_probe_configs" edge to the ModelProbeConfig entity by IDs.
+func (_u *ChannelUpdate) AddModelProbeConfigIDs(ids ...int) *ChannelUpdate {
+	_u.mutation.AddModelProbeConfigIDs(ids...)
+	return _u
+}
+
+// AddModelProbeConfigs adds the "model_probe_configs" edges to the ModelProbeConfig entity.
+func (_u *ChannelUpdate) AddModelProbeConfigs(v ...*ModelProbeConfig) *ChannelUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddModelProbeConfigIDs(ids...)
+}
+
 // AddChannelModelPriceIDs adds the "channel_model_prices" edge to the ChannelModelPrice entity by IDs.
 func (_u *ChannelUpdate) AddChannelModelPriceIDs(ids ...int) *ChannelUpdate {
 	_u.mutation.AddChannelModelPriceIDs(ids...)
@@ -602,6 +618,27 @@ func (_u *ChannelUpdate) RemoveModelHealthHistories(v ...*ModelHealthHistory) *C
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveModelHealthHistoryIDs(ids...)
+}
+
+// ClearModelProbeConfigs clears all "model_probe_configs" edges to the ModelProbeConfig entity.
+func (_u *ChannelUpdate) ClearModelProbeConfigs() *ChannelUpdate {
+	_u.mutation.ClearModelProbeConfigs()
+	return _u
+}
+
+// RemoveModelProbeConfigIDs removes the "model_probe_configs" edge to ModelProbeConfig entities by IDs.
+func (_u *ChannelUpdate) RemoveModelProbeConfigIDs(ids ...int) *ChannelUpdate {
+	_u.mutation.RemoveModelProbeConfigIDs(ids...)
+	return _u
+}
+
+// RemoveModelProbeConfigs removes "model_probe_configs" edges to ModelProbeConfig entities.
+func (_u *ChannelUpdate) RemoveModelProbeConfigs(v ...*ModelProbeConfig) *ChannelUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveModelProbeConfigIDs(ids...)
 }
 
 // ClearChannelModelPrices clears all "channel_model_prices" edges to the ChannelModelPrice entity.
@@ -1079,6 +1116,51 @@ func (_u *ChannelUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(modelhealthhistory.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ModelProbeConfigsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   channel.ModelProbeConfigsTable,
+			Columns: []string{channel.ModelProbeConfigsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(modelprobeconfig.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedModelProbeConfigsIDs(); len(nodes) > 0 && !_u.mutation.ModelProbeConfigsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   channel.ModelProbeConfigsTable,
+			Columns: []string{channel.ModelProbeConfigsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(modelprobeconfig.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ModelProbeConfigsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   channel.ModelProbeConfigsTable,
+			Columns: []string{channel.ModelProbeConfigsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(modelprobeconfig.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1582,6 +1664,21 @@ func (_u *ChannelUpdateOne) AddModelHealthHistories(v ...*ModelHealthHistory) *C
 	return _u.AddModelHealthHistoryIDs(ids...)
 }
 
+// AddModelProbeConfigIDs adds the "model_probe_configs" edge to the ModelProbeConfig entity by IDs.
+func (_u *ChannelUpdateOne) AddModelProbeConfigIDs(ids ...int) *ChannelUpdateOne {
+	_u.mutation.AddModelProbeConfigIDs(ids...)
+	return _u
+}
+
+// AddModelProbeConfigs adds the "model_probe_configs" edges to the ModelProbeConfig entity.
+func (_u *ChannelUpdateOne) AddModelProbeConfigs(v ...*ModelProbeConfig) *ChannelUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddModelProbeConfigIDs(ids...)
+}
+
 // AddChannelModelPriceIDs adds the "channel_model_prices" edge to the ChannelModelPrice entity by IDs.
 func (_u *ChannelUpdateOne) AddChannelModelPriceIDs(ids ...int) *ChannelUpdateOne {
 	_u.mutation.AddChannelModelPriceIDs(ids...)
@@ -1745,6 +1842,27 @@ func (_u *ChannelUpdateOne) RemoveModelHealthHistories(v ...*ModelHealthHistory)
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveModelHealthHistoryIDs(ids...)
+}
+
+// ClearModelProbeConfigs clears all "model_probe_configs" edges to the ModelProbeConfig entity.
+func (_u *ChannelUpdateOne) ClearModelProbeConfigs() *ChannelUpdateOne {
+	_u.mutation.ClearModelProbeConfigs()
+	return _u
+}
+
+// RemoveModelProbeConfigIDs removes the "model_probe_configs" edge to ModelProbeConfig entities by IDs.
+func (_u *ChannelUpdateOne) RemoveModelProbeConfigIDs(ids ...int) *ChannelUpdateOne {
+	_u.mutation.RemoveModelProbeConfigIDs(ids...)
+	return _u
+}
+
+// RemoveModelProbeConfigs removes "model_probe_configs" edges to ModelProbeConfig entities.
+func (_u *ChannelUpdateOne) RemoveModelProbeConfigs(v ...*ModelProbeConfig) *ChannelUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveModelProbeConfigIDs(ids...)
 }
 
 // ClearChannelModelPrices clears all "channel_model_prices" edges to the ChannelModelPrice entity.
@@ -2252,6 +2370,51 @@ func (_u *ChannelUpdateOne) sqlSave(ctx context.Context) (_node *Channel, err er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(modelhealthhistory.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ModelProbeConfigsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   channel.ModelProbeConfigsTable,
+			Columns: []string{channel.ModelProbeConfigsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(modelprobeconfig.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedModelProbeConfigsIDs(); len(nodes) > 0 && !_u.mutation.ModelProbeConfigsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   channel.ModelProbeConfigsTable,
+			Columns: []string{channel.ModelProbeConfigsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(modelprobeconfig.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ModelProbeConfigsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   channel.ModelProbeConfigsTable,
+			Columns: []string{channel.ModelProbeConfigsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(modelprobeconfig.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

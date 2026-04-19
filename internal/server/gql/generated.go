@@ -76,6 +76,7 @@ type ResolverRoot interface {
 	Model() ModelResolver
 	ModelHealthHistory() ModelHealthHistoryResolver
 	ModelHealthSnapshot() ModelHealthSnapshotResolver
+	ModelProbeConfig() ModelProbeConfigResolver
 	Mutation() MutationResolver
 	Project() ProjectResolver
 	Prompt() PromptResolver
@@ -285,6 +286,7 @@ type ComplexityRoot struct {
 		ManualModels            func(childComplexity int) int
 		ModelHealthHistories    func(childComplexity int) int
 		ModelHealthSnapshots    func(childComplexity int) int
+		ModelProbeConfigs       func(childComplexity int) int
 		Name                    func(childComplexity int) int
 		OrderingWeight          func(childComplexity int) int
 		Policies                func(childComplexity int) int
@@ -892,6 +894,19 @@ type ComplexityRoot struct {
 		ItemCode                 func(childComplexity int) int
 		Pricing                  func(childComplexity int) int
 		PromptWriteCacheVariants func(childComplexity int) int
+	}
+
+	ModelProbeConfig struct {
+		ActualModelID       func(childComplexity int) int
+		AutoDisabledAt      func(childComplexity int) int
+		Channel             func(childComplexity int) int
+		ChannelID           func(childComplexity int) int
+		ConsecutiveFailures func(childComplexity int) int
+		CreatedAt           func(childComplexity int) int
+		DisplayModel        func(childComplexity int) int
+		ID                  func(childComplexity int) int
+		ProbeEnabled        func(childComplexity int) int
+		UpdatedAt           func(childComplexity int) int
 	}
 
 	ModelSettings struct {
@@ -2022,6 +2037,11 @@ type ModelHealthSnapshotResolver interface {
 
 	ChannelID(ctx context.Context, obj *ent.ModelHealthSnapshot) (*objects.GUID, error)
 }
+type ModelProbeConfigResolver interface {
+	ID(ctx context.Context, obj *ent.ModelProbeConfig) (*objects.GUID, error)
+
+	ChannelID(ctx context.Context, obj *ent.ModelProbeConfig) (*objects.GUID, error)
+}
 type MutationResolver interface {
 	CreateChannel(ctx context.Context, input ent.CreateChannelInput) (*ent.Channel, error)
 	BulkCreateChannels(ctx context.Context, input biz.BulkCreateChannelsInput) ([]*ent.Channel, error)
@@ -3015,6 +3035,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Channel.ModelHealthSnapshots(childComplexity), true
+	case "Channel.modelProbeConfigs":
+		if e.complexity.Channel.ModelProbeConfigs == nil {
+			break
+		}
+
+		return e.complexity.Channel.ModelProbeConfigs(childComplexity), true
 	case "Channel.name":
 		if e.complexity.Channel.Name == nil {
 			break
@@ -5300,6 +5326,67 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.ModelPriceItem.PromptWriteCacheVariants(childComplexity), true
+
+	case "ModelProbeConfig.actualModelID":
+		if e.complexity.ModelProbeConfig.ActualModelID == nil {
+			break
+		}
+
+		return e.complexity.ModelProbeConfig.ActualModelID(childComplexity), true
+	case "ModelProbeConfig.autoDisabledAt":
+		if e.complexity.ModelProbeConfig.AutoDisabledAt == nil {
+			break
+		}
+
+		return e.complexity.ModelProbeConfig.AutoDisabledAt(childComplexity), true
+	case "ModelProbeConfig.channel":
+		if e.complexity.ModelProbeConfig.Channel == nil {
+			break
+		}
+
+		return e.complexity.ModelProbeConfig.Channel(childComplexity), true
+	case "ModelProbeConfig.channelID":
+		if e.complexity.ModelProbeConfig.ChannelID == nil {
+			break
+		}
+
+		return e.complexity.ModelProbeConfig.ChannelID(childComplexity), true
+	case "ModelProbeConfig.consecutiveFailures":
+		if e.complexity.ModelProbeConfig.ConsecutiveFailures == nil {
+			break
+		}
+
+		return e.complexity.ModelProbeConfig.ConsecutiveFailures(childComplexity), true
+	case "ModelProbeConfig.createdAt":
+		if e.complexity.ModelProbeConfig.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.ModelProbeConfig.CreatedAt(childComplexity), true
+	case "ModelProbeConfig.displayModel":
+		if e.complexity.ModelProbeConfig.DisplayModel == nil {
+			break
+		}
+
+		return e.complexity.ModelProbeConfig.DisplayModel(childComplexity), true
+	case "ModelProbeConfig.id":
+		if e.complexity.ModelProbeConfig.ID == nil {
+			break
+		}
+
+		return e.complexity.ModelProbeConfig.ID(childComplexity), true
+	case "ModelProbeConfig.probeEnabled":
+		if e.complexity.ModelProbeConfig.ProbeEnabled == nil {
+			break
+		}
+
+		return e.complexity.ModelProbeConfig.ProbeEnabled(childComplexity), true
+	case "ModelProbeConfig.updatedAt":
+		if e.complexity.ModelProbeConfig.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.ModelProbeConfig.UpdatedAt(childComplexity), true
 
 	case "ModelSettings.associations":
 		if e.complexity.ModelSettings.Associations == nil {
@@ -10602,6 +10689,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputModelOrder,
 		ec.unmarshalInputModelPriceInput,
 		ec.unmarshalInputModelPriceItemInput,
+		ec.unmarshalInputModelProbeConfigOrder,
+		ec.unmarshalInputModelProbeConfigWhereInput,
 		ec.unmarshalInputModelSettingsInput,
 		ec.unmarshalInputModelWhereInput,
 		ec.unmarshalInputOAuthCredentialsInput,
@@ -15754,6 +15843,8 @@ func (ec *executionContext) fieldContext_ApplyChannelOverrideTemplatePayload_cha
 				return ec.fieldContext_Channel_modelHealthSnapshots(ctx, field)
 			case "modelHealthHistories":
 				return ec.fieldContext_Channel_modelHealthHistories(ctx, field)
+			case "modelProbeConfigs":
+				return ec.fieldContext_Channel_modelProbeConfigs(ctx, field)
 			case "channelModelPrices":
 				return ec.fieldContext_Channel_channelModelPrices(ctx, field)
 			case "providerQuotaStatus":
@@ -16762,6 +16853,8 @@ func (ec *executionContext) fieldContext_BulkImportChannelsResult_channels(_ con
 				return ec.fieldContext_Channel_modelHealthSnapshots(ctx, field)
 			case "modelHealthHistories":
 				return ec.fieldContext_Channel_modelHealthHistories(ctx, field)
+			case "modelProbeConfigs":
+				return ec.fieldContext_Channel_modelProbeConfigs(ctx, field)
 			case "channelModelPrices":
 				return ec.fieldContext_Channel_channelModelPrices(ctx, field)
 			case "providerQuotaStatus":
@@ -16909,6 +17002,8 @@ func (ec *executionContext) fieldContext_BulkUpdateChannelOrderingResult_channel
 				return ec.fieldContext_Channel_modelHealthSnapshots(ctx, field)
 			case "modelHealthHistories":
 				return ec.fieldContext_Channel_modelHealthHistories(ctx, field)
+			case "modelProbeConfigs":
+				return ec.fieldContext_Channel_modelProbeConfigs(ctx, field)
 			case "channelModelPrices":
 				return ec.fieldContext_Channel_channelModelPrices(ctx, field)
 			case "providerQuotaStatus":
@@ -17786,6 +17881,57 @@ func (ec *executionContext) fieldContext_Channel_modelHealthHistories(_ context.
 	return fc, nil
 }
 
+func (ec *executionContext) _Channel_modelProbeConfigs(ctx context.Context, field graphql.CollectedField, obj *ent.Channel) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Channel_modelProbeConfigs,
+		func(ctx context.Context) (any, error) {
+			return obj.ModelProbeConfigs(ctx)
+		},
+		nil,
+		ec.marshalOModelProbeConfig2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐModelProbeConfigᚄ,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Channel_modelProbeConfigs(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Channel",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_ModelProbeConfig_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_ModelProbeConfig_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_ModelProbeConfig_updatedAt(ctx, field)
+			case "displayModel":
+				return ec.fieldContext_ModelProbeConfig_displayModel(ctx, field)
+			case "channelID":
+				return ec.fieldContext_ModelProbeConfig_channelID(ctx, field)
+			case "actualModelID":
+				return ec.fieldContext_ModelProbeConfig_actualModelID(ctx, field)
+			case "probeEnabled":
+				return ec.fieldContext_ModelProbeConfig_probeEnabled(ctx, field)
+			case "consecutiveFailures":
+				return ec.fieldContext_ModelProbeConfig_consecutiveFailures(ctx, field)
+			case "autoDisabledAt":
+				return ec.fieldContext_ModelProbeConfig_autoDisabledAt(ctx, field)
+			case "channel":
+				return ec.fieldContext_ModelProbeConfig_channel(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ModelProbeConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Channel_channelModelPrices(ctx context.Context, field graphql.CollectedField, obj *ent.Channel) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -18316,6 +18462,8 @@ func (ec *executionContext) fieldContext_ChannelEdge_node(_ context.Context, fie
 				return ec.fieldContext_Channel_modelHealthSnapshots(ctx, field)
 			case "modelHealthHistories":
 				return ec.fieldContext_Channel_modelHealthHistories(ctx, field)
+			case "modelProbeConfigs":
+				return ec.fieldContext_Channel_modelProbeConfigs(ctx, field)
 			case "channelModelPrices":
 				return ec.fieldContext_Channel_channelModelPrices(ctx, field)
 			case "providerQuotaStatus":
@@ -19163,6 +19311,8 @@ func (ec *executionContext) fieldContext_ChannelModelPrice_channel(_ context.Con
 				return ec.fieldContext_Channel_modelHealthSnapshots(ctx, field)
 			case "modelHealthHistories":
 				return ec.fieldContext_Channel_modelHealthHistories(ctx, field)
+			case "modelProbeConfigs":
+				return ec.fieldContext_Channel_modelProbeConfigs(ctx, field)
 			case "channelModelPrices":
 				return ec.fieldContext_Channel_channelModelPrices(ctx, field)
 			case "providerQuotaStatus":
@@ -21085,6 +21235,8 @@ func (ec *executionContext) fieldContext_ChannelProbe_channel(_ context.Context,
 				return ec.fieldContext_Channel_modelHealthSnapshots(ctx, field)
 			case "modelHealthHistories":
 				return ec.fieldContext_Channel_modelHealthHistories(ctx, field)
+			case "modelProbeConfigs":
+				return ec.fieldContext_Channel_modelProbeConfigs(ctx, field)
 			case "channelModelPrices":
 				return ec.fieldContext_Channel_channelModelPrices(ctx, field)
 			case "providerQuotaStatus":
@@ -27814,6 +27966,8 @@ func (ec *executionContext) fieldContext_ModelChannelConnection_channel(_ contex
 				return ec.fieldContext_Channel_modelHealthSnapshots(ctx, field)
 			case "modelHealthHistories":
 				return ec.fieldContext_Channel_modelHealthHistories(ctx, field)
+			case "modelProbeConfigs":
+				return ec.fieldContext_Channel_modelProbeConfigs(ctx, field)
 			case "channelModelPrices":
 				return ec.fieldContext_Channel_channelModelPrices(ctx, field)
 			case "providerQuotaStatus":
@@ -28450,6 +28604,8 @@ func (ec *executionContext) fieldContext_ModelHealthHistory_channel(_ context.Co
 				return ec.fieldContext_Channel_modelHealthSnapshots(ctx, field)
 			case "modelHealthHistories":
 				return ec.fieldContext_Channel_modelHealthHistories(ctx, field)
+			case "modelProbeConfigs":
+				return ec.fieldContext_Channel_modelProbeConfigs(ctx, field)
 			case "channelModelPrices":
 				return ec.fieldContext_Channel_channelModelPrices(ctx, field)
 			case "providerQuotaStatus":
@@ -28829,6 +28985,8 @@ func (ec *executionContext) fieldContext_ModelHealthSnapshot_channel(_ context.C
 				return ec.fieldContext_Channel_modelHealthSnapshots(ctx, field)
 			case "modelHealthHistories":
 				return ec.fieldContext_Channel_modelHealthHistories(ctx, field)
+			case "modelProbeConfigs":
+				return ec.fieldContext_Channel_modelProbeConfigs(ctx, field)
 			case "channelModelPrices":
 				return ec.fieldContext_Channel_channelModelPrices(ctx, field)
 			case "providerQuotaStatus":
@@ -29342,6 +29500,358 @@ func (ec *executionContext) fieldContext_ModelPriceItem_promptWriteCacheVariants
 	return fc, nil
 }
 
+func (ec *executionContext) _ModelProbeConfig_id(ctx context.Context, field graphql.CollectedField, obj *ent.ModelProbeConfig) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ModelProbeConfig_id,
+		func(ctx context.Context) (any, error) {
+			return ec.resolvers.ModelProbeConfig().ID(ctx, obj)
+		},
+		nil,
+		ec.marshalNID2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐGUID,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ModelProbeConfig_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ModelProbeConfig",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ModelProbeConfig_createdAt(ctx context.Context, field graphql.CollectedField, obj *ent.ModelProbeConfig) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ModelProbeConfig_createdAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ModelProbeConfig_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ModelProbeConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ModelProbeConfig_updatedAt(ctx context.Context, field graphql.CollectedField, obj *ent.ModelProbeConfig) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ModelProbeConfig_updatedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ModelProbeConfig_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ModelProbeConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ModelProbeConfig_displayModel(ctx context.Context, field graphql.CollectedField, obj *ent.ModelProbeConfig) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ModelProbeConfig_displayModel,
+		func(ctx context.Context) (any, error) {
+			return obj.DisplayModel, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ModelProbeConfig_displayModel(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ModelProbeConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ModelProbeConfig_channelID(ctx context.Context, field graphql.CollectedField, obj *ent.ModelProbeConfig) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ModelProbeConfig_channelID,
+		func(ctx context.Context) (any, error) {
+			return ec.resolvers.ModelProbeConfig().ChannelID(ctx, obj)
+		},
+		nil,
+		ec.marshalNID2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐGUID,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ModelProbeConfig_channelID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ModelProbeConfig",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ModelProbeConfig_actualModelID(ctx context.Context, field graphql.CollectedField, obj *ent.ModelProbeConfig) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ModelProbeConfig_actualModelID,
+		func(ctx context.Context) (any, error) {
+			return obj.ActualModelID, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ModelProbeConfig_actualModelID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ModelProbeConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ModelProbeConfig_probeEnabled(ctx context.Context, field graphql.CollectedField, obj *ent.ModelProbeConfig) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ModelProbeConfig_probeEnabled,
+		func(ctx context.Context) (any, error) {
+			return obj.ProbeEnabled, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ModelProbeConfig_probeEnabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ModelProbeConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ModelProbeConfig_consecutiveFailures(ctx context.Context, field graphql.CollectedField, obj *ent.ModelProbeConfig) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ModelProbeConfig_consecutiveFailures,
+		func(ctx context.Context) (any, error) {
+			return obj.ConsecutiveFailures, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ModelProbeConfig_consecutiveFailures(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ModelProbeConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ModelProbeConfig_autoDisabledAt(ctx context.Context, field graphql.CollectedField, obj *ent.ModelProbeConfig) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ModelProbeConfig_autoDisabledAt,
+		func(ctx context.Context) (any, error) {
+			return obj.AutoDisabledAt, nil
+		},
+		nil,
+		ec.marshalOInt2ᚖint64,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ModelProbeConfig_autoDisabledAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ModelProbeConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ModelProbeConfig_channel(ctx context.Context, field graphql.CollectedField, obj *ent.ModelProbeConfig) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ModelProbeConfig_channel,
+		func(ctx context.Context) (any, error) {
+			return obj.Channel(ctx)
+		},
+		nil,
+		ec.marshalNChannel2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐChannel,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ModelProbeConfig_channel(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ModelProbeConfig",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Channel_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Channel_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Channel_updatedAt(ctx, field)
+			case "type":
+				return ec.fieldContext_Channel_type(ctx, field)
+			case "baseURL":
+				return ec.fieldContext_Channel_baseURL(ctx, field)
+			case "name":
+				return ec.fieldContext_Channel_name(ctx, field)
+			case "status":
+				return ec.fieldContext_Channel_status(ctx, field)
+			case "supportedModels":
+				return ec.fieldContext_Channel_supportedModels(ctx, field)
+			case "manualModels":
+				return ec.fieldContext_Channel_manualModels(ctx, field)
+			case "autoSyncSupportedModels":
+				return ec.fieldContext_Channel_autoSyncSupportedModels(ctx, field)
+			case "autoSyncModelPattern":
+				return ec.fieldContext_Channel_autoSyncModelPattern(ctx, field)
+			case "tags":
+				return ec.fieldContext_Channel_tags(ctx, field)
+			case "defaultTestModel":
+				return ec.fieldContext_Channel_defaultTestModel(ctx, field)
+			case "policies":
+				return ec.fieldContext_Channel_policies(ctx, field)
+			case "settings":
+				return ec.fieldContext_Channel_settings(ctx, field)
+			case "orderingWeight":
+				return ec.fieldContext_Channel_orderingWeight(ctx, field)
+			case "errorMessage":
+				return ec.fieldContext_Channel_errorMessage(ctx, field)
+			case "remark":
+				return ec.fieldContext_Channel_remark(ctx, field)
+			case "requests":
+				return ec.fieldContext_Channel_requests(ctx, field)
+			case "executions":
+				return ec.fieldContext_Channel_executions(ctx, field)
+			case "usageLogs":
+				return ec.fieldContext_Channel_usageLogs(ctx, field)
+			case "channelProbes":
+				return ec.fieldContext_Channel_channelProbes(ctx, field)
+			case "modelHealthSnapshots":
+				return ec.fieldContext_Channel_modelHealthSnapshots(ctx, field)
+			case "modelHealthHistories":
+				return ec.fieldContext_Channel_modelHealthHistories(ctx, field)
+			case "modelProbeConfigs":
+				return ec.fieldContext_Channel_modelProbeConfigs(ctx, field)
+			case "channelModelPrices":
+				return ec.fieldContext_Channel_channelModelPrices(ctx, field)
+			case "providerQuotaStatus":
+				return ec.fieldContext_Channel_providerQuotaStatus(ctx, field)
+			case "allModelEntries":
+				return ec.fieldContext_Channel_allModelEntries(ctx, field)
+			case "credentials":
+				return ec.fieldContext_Channel_credentials(ctx, field)
+			case "disabledAPIKeys":
+				return ec.fieldContext_Channel_disabledAPIKeys(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Channel", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ModelSettings_probeEnabled(ctx context.Context, field graphql.CollectedField, obj *objects.ModelSettings) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -29642,6 +30152,8 @@ func (ec *executionContext) fieldContext_Mutation_createChannel(ctx context.Cont
 				return ec.fieldContext_Channel_modelHealthSnapshots(ctx, field)
 			case "modelHealthHistories":
 				return ec.fieldContext_Channel_modelHealthHistories(ctx, field)
+			case "modelProbeConfigs":
+				return ec.fieldContext_Channel_modelProbeConfigs(ctx, field)
 			case "channelModelPrices":
 				return ec.fieldContext_Channel_channelModelPrices(ctx, field)
 			case "providerQuotaStatus":
@@ -29743,6 +30255,8 @@ func (ec *executionContext) fieldContext_Mutation_bulkCreateChannels(ctx context
 				return ec.fieldContext_Channel_modelHealthSnapshots(ctx, field)
 			case "modelHealthHistories":
 				return ec.fieldContext_Channel_modelHealthHistories(ctx, field)
+			case "modelProbeConfigs":
+				return ec.fieldContext_Channel_modelProbeConfigs(ctx, field)
 			case "channelModelPrices":
 				return ec.fieldContext_Channel_channelModelPrices(ctx, field)
 			case "providerQuotaStatus":
@@ -29844,6 +30358,8 @@ func (ec *executionContext) fieldContext_Mutation_updateChannel(ctx context.Cont
 				return ec.fieldContext_Channel_modelHealthSnapshots(ctx, field)
 			case "modelHealthHistories":
 				return ec.fieldContext_Channel_modelHealthHistories(ctx, field)
+			case "modelProbeConfigs":
+				return ec.fieldContext_Channel_modelProbeConfigs(ctx, field)
 			case "channelModelPrices":
 				return ec.fieldContext_Channel_channelModelPrices(ctx, field)
 			case "providerQuotaStatus":
@@ -29945,6 +30461,8 @@ func (ec *executionContext) fieldContext_Mutation_updateChannelStatus(ctx contex
 				return ec.fieldContext_Channel_modelHealthSnapshots(ctx, field)
 			case "modelHealthHistories":
 				return ec.fieldContext_Channel_modelHealthHistories(ctx, field)
+			case "modelProbeConfigs":
+				return ec.fieldContext_Channel_modelProbeConfigs(ctx, field)
 			case "channelModelPrices":
 				return ec.fieldContext_Channel_channelModelPrices(ctx, field)
 			case "providerQuotaStatus":
@@ -38292,6 +38810,8 @@ func (ec *executionContext) fieldContext_ProviderQuotaStatus_channel(_ context.C
 				return ec.fieldContext_Channel_modelHealthSnapshots(ctx, field)
 			case "modelHealthHistories":
 				return ec.fieldContext_Channel_modelHealthHistories(ctx, field)
+			case "modelProbeConfigs":
+				return ec.fieldContext_Channel_modelProbeConfigs(ctx, field)
 			case "channelModelPrices":
 				return ec.fieldContext_Channel_channelModelPrices(ctx, field)
 			case "providerQuotaStatus":
@@ -39480,6 +40000,8 @@ func (ec *executionContext) fieldContext_Query_allChannelSummarys(ctx context.Co
 				return ec.fieldContext_Channel_modelHealthSnapshots(ctx, field)
 			case "modelHealthHistories":
 				return ec.fieldContext_Channel_modelHealthHistories(ctx, field)
+			case "modelProbeConfigs":
+				return ec.fieldContext_Channel_modelProbeConfigs(ctx, field)
 			case "channelModelPrices":
 				return ec.fieldContext_Channel_channelModelPrices(ctx, field)
 			case "providerQuotaStatus":
@@ -43349,6 +43871,8 @@ func (ec *executionContext) fieldContext_Request_channel(_ context.Context, fiel
 				return ec.fieldContext_Channel_modelHealthSnapshots(ctx, field)
 			case "modelHealthHistories":
 				return ec.fieldContext_Channel_modelHealthHistories(ctx, field)
+			case "modelProbeConfigs":
+				return ec.fieldContext_Channel_modelProbeConfigs(ctx, field)
 			case "channelModelPrices":
 				return ec.fieldContext_Channel_channelModelPrices(ctx, field)
 			case "providerQuotaStatus":
@@ -44430,6 +44954,8 @@ func (ec *executionContext) fieldContext_RequestExecution_channel(_ context.Cont
 				return ec.fieldContext_Channel_modelHealthSnapshots(ctx, field)
 			case "modelHealthHistories":
 				return ec.fieldContext_Channel_modelHealthHistories(ctx, field)
+			case "modelProbeConfigs":
+				return ec.fieldContext_Channel_modelProbeConfigs(ctx, field)
 			case "channelModelPrices":
 				return ec.fieldContext_Channel_channelModelPrices(ctx, field)
 			case "providerQuotaStatus":
@@ -52134,6 +52660,8 @@ func (ec *executionContext) fieldContext_UnassociatedChannel_channel(_ context.C
 				return ec.fieldContext_Channel_modelHealthSnapshots(ctx, field)
 			case "modelHealthHistories":
 				return ec.fieldContext_Channel_modelHealthHistories(ctx, field)
+			case "modelProbeConfigs":
+				return ec.fieldContext_Channel_modelProbeConfigs(ctx, field)
 			case "channelModelPrices":
 				return ec.fieldContext_Channel_channelModelPrices(ctx, field)
 			case "providerQuotaStatus":
@@ -53151,6 +53679,8 @@ func (ec *executionContext) fieldContext_UsageLog_channel(_ context.Context, fie
 				return ec.fieldContext_Channel_modelHealthSnapshots(ctx, field)
 			case "modelHealthHistories":
 				return ec.fieldContext_Channel_modelHealthHistories(ctx, field)
+			case "modelProbeConfigs":
+				return ec.fieldContext_Channel_modelProbeConfigs(ctx, field)
 			case "channelModelPrices":
 				return ec.fieldContext_Channel_channelModelPrices(ctx, field)
 			case "providerQuotaStatus":
@@ -61944,7 +62474,7 @@ func (ec *executionContext) unmarshalInputChannelWhereInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "updatedAt", "updatedAtNEQ", "updatedAtIn", "updatedAtNotIn", "updatedAtGT", "updatedAtGTE", "updatedAtLT", "updatedAtLTE", "type", "typeNEQ", "typeIn", "typeNotIn", "baseURL", "baseURLNEQ", "baseURLIn", "baseURLNotIn", "baseURLGT", "baseURLGTE", "baseURLLT", "baseURLLTE", "baseURLContains", "baseURLHasPrefix", "baseURLHasSuffix", "baseURLIsNil", "baseURLNotNil", "baseURLEqualFold", "baseURLContainsFold", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "status", "statusNEQ", "statusIn", "statusNotIn", "autoSyncSupportedModels", "autoSyncSupportedModelsNEQ", "autoSyncModelPattern", "autoSyncModelPatternNEQ", "autoSyncModelPatternIn", "autoSyncModelPatternNotIn", "autoSyncModelPatternGT", "autoSyncModelPatternGTE", "autoSyncModelPatternLT", "autoSyncModelPatternLTE", "autoSyncModelPatternContains", "autoSyncModelPatternHasPrefix", "autoSyncModelPatternHasSuffix", "autoSyncModelPatternIsNil", "autoSyncModelPatternNotNil", "autoSyncModelPatternEqualFold", "autoSyncModelPatternContainsFold", "defaultTestModel", "defaultTestModelNEQ", "defaultTestModelIn", "defaultTestModelNotIn", "defaultTestModelGT", "defaultTestModelGTE", "defaultTestModelLT", "defaultTestModelLTE", "defaultTestModelContains", "defaultTestModelHasPrefix", "defaultTestModelHasSuffix", "defaultTestModelEqualFold", "defaultTestModelContainsFold", "orderingWeight", "orderingWeightNEQ", "orderingWeightIn", "orderingWeightNotIn", "orderingWeightGT", "orderingWeightGTE", "orderingWeightLT", "orderingWeightLTE", "errorMessage", "errorMessageNEQ", "errorMessageIn", "errorMessageNotIn", "errorMessageGT", "errorMessageGTE", "errorMessageLT", "errorMessageLTE", "errorMessageContains", "errorMessageHasPrefix", "errorMessageHasSuffix", "errorMessageIsNil", "errorMessageNotNil", "errorMessageEqualFold", "errorMessageContainsFold", "remark", "remarkNEQ", "remarkIn", "remarkNotIn", "remarkGT", "remarkGTE", "remarkLT", "remarkLTE", "remarkContains", "remarkHasPrefix", "remarkHasSuffix", "remarkIsNil", "remarkNotNil", "remarkEqualFold", "remarkContainsFold", "hasRequests", "hasRequestsWith", "hasExecutions", "hasExecutionsWith", "hasUsageLogs", "hasUsageLogsWith", "hasChannelProbes", "hasChannelProbesWith", "hasModelHealthSnapshots", "hasModelHealthSnapshotsWith", "hasModelHealthHistories", "hasModelHealthHistoriesWith", "hasChannelModelPrices", "hasChannelModelPricesWith", "hasProviderQuotaStatus", "hasProviderQuotaStatusWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "updatedAt", "updatedAtNEQ", "updatedAtIn", "updatedAtNotIn", "updatedAtGT", "updatedAtGTE", "updatedAtLT", "updatedAtLTE", "type", "typeNEQ", "typeIn", "typeNotIn", "baseURL", "baseURLNEQ", "baseURLIn", "baseURLNotIn", "baseURLGT", "baseURLGTE", "baseURLLT", "baseURLLTE", "baseURLContains", "baseURLHasPrefix", "baseURLHasSuffix", "baseURLIsNil", "baseURLNotNil", "baseURLEqualFold", "baseURLContainsFold", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "status", "statusNEQ", "statusIn", "statusNotIn", "autoSyncSupportedModels", "autoSyncSupportedModelsNEQ", "autoSyncModelPattern", "autoSyncModelPatternNEQ", "autoSyncModelPatternIn", "autoSyncModelPatternNotIn", "autoSyncModelPatternGT", "autoSyncModelPatternGTE", "autoSyncModelPatternLT", "autoSyncModelPatternLTE", "autoSyncModelPatternContains", "autoSyncModelPatternHasPrefix", "autoSyncModelPatternHasSuffix", "autoSyncModelPatternIsNil", "autoSyncModelPatternNotNil", "autoSyncModelPatternEqualFold", "autoSyncModelPatternContainsFold", "defaultTestModel", "defaultTestModelNEQ", "defaultTestModelIn", "defaultTestModelNotIn", "defaultTestModelGT", "defaultTestModelGTE", "defaultTestModelLT", "defaultTestModelLTE", "defaultTestModelContains", "defaultTestModelHasPrefix", "defaultTestModelHasSuffix", "defaultTestModelEqualFold", "defaultTestModelContainsFold", "orderingWeight", "orderingWeightNEQ", "orderingWeightIn", "orderingWeightNotIn", "orderingWeightGT", "orderingWeightGTE", "orderingWeightLT", "orderingWeightLTE", "errorMessage", "errorMessageNEQ", "errorMessageIn", "errorMessageNotIn", "errorMessageGT", "errorMessageGTE", "errorMessageLT", "errorMessageLTE", "errorMessageContains", "errorMessageHasPrefix", "errorMessageHasSuffix", "errorMessageIsNil", "errorMessageNotNil", "errorMessageEqualFold", "errorMessageContainsFold", "remark", "remarkNEQ", "remarkIn", "remarkNotIn", "remarkGT", "remarkGTE", "remarkLT", "remarkLTE", "remarkContains", "remarkHasPrefix", "remarkHasSuffix", "remarkIsNil", "remarkNotNil", "remarkEqualFold", "remarkContainsFold", "hasRequests", "hasRequestsWith", "hasExecutions", "hasExecutionsWith", "hasUsageLogs", "hasUsageLogsWith", "hasChannelProbes", "hasChannelProbesWith", "hasModelHealthSnapshots", "hasModelHealthSnapshotsWith", "hasModelHealthHistories", "hasModelHealthHistoriesWith", "hasModelProbeConfigs", "hasModelProbeConfigsWith", "hasChannelModelPrices", "hasChannelModelPricesWith", "hasProviderQuotaStatus", "hasProviderQuotaStatusWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -62984,6 +63514,20 @@ func (ec *executionContext) unmarshalInputChannelWhereInput(ctx context.Context,
 				return it, err
 			}
 			it.HasModelHealthHistoriesWith = data
+		case "hasModelProbeConfigs":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasModelProbeConfigs"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasModelProbeConfigs = data
+		case "hasModelProbeConfigsWith":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasModelProbeConfigsWith"))
+			data, err := ec.unmarshalOModelProbeConfigWhereInput2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐModelProbeConfigWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasModelProbeConfigsWith = data
 		case "hasChannelModelPrices":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasChannelModelPrices"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -67673,6 +68217,665 @@ func (ec *executionContext) unmarshalInputModelPriceItemInput(ctx context.Contex
 				return it, err
 			}
 			it.PromptWriteCacheVariants = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputModelProbeConfigOrder(ctx context.Context, obj any) (ent.ModelProbeConfigOrder, error) {
+	var it ent.ModelProbeConfigOrder
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	if _, present := asMap["direction"]; !present {
+		asMap["direction"] = "ASC"
+	}
+
+	fieldsInOrder := [...]string{"direction", "field"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "direction":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("direction"))
+			data, err := ec.unmarshalNOrderDirection2entgoᚗioᚋcontribᚋentgqlᚐOrderDirection(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Direction = data
+		case "field":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("field"))
+			data, err := ec.unmarshalNModelProbeConfigOrderField2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐModelProbeConfigOrderField(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Field = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputModelProbeConfigWhereInput(ctx context.Context, obj any) (ent.ModelProbeConfigWhereInput, error) {
+	var it ent.ModelProbeConfigWhereInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "updatedAt", "updatedAtNEQ", "updatedAtIn", "updatedAtNotIn", "updatedAtGT", "updatedAtGTE", "updatedAtLT", "updatedAtLTE", "displayModel", "displayModelNEQ", "displayModelIn", "displayModelNotIn", "displayModelGT", "displayModelGTE", "displayModelLT", "displayModelLTE", "displayModelContains", "displayModelHasPrefix", "displayModelHasSuffix", "displayModelEqualFold", "displayModelContainsFold", "channelID", "channelIDNEQ", "channelIDIn", "channelIDNotIn", "actualModelID", "actualModelIDNEQ", "actualModelIDIn", "actualModelIDNotIn", "actualModelIDGT", "actualModelIDGTE", "actualModelIDLT", "actualModelIDLTE", "actualModelIDContains", "actualModelIDHasPrefix", "actualModelIDHasSuffix", "actualModelIDEqualFold", "actualModelIDContainsFold", "probeEnabled", "probeEnabledNEQ", "consecutiveFailures", "consecutiveFailuresNEQ", "consecutiveFailuresIn", "consecutiveFailuresNotIn", "consecutiveFailuresGT", "consecutiveFailuresGTE", "consecutiveFailuresLT", "consecutiveFailuresLTE", "autoDisabledAt", "autoDisabledAtNEQ", "autoDisabledAtIn", "autoDisabledAtNotIn", "autoDisabledAtGT", "autoDisabledAtGTE", "autoDisabledAtLT", "autoDisabledAtLTE", "autoDisabledAtIsNil", "autoDisabledAtNotNil", "hasChannel", "hasChannelWith"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "not":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("not"))
+			data, err := ec.unmarshalOModelProbeConfigWhereInput2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐModelProbeConfigWhereInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Not = data
+		case "and":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
+			data, err := ec.unmarshalOModelProbeConfigWhereInput2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐModelProbeConfigWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.And = data
+		case "or":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
+			data, err := ec.unmarshalOModelProbeConfigWhereInput2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐModelProbeConfigWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Or = data
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐGUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			converted, err := objects.ConvertGUIDPtrToIntPtr(data)
+			if err != nil {
+				return it, graphql.ErrorOnPath(ctx, err)
+			}
+			it.ID = converted
+		case "idNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNEQ"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐGUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			converted, err := objects.ConvertGUIDPtrToIntPtr(data)
+			if err != nil {
+				return it, graphql.ErrorOnPath(ctx, err)
+			}
+			it.IDNEQ = converted
+		case "idIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idIn"))
+			data, err := ec.unmarshalOID2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐGUIDᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			converted, err := objects.ConvertGUIDPtrsToInts(data)
+			if err != nil {
+				return it, graphql.ErrorOnPath(ctx, err)
+			}
+			it.IDIn = converted
+		case "idNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNotIn"))
+			data, err := ec.unmarshalOID2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐGUIDᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			converted, err := objects.ConvertGUIDPtrsToInts(data)
+			if err != nil {
+				return it, graphql.ErrorOnPath(ctx, err)
+			}
+			it.IDNotIn = converted
+		case "idGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGT"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐGUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			converted, err := objects.ConvertGUIDPtrToIntPtr(data)
+			if err != nil {
+				return it, graphql.ErrorOnPath(ctx, err)
+			}
+			it.IDGT = converted
+		case "idGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGTE"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐGUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			converted, err := objects.ConvertGUIDPtrToIntPtr(data)
+			if err != nil {
+				return it, graphql.ErrorOnPath(ctx, err)
+			}
+			it.IDGTE = converted
+		case "idLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLT"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐGUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			converted, err := objects.ConvertGUIDPtrToIntPtr(data)
+			if err != nil {
+				return it, graphql.ErrorOnPath(ctx, err)
+			}
+			it.IDLT = converted
+		case "idLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLTE"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐGUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			converted, err := objects.ConvertGUIDPtrToIntPtr(data)
+			if err != nil {
+				return it, graphql.ErrorOnPath(ctx, err)
+			}
+			it.IDLTE = converted
+		case "createdAt":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAt"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAt = data
+		case "createdAtNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtNEQ"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtNEQ = data
+		case "createdAtIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtIn"))
+			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtIn = data
+		case "createdAtNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtNotIn"))
+			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtNotIn = data
+		case "createdAtGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtGT"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtGT = data
+		case "createdAtGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtGTE"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtGTE = data
+		case "createdAtLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtLT"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtLT = data
+		case "createdAtLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtLTE"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtLTE = data
+		case "updatedAt":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAt"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UpdatedAt = data
+		case "updatedAtNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtNEQ"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UpdatedAtNEQ = data
+		case "updatedAtIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtIn"))
+			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UpdatedAtIn = data
+		case "updatedAtNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtNotIn"))
+			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UpdatedAtNotIn = data
+		case "updatedAtGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtGT"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UpdatedAtGT = data
+		case "updatedAtGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtGTE"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UpdatedAtGTE = data
+		case "updatedAtLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtLT"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UpdatedAtLT = data
+		case "updatedAtLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtLTE"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UpdatedAtLTE = data
+		case "displayModel":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("displayModel"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DisplayModel = data
+		case "displayModelNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("displayModelNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DisplayModelNEQ = data
+		case "displayModelIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("displayModelIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DisplayModelIn = data
+		case "displayModelNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("displayModelNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DisplayModelNotIn = data
+		case "displayModelGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("displayModelGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DisplayModelGT = data
+		case "displayModelGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("displayModelGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DisplayModelGTE = data
+		case "displayModelLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("displayModelLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DisplayModelLT = data
+		case "displayModelLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("displayModelLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DisplayModelLTE = data
+		case "displayModelContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("displayModelContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DisplayModelContains = data
+		case "displayModelHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("displayModelHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DisplayModelHasPrefix = data
+		case "displayModelHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("displayModelHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DisplayModelHasSuffix = data
+		case "displayModelEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("displayModelEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DisplayModelEqualFold = data
+		case "displayModelContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("displayModelContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DisplayModelContainsFold = data
+		case "channelID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channelID"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐGUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			converted, err := objects.ConvertGUIDPtrToIntPtr(data)
+			if err != nil {
+				return it, graphql.ErrorOnPath(ctx, err)
+			}
+			it.ChannelID = converted
+		case "channelIDNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channelIDNEQ"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐGUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			converted, err := objects.ConvertGUIDPtrToIntPtr(data)
+			if err != nil {
+				return it, graphql.ErrorOnPath(ctx, err)
+			}
+			it.ChannelIDNEQ = converted
+		case "channelIDIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channelIDIn"))
+			data, err := ec.unmarshalOID2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐGUIDᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			converted, err := objects.ConvertGUIDPtrsToInts(data)
+			if err != nil {
+				return it, graphql.ErrorOnPath(ctx, err)
+			}
+			it.ChannelIDIn = converted
+		case "channelIDNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channelIDNotIn"))
+			data, err := ec.unmarshalOID2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐGUIDᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			converted, err := objects.ConvertGUIDPtrsToInts(data)
+			if err != nil {
+				return it, graphql.ErrorOnPath(ctx, err)
+			}
+			it.ChannelIDNotIn = converted
+		case "actualModelID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("actualModelID"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ActualModelID = data
+		case "actualModelIDNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("actualModelIDNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ActualModelIDNEQ = data
+		case "actualModelIDIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("actualModelIDIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ActualModelIDIn = data
+		case "actualModelIDNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("actualModelIDNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ActualModelIDNotIn = data
+		case "actualModelIDGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("actualModelIDGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ActualModelIDGT = data
+		case "actualModelIDGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("actualModelIDGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ActualModelIDGTE = data
+		case "actualModelIDLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("actualModelIDLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ActualModelIDLT = data
+		case "actualModelIDLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("actualModelIDLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ActualModelIDLTE = data
+		case "actualModelIDContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("actualModelIDContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ActualModelIDContains = data
+		case "actualModelIDHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("actualModelIDHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ActualModelIDHasPrefix = data
+		case "actualModelIDHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("actualModelIDHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ActualModelIDHasSuffix = data
+		case "actualModelIDEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("actualModelIDEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ActualModelIDEqualFold = data
+		case "actualModelIDContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("actualModelIDContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ActualModelIDContainsFold = data
+		case "probeEnabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("probeEnabled"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ProbeEnabled = data
+		case "probeEnabledNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("probeEnabledNEQ"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ProbeEnabledNEQ = data
+		case "consecutiveFailures":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("consecutiveFailures"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ConsecutiveFailures = data
+		case "consecutiveFailuresNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("consecutiveFailuresNEQ"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ConsecutiveFailuresNEQ = data
+		case "consecutiveFailuresIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("consecutiveFailuresIn"))
+			data, err := ec.unmarshalOInt2ᚕintᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ConsecutiveFailuresIn = data
+		case "consecutiveFailuresNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("consecutiveFailuresNotIn"))
+			data, err := ec.unmarshalOInt2ᚕintᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ConsecutiveFailuresNotIn = data
+		case "consecutiveFailuresGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("consecutiveFailuresGT"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ConsecutiveFailuresGT = data
+		case "consecutiveFailuresGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("consecutiveFailuresGTE"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ConsecutiveFailuresGTE = data
+		case "consecutiveFailuresLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("consecutiveFailuresLT"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ConsecutiveFailuresLT = data
+		case "consecutiveFailuresLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("consecutiveFailuresLTE"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ConsecutiveFailuresLTE = data
+		case "autoDisabledAt":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("autoDisabledAt"))
+			data, err := ec.unmarshalOInt2ᚖint64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AutoDisabledAt = data
+		case "autoDisabledAtNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("autoDisabledAtNEQ"))
+			data, err := ec.unmarshalOInt2ᚖint64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AutoDisabledAtNEQ = data
+		case "autoDisabledAtIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("autoDisabledAtIn"))
+			data, err := ec.unmarshalOInt2ᚕint64ᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AutoDisabledAtIn = data
+		case "autoDisabledAtNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("autoDisabledAtNotIn"))
+			data, err := ec.unmarshalOInt2ᚕint64ᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AutoDisabledAtNotIn = data
+		case "autoDisabledAtGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("autoDisabledAtGT"))
+			data, err := ec.unmarshalOInt2ᚖint64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AutoDisabledAtGT = data
+		case "autoDisabledAtGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("autoDisabledAtGTE"))
+			data, err := ec.unmarshalOInt2ᚖint64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AutoDisabledAtGTE = data
+		case "autoDisabledAtLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("autoDisabledAtLT"))
+			data, err := ec.unmarshalOInt2ᚖint64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AutoDisabledAtLT = data
+		case "autoDisabledAtLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("autoDisabledAtLTE"))
+			data, err := ec.unmarshalOInt2ᚖint64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AutoDisabledAtLTE = data
+		case "autoDisabledAtIsNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("autoDisabledAtIsNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AutoDisabledAtIsNil = data
+		case "autoDisabledAtNotNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("autoDisabledAtNotNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AutoDisabledAtNotNil = data
+		case "hasChannel":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasChannel"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasChannel = data
+		case "hasChannelWith":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasChannelWith"))
+			data, err := ec.unmarshalOChannelWhereInput2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐChannelWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasChannelWith = data
 		}
 	}
 
@@ -84034,6 +85237,11 @@ func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj
 			return graphql.Null
 		}
 		return ec._Project(ctx, sel, obj)
+	case *ent.ModelProbeConfig:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._ModelProbeConfig(ctx, sel, obj)
 	case *ent.ModelHealthSnapshot:
 		if obj == nil {
 			return graphql.Null
@@ -85825,6 +87033,39 @@ func (ec *executionContext) _Channel(ctx context.Context, sel ast.SelectionSet, 
 					}
 				}()
 				res = ec._Channel_modelHealthHistories(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "modelProbeConfigs":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Channel_modelProbeConfigs(ctx, field, obj)
 				return res
 			}
 
@@ -91173,6 +92414,180 @@ func (ec *executionContext) _ModelPriceItem(ctx context.Context, sel ast.Selecti
 			}
 		case "promptWriteCacheVariants":
 			out.Values[i] = ec._ModelPriceItem_promptWriteCacheVariants(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var modelProbeConfigImplementors = []string{"ModelProbeConfig", "Node"}
+
+func (ec *executionContext) _ModelProbeConfig(ctx context.Context, sel ast.SelectionSet, obj *ent.ModelProbeConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, modelProbeConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ModelProbeConfig")
+		case "id":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ModelProbeConfig_id(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "createdAt":
+			out.Values[i] = ec._ModelProbeConfig_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "updatedAt":
+			out.Values[i] = ec._ModelProbeConfig_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "displayModel":
+			out.Values[i] = ec._ModelProbeConfig_displayModel(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "channelID":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ModelProbeConfig_channelID(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "actualModelID":
+			out.Values[i] = ec._ModelProbeConfig_actualModelID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "probeEnabled":
+			out.Values[i] = ec._ModelProbeConfig_probeEnabled(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "consecutiveFailures":
+			out.Values[i] = ec._ModelProbeConfig_consecutiveFailures(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "autoDisabledAt":
+			out.Values[i] = ec._ModelProbeConfig_autoDisabledAt(ctx, field, obj)
+		case "channel":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ModelProbeConfig_channel(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -106073,6 +107488,37 @@ func (ec *executionContext) unmarshalNModelPriceItemInput2ᚕgithubᚗcomᚋloop
 	return res, nil
 }
 
+func (ec *executionContext) marshalNModelProbeConfig2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐModelProbeConfig(ctx context.Context, sel ast.SelectionSet, v *ent.ModelProbeConfig) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ModelProbeConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNModelProbeConfigOrderField2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐModelProbeConfigOrderField(ctx context.Context, v any) (*ent.ModelProbeConfigOrderField, error) {
+	var res = new(ent.ModelProbeConfigOrderField)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNModelProbeConfigOrderField2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐModelProbeConfigOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.ModelProbeConfigOrderField) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return v
+}
+
+func (ec *executionContext) unmarshalNModelProbeConfigWhereInput2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐModelProbeConfigWhereInput(ctx context.Context, v any) (*ent.ModelProbeConfigWhereInput, error) {
+	res, err := ec.unmarshalInputModelProbeConfigWhereInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNModelSettings2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐModelSettings(ctx context.Context, sel ast.SelectionSet, v *objects.ModelSettings) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -111749,6 +113195,79 @@ func (ec *executionContext) unmarshalOModelOrder2ᚖgithubᚗcomᚋloopljᚋaxon
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputModelOrder(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOModelProbeConfig2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐModelProbeConfigᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.ModelProbeConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNModelProbeConfig2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐModelProbeConfig(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOModelProbeConfigWhereInput2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐModelProbeConfigWhereInputᚄ(ctx context.Context, v any) ([]*ent.ModelProbeConfigWhereInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*ent.ModelProbeConfigWhereInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNModelProbeConfigWhereInput2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐModelProbeConfigWhereInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOModelProbeConfigWhereInput2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐModelProbeConfigWhereInput(ctx context.Context, v any) (*ent.ModelProbeConfigWhereInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputModelProbeConfigWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 

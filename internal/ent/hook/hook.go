@@ -129,6 +129,18 @@ func (f ModelHealthSnapshotFunc) Mutate(ctx context.Context, m ent.Mutation) (en
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ModelHealthSnapshotMutation", m)
 }
 
+// The ModelProbeConfigFunc type is an adapter to allow the use of ordinary
+// function as ModelProbeConfig mutator.
+type ModelProbeConfigFunc func(context.Context, *ent.ModelProbeConfigMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ModelProbeConfigFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ModelProbeConfigMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ModelProbeConfigMutation", m)
+}
+
 // The ProjectFunc type is an adapter to allow the use of ordinary
 // function as Project mutator.
 type ProjectFunc func(context.Context, *ent.ProjectMutation) (ent.Value, error)

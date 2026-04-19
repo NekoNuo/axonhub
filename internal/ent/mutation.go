@@ -21,6 +21,7 @@ import (
 	"github.com/looplj/axonhub/internal/ent/model"
 	"github.com/looplj/axonhub/internal/ent/modelhealthhistory"
 	"github.com/looplj/axonhub/internal/ent/modelhealthsnapshot"
+	"github.com/looplj/axonhub/internal/ent/modelprobeconfig"
 	"github.com/looplj/axonhub/internal/ent/predicate"
 	"github.com/looplj/axonhub/internal/ent/project"
 	"github.com/looplj/axonhub/internal/ent/prompt"
@@ -59,6 +60,7 @@ const (
 	TypeModel                    = "Model"
 	TypeModelHealthHistory       = "ModelHealthHistory"
 	TypeModelHealthSnapshot      = "ModelHealthSnapshot"
+	TypeModelProbeConfig         = "ModelProbeConfig"
 	TypeProject                  = "Project"
 	TypePrompt                   = "Prompt"
 	TypePromptProtectionRule     = "PromptProtectionRule"
@@ -1291,6 +1293,9 @@ type ChannelMutation struct {
 	model_health_histories        map[int]struct{}
 	removedmodel_health_histories map[int]struct{}
 	clearedmodel_health_histories bool
+	model_probe_configs           map[int]struct{}
+	removedmodel_probe_configs    map[int]struct{}
+	clearedmodel_probe_configs    bool
 	channel_model_prices          map[int]struct{}
 	removedchannel_model_prices   map[int]struct{}
 	clearedchannel_model_prices   bool
@@ -2663,6 +2668,60 @@ func (m *ChannelMutation) ResetModelHealthHistories() {
 	m.removedmodel_health_histories = nil
 }
 
+// AddModelProbeConfigIDs adds the "model_probe_configs" edge to the ModelProbeConfig entity by ids.
+func (m *ChannelMutation) AddModelProbeConfigIDs(ids ...int) {
+	if m.model_probe_configs == nil {
+		m.model_probe_configs = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.model_probe_configs[ids[i]] = struct{}{}
+	}
+}
+
+// ClearModelProbeConfigs clears the "model_probe_configs" edge to the ModelProbeConfig entity.
+func (m *ChannelMutation) ClearModelProbeConfigs() {
+	m.clearedmodel_probe_configs = true
+}
+
+// ModelProbeConfigsCleared reports if the "model_probe_configs" edge to the ModelProbeConfig entity was cleared.
+func (m *ChannelMutation) ModelProbeConfigsCleared() bool {
+	return m.clearedmodel_probe_configs
+}
+
+// RemoveModelProbeConfigIDs removes the "model_probe_configs" edge to the ModelProbeConfig entity by IDs.
+func (m *ChannelMutation) RemoveModelProbeConfigIDs(ids ...int) {
+	if m.removedmodel_probe_configs == nil {
+		m.removedmodel_probe_configs = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.model_probe_configs, ids[i])
+		m.removedmodel_probe_configs[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedModelProbeConfigs returns the removed IDs of the "model_probe_configs" edge to the ModelProbeConfig entity.
+func (m *ChannelMutation) RemovedModelProbeConfigsIDs() (ids []int) {
+	for id := range m.removedmodel_probe_configs {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ModelProbeConfigsIDs returns the "model_probe_configs" edge IDs in the mutation.
+func (m *ChannelMutation) ModelProbeConfigsIDs() (ids []int) {
+	for id := range m.model_probe_configs {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetModelProbeConfigs resets all changes to the "model_probe_configs" edge.
+func (m *ChannelMutation) ResetModelProbeConfigs() {
+	m.model_probe_configs = nil
+	m.clearedmodel_probe_configs = false
+	m.removedmodel_probe_configs = nil
+}
+
 // AddChannelModelPriceIDs adds the "channel_model_prices" edge to the ChannelModelPrice entity by ids.
 func (m *ChannelMutation) AddChannelModelPriceIDs(ids ...int) {
 	if m.channel_model_prices == nil {
@@ -3296,7 +3355,7 @@ func (m *ChannelMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ChannelMutation) AddedEdges() []string {
-	edges := make([]string, 0, 8)
+	edges := make([]string, 0, 9)
 	if m.requests != nil {
 		edges = append(edges, channel.EdgeRequests)
 	}
@@ -3314,6 +3373,9 @@ func (m *ChannelMutation) AddedEdges() []string {
 	}
 	if m.model_health_histories != nil {
 		edges = append(edges, channel.EdgeModelHealthHistories)
+	}
+	if m.model_probe_configs != nil {
+		edges = append(edges, channel.EdgeModelProbeConfigs)
 	}
 	if m.channel_model_prices != nil {
 		edges = append(edges, channel.EdgeChannelModelPrices)
@@ -3364,6 +3426,12 @@ func (m *ChannelMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case channel.EdgeModelProbeConfigs:
+		ids := make([]ent.Value, 0, len(m.model_probe_configs))
+		for id := range m.model_probe_configs {
+			ids = append(ids, id)
+		}
+		return ids
 	case channel.EdgeChannelModelPrices:
 		ids := make([]ent.Value, 0, len(m.channel_model_prices))
 		for id := range m.channel_model_prices {
@@ -3380,7 +3448,7 @@ func (m *ChannelMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ChannelMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 8)
+	edges := make([]string, 0, 9)
 	if m.removedrequests != nil {
 		edges = append(edges, channel.EdgeRequests)
 	}
@@ -3398,6 +3466,9 @@ func (m *ChannelMutation) RemovedEdges() []string {
 	}
 	if m.removedmodel_health_histories != nil {
 		edges = append(edges, channel.EdgeModelHealthHistories)
+	}
+	if m.removedmodel_probe_configs != nil {
+		edges = append(edges, channel.EdgeModelProbeConfigs)
 	}
 	if m.removedchannel_model_prices != nil {
 		edges = append(edges, channel.EdgeChannelModelPrices)
@@ -3445,6 +3516,12 @@ func (m *ChannelMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case channel.EdgeModelProbeConfigs:
+		ids := make([]ent.Value, 0, len(m.removedmodel_probe_configs))
+		for id := range m.removedmodel_probe_configs {
+			ids = append(ids, id)
+		}
+		return ids
 	case channel.EdgeChannelModelPrices:
 		ids := make([]ent.Value, 0, len(m.removedchannel_model_prices))
 		for id := range m.removedchannel_model_prices {
@@ -3457,7 +3534,7 @@ func (m *ChannelMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ChannelMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 8)
+	edges := make([]string, 0, 9)
 	if m.clearedrequests {
 		edges = append(edges, channel.EdgeRequests)
 	}
@@ -3475,6 +3552,9 @@ func (m *ChannelMutation) ClearedEdges() []string {
 	}
 	if m.clearedmodel_health_histories {
 		edges = append(edges, channel.EdgeModelHealthHistories)
+	}
+	if m.clearedmodel_probe_configs {
+		edges = append(edges, channel.EdgeModelProbeConfigs)
 	}
 	if m.clearedchannel_model_prices {
 		edges = append(edges, channel.EdgeChannelModelPrices)
@@ -3501,6 +3581,8 @@ func (m *ChannelMutation) EdgeCleared(name string) bool {
 		return m.clearedmodel_health_snapshots
 	case channel.EdgeModelHealthHistories:
 		return m.clearedmodel_health_histories
+	case channel.EdgeModelProbeConfigs:
+		return m.clearedmodel_probe_configs
 	case channel.EdgeChannelModelPrices:
 		return m.clearedchannel_model_prices
 	case channel.EdgeProviderQuotaStatus:
@@ -3541,6 +3623,9 @@ func (m *ChannelMutation) ResetEdge(name string) error {
 		return nil
 	case channel.EdgeModelHealthHistories:
 		m.ResetModelHealthHistories()
+		return nil
+	case channel.EdgeModelProbeConfigs:
+		m.ResetModelProbeConfigs()
 		return nil
 	case channel.EdgeChannelModelPrices:
 		m.ResetChannelModelPrices()
@@ -11103,6 +11188,856 @@ func (m *ModelHealthSnapshotMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown ModelHealthSnapshot edge %s", name)
+}
+
+// ModelProbeConfigMutation represents an operation that mutates the ModelProbeConfig nodes in the graph.
+type ModelProbeConfigMutation struct {
+	config
+	op                      Op
+	typ                     string
+	id                      *int
+	created_at              *time.Time
+	updated_at              *time.Time
+	display_model           *string
+	actual_model_id         *string
+	probe_enabled           *bool
+	consecutive_failures    *int
+	addconsecutive_failures *int
+	auto_disabled_at        *int64
+	addauto_disabled_at     *int64
+	clearedFields           map[string]struct{}
+	channel                 *int
+	clearedchannel          bool
+	done                    bool
+	oldValue                func(context.Context) (*ModelProbeConfig, error)
+	predicates              []predicate.ModelProbeConfig
+}
+
+var _ ent.Mutation = (*ModelProbeConfigMutation)(nil)
+
+// modelprobeconfigOption allows management of the mutation configuration using functional options.
+type modelprobeconfigOption func(*ModelProbeConfigMutation)
+
+// newModelProbeConfigMutation creates new mutation for the ModelProbeConfig entity.
+func newModelProbeConfigMutation(c config, op Op, opts ...modelprobeconfigOption) *ModelProbeConfigMutation {
+	m := &ModelProbeConfigMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeModelProbeConfig,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withModelProbeConfigID sets the ID field of the mutation.
+func withModelProbeConfigID(id int) modelprobeconfigOption {
+	return func(m *ModelProbeConfigMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ModelProbeConfig
+		)
+		m.oldValue = func(ctx context.Context) (*ModelProbeConfig, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ModelProbeConfig.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withModelProbeConfig sets the old ModelProbeConfig of the mutation.
+func withModelProbeConfig(node *ModelProbeConfig) modelprobeconfigOption {
+	return func(m *ModelProbeConfigMutation) {
+		m.oldValue = func(context.Context) (*ModelProbeConfig, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ModelProbeConfigMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ModelProbeConfigMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ModelProbeConfigMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ModelProbeConfigMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ModelProbeConfig.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ModelProbeConfigMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ModelProbeConfigMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the ModelProbeConfig entity.
+// If the ModelProbeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelProbeConfigMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ModelProbeConfigMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *ModelProbeConfigMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *ModelProbeConfigMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the ModelProbeConfig entity.
+// If the ModelProbeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelProbeConfigMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *ModelProbeConfigMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetDisplayModel sets the "display_model" field.
+func (m *ModelProbeConfigMutation) SetDisplayModel(s string) {
+	m.display_model = &s
+}
+
+// DisplayModel returns the value of the "display_model" field in the mutation.
+func (m *ModelProbeConfigMutation) DisplayModel() (r string, exists bool) {
+	v := m.display_model
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDisplayModel returns the old "display_model" field's value of the ModelProbeConfig entity.
+// If the ModelProbeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelProbeConfigMutation) OldDisplayModel(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDisplayModel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDisplayModel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDisplayModel: %w", err)
+	}
+	return oldValue.DisplayModel, nil
+}
+
+// ResetDisplayModel resets all changes to the "display_model" field.
+func (m *ModelProbeConfigMutation) ResetDisplayModel() {
+	m.display_model = nil
+}
+
+// SetChannelID sets the "channel_id" field.
+func (m *ModelProbeConfigMutation) SetChannelID(i int) {
+	m.channel = &i
+}
+
+// ChannelID returns the value of the "channel_id" field in the mutation.
+func (m *ModelProbeConfigMutation) ChannelID() (r int, exists bool) {
+	v := m.channel
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldChannelID returns the old "channel_id" field's value of the ModelProbeConfig entity.
+// If the ModelProbeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelProbeConfigMutation) OldChannelID(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldChannelID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldChannelID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldChannelID: %w", err)
+	}
+	return oldValue.ChannelID, nil
+}
+
+// ResetChannelID resets all changes to the "channel_id" field.
+func (m *ModelProbeConfigMutation) ResetChannelID() {
+	m.channel = nil
+}
+
+// SetActualModelID sets the "actual_model_id" field.
+func (m *ModelProbeConfigMutation) SetActualModelID(s string) {
+	m.actual_model_id = &s
+}
+
+// ActualModelID returns the value of the "actual_model_id" field in the mutation.
+func (m *ModelProbeConfigMutation) ActualModelID() (r string, exists bool) {
+	v := m.actual_model_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldActualModelID returns the old "actual_model_id" field's value of the ModelProbeConfig entity.
+// If the ModelProbeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelProbeConfigMutation) OldActualModelID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldActualModelID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldActualModelID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldActualModelID: %w", err)
+	}
+	return oldValue.ActualModelID, nil
+}
+
+// ResetActualModelID resets all changes to the "actual_model_id" field.
+func (m *ModelProbeConfigMutation) ResetActualModelID() {
+	m.actual_model_id = nil
+}
+
+// SetProbeEnabled sets the "probe_enabled" field.
+func (m *ModelProbeConfigMutation) SetProbeEnabled(b bool) {
+	m.probe_enabled = &b
+}
+
+// ProbeEnabled returns the value of the "probe_enabled" field in the mutation.
+func (m *ModelProbeConfigMutation) ProbeEnabled() (r bool, exists bool) {
+	v := m.probe_enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProbeEnabled returns the old "probe_enabled" field's value of the ModelProbeConfig entity.
+// If the ModelProbeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelProbeConfigMutation) OldProbeEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProbeEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProbeEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProbeEnabled: %w", err)
+	}
+	return oldValue.ProbeEnabled, nil
+}
+
+// ResetProbeEnabled resets all changes to the "probe_enabled" field.
+func (m *ModelProbeConfigMutation) ResetProbeEnabled() {
+	m.probe_enabled = nil
+}
+
+// SetConsecutiveFailures sets the "consecutive_failures" field.
+func (m *ModelProbeConfigMutation) SetConsecutiveFailures(i int) {
+	m.consecutive_failures = &i
+	m.addconsecutive_failures = nil
+}
+
+// ConsecutiveFailures returns the value of the "consecutive_failures" field in the mutation.
+func (m *ModelProbeConfigMutation) ConsecutiveFailures() (r int, exists bool) {
+	v := m.consecutive_failures
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldConsecutiveFailures returns the old "consecutive_failures" field's value of the ModelProbeConfig entity.
+// If the ModelProbeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelProbeConfigMutation) OldConsecutiveFailures(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldConsecutiveFailures is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldConsecutiveFailures requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldConsecutiveFailures: %w", err)
+	}
+	return oldValue.ConsecutiveFailures, nil
+}
+
+// AddConsecutiveFailures adds i to the "consecutive_failures" field.
+func (m *ModelProbeConfigMutation) AddConsecutiveFailures(i int) {
+	if m.addconsecutive_failures != nil {
+		*m.addconsecutive_failures += i
+	} else {
+		m.addconsecutive_failures = &i
+	}
+}
+
+// AddedConsecutiveFailures returns the value that was added to the "consecutive_failures" field in this mutation.
+func (m *ModelProbeConfigMutation) AddedConsecutiveFailures() (r int, exists bool) {
+	v := m.addconsecutive_failures
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetConsecutiveFailures resets all changes to the "consecutive_failures" field.
+func (m *ModelProbeConfigMutation) ResetConsecutiveFailures() {
+	m.consecutive_failures = nil
+	m.addconsecutive_failures = nil
+}
+
+// SetAutoDisabledAt sets the "auto_disabled_at" field.
+func (m *ModelProbeConfigMutation) SetAutoDisabledAt(i int64) {
+	m.auto_disabled_at = &i
+	m.addauto_disabled_at = nil
+}
+
+// AutoDisabledAt returns the value of the "auto_disabled_at" field in the mutation.
+func (m *ModelProbeConfigMutation) AutoDisabledAt() (r int64, exists bool) {
+	v := m.auto_disabled_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAutoDisabledAt returns the old "auto_disabled_at" field's value of the ModelProbeConfig entity.
+// If the ModelProbeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelProbeConfigMutation) OldAutoDisabledAt(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAutoDisabledAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAutoDisabledAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAutoDisabledAt: %w", err)
+	}
+	return oldValue.AutoDisabledAt, nil
+}
+
+// AddAutoDisabledAt adds i to the "auto_disabled_at" field.
+func (m *ModelProbeConfigMutation) AddAutoDisabledAt(i int64) {
+	if m.addauto_disabled_at != nil {
+		*m.addauto_disabled_at += i
+	} else {
+		m.addauto_disabled_at = &i
+	}
+}
+
+// AddedAutoDisabledAt returns the value that was added to the "auto_disabled_at" field in this mutation.
+func (m *ModelProbeConfigMutation) AddedAutoDisabledAt() (r int64, exists bool) {
+	v := m.addauto_disabled_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearAutoDisabledAt clears the value of the "auto_disabled_at" field.
+func (m *ModelProbeConfigMutation) ClearAutoDisabledAt() {
+	m.auto_disabled_at = nil
+	m.addauto_disabled_at = nil
+	m.clearedFields[modelprobeconfig.FieldAutoDisabledAt] = struct{}{}
+}
+
+// AutoDisabledAtCleared returns if the "auto_disabled_at" field was cleared in this mutation.
+func (m *ModelProbeConfigMutation) AutoDisabledAtCleared() bool {
+	_, ok := m.clearedFields[modelprobeconfig.FieldAutoDisabledAt]
+	return ok
+}
+
+// ResetAutoDisabledAt resets all changes to the "auto_disabled_at" field.
+func (m *ModelProbeConfigMutation) ResetAutoDisabledAt() {
+	m.auto_disabled_at = nil
+	m.addauto_disabled_at = nil
+	delete(m.clearedFields, modelprobeconfig.FieldAutoDisabledAt)
+}
+
+// ClearChannel clears the "channel" edge to the Channel entity.
+func (m *ModelProbeConfigMutation) ClearChannel() {
+	m.clearedchannel = true
+	m.clearedFields[modelprobeconfig.FieldChannelID] = struct{}{}
+}
+
+// ChannelCleared reports if the "channel" edge to the Channel entity was cleared.
+func (m *ModelProbeConfigMutation) ChannelCleared() bool {
+	return m.clearedchannel
+}
+
+// ChannelIDs returns the "channel" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ChannelID instead. It exists only for internal usage by the builders.
+func (m *ModelProbeConfigMutation) ChannelIDs() (ids []int) {
+	if id := m.channel; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetChannel resets all changes to the "channel" edge.
+func (m *ModelProbeConfigMutation) ResetChannel() {
+	m.channel = nil
+	m.clearedchannel = false
+}
+
+// Where appends a list predicates to the ModelProbeConfigMutation builder.
+func (m *ModelProbeConfigMutation) Where(ps ...predicate.ModelProbeConfig) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ModelProbeConfigMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ModelProbeConfigMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.ModelProbeConfig, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ModelProbeConfigMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ModelProbeConfigMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (ModelProbeConfig).
+func (m *ModelProbeConfigMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ModelProbeConfigMutation) Fields() []string {
+	fields := make([]string, 0, 8)
+	if m.created_at != nil {
+		fields = append(fields, modelprobeconfig.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, modelprobeconfig.FieldUpdatedAt)
+	}
+	if m.display_model != nil {
+		fields = append(fields, modelprobeconfig.FieldDisplayModel)
+	}
+	if m.channel != nil {
+		fields = append(fields, modelprobeconfig.FieldChannelID)
+	}
+	if m.actual_model_id != nil {
+		fields = append(fields, modelprobeconfig.FieldActualModelID)
+	}
+	if m.probe_enabled != nil {
+		fields = append(fields, modelprobeconfig.FieldProbeEnabled)
+	}
+	if m.consecutive_failures != nil {
+		fields = append(fields, modelprobeconfig.FieldConsecutiveFailures)
+	}
+	if m.auto_disabled_at != nil {
+		fields = append(fields, modelprobeconfig.FieldAutoDisabledAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ModelProbeConfigMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case modelprobeconfig.FieldCreatedAt:
+		return m.CreatedAt()
+	case modelprobeconfig.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case modelprobeconfig.FieldDisplayModel:
+		return m.DisplayModel()
+	case modelprobeconfig.FieldChannelID:
+		return m.ChannelID()
+	case modelprobeconfig.FieldActualModelID:
+		return m.ActualModelID()
+	case modelprobeconfig.FieldProbeEnabled:
+		return m.ProbeEnabled()
+	case modelprobeconfig.FieldConsecutiveFailures:
+		return m.ConsecutiveFailures()
+	case modelprobeconfig.FieldAutoDisabledAt:
+		return m.AutoDisabledAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ModelProbeConfigMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case modelprobeconfig.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case modelprobeconfig.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case modelprobeconfig.FieldDisplayModel:
+		return m.OldDisplayModel(ctx)
+	case modelprobeconfig.FieldChannelID:
+		return m.OldChannelID(ctx)
+	case modelprobeconfig.FieldActualModelID:
+		return m.OldActualModelID(ctx)
+	case modelprobeconfig.FieldProbeEnabled:
+		return m.OldProbeEnabled(ctx)
+	case modelprobeconfig.FieldConsecutiveFailures:
+		return m.OldConsecutiveFailures(ctx)
+	case modelprobeconfig.FieldAutoDisabledAt:
+		return m.OldAutoDisabledAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown ModelProbeConfig field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ModelProbeConfigMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case modelprobeconfig.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case modelprobeconfig.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case modelprobeconfig.FieldDisplayModel:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDisplayModel(v)
+		return nil
+	case modelprobeconfig.FieldChannelID:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetChannelID(v)
+		return nil
+	case modelprobeconfig.FieldActualModelID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetActualModelID(v)
+		return nil
+	case modelprobeconfig.FieldProbeEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProbeEnabled(v)
+		return nil
+	case modelprobeconfig.FieldConsecutiveFailures:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetConsecutiveFailures(v)
+		return nil
+	case modelprobeconfig.FieldAutoDisabledAt:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAutoDisabledAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ModelProbeConfig field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ModelProbeConfigMutation) AddedFields() []string {
+	var fields []string
+	if m.addconsecutive_failures != nil {
+		fields = append(fields, modelprobeconfig.FieldConsecutiveFailures)
+	}
+	if m.addauto_disabled_at != nil {
+		fields = append(fields, modelprobeconfig.FieldAutoDisabledAt)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ModelProbeConfigMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case modelprobeconfig.FieldConsecutiveFailures:
+		return m.AddedConsecutiveFailures()
+	case modelprobeconfig.FieldAutoDisabledAt:
+		return m.AddedAutoDisabledAt()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ModelProbeConfigMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case modelprobeconfig.FieldConsecutiveFailures:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddConsecutiveFailures(v)
+		return nil
+	case modelprobeconfig.FieldAutoDisabledAt:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAutoDisabledAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ModelProbeConfig numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ModelProbeConfigMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(modelprobeconfig.FieldAutoDisabledAt) {
+		fields = append(fields, modelprobeconfig.FieldAutoDisabledAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ModelProbeConfigMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ModelProbeConfigMutation) ClearField(name string) error {
+	switch name {
+	case modelprobeconfig.FieldAutoDisabledAt:
+		m.ClearAutoDisabledAt()
+		return nil
+	}
+	return fmt.Errorf("unknown ModelProbeConfig nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ModelProbeConfigMutation) ResetField(name string) error {
+	switch name {
+	case modelprobeconfig.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case modelprobeconfig.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case modelprobeconfig.FieldDisplayModel:
+		m.ResetDisplayModel()
+		return nil
+	case modelprobeconfig.FieldChannelID:
+		m.ResetChannelID()
+		return nil
+	case modelprobeconfig.FieldActualModelID:
+		m.ResetActualModelID()
+		return nil
+	case modelprobeconfig.FieldProbeEnabled:
+		m.ResetProbeEnabled()
+		return nil
+	case modelprobeconfig.FieldConsecutiveFailures:
+		m.ResetConsecutiveFailures()
+		return nil
+	case modelprobeconfig.FieldAutoDisabledAt:
+		m.ResetAutoDisabledAt()
+		return nil
+	}
+	return fmt.Errorf("unknown ModelProbeConfig field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ModelProbeConfigMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.channel != nil {
+		edges = append(edges, modelprobeconfig.EdgeChannel)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ModelProbeConfigMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case modelprobeconfig.EdgeChannel:
+		if id := m.channel; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ModelProbeConfigMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ModelProbeConfigMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ModelProbeConfigMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedchannel {
+		edges = append(edges, modelprobeconfig.EdgeChannel)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ModelProbeConfigMutation) EdgeCleared(name string) bool {
+	switch name {
+	case modelprobeconfig.EdgeChannel:
+		return m.clearedchannel
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ModelProbeConfigMutation) ClearEdge(name string) error {
+	switch name {
+	case modelprobeconfig.EdgeChannel:
+		m.ClearChannel()
+		return nil
+	}
+	return fmt.Errorf("unknown ModelProbeConfig unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ModelProbeConfigMutation) ResetEdge(name string) error {
+	switch name {
+	case modelprobeconfig.EdgeChannel:
+		m.ResetChannel()
+		return nil
+	}
+	return fmt.Errorf("unknown ModelProbeConfig edge %s", name)
 }
 
 // ProjectMutation represents an operation that mutates the Project nodes in the graph.

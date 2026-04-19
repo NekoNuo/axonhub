@@ -22,6 +22,7 @@ import (
 	"github.com/looplj/axonhub/internal/ent/model"
 	"github.com/looplj/axonhub/internal/ent/modelhealthhistory"
 	"github.com/looplj/axonhub/internal/ent/modelhealthsnapshot"
+	"github.com/looplj/axonhub/internal/ent/modelprobeconfig"
 	"github.com/looplj/axonhub/internal/ent/project"
 	"github.com/looplj/axonhub/internal/ent/prompt"
 	"github.com/looplj/axonhub/internal/ent/promptprotectionrule"
@@ -107,6 +108,7 @@ func checkColumn(t, c string) error {
 			model.Table:                    model.ValidColumn,
 			modelhealthhistory.Table:       modelhealthhistory.ValidColumn,
 			modelhealthsnapshot.Table:      modelhealthsnapshot.ValidColumn,
+			modelprobeconfig.Table:         modelprobeconfig.ValidColumn,
 			project.Table:                  project.ValidColumn,
 			prompt.Table:                   prompt.ValidColumn,
 			promptprotectionrule.Table:     promptprotectionrule.ValidColumn,

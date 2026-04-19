@@ -168,6 +168,10 @@ func (Channel) Edges() []ent.Edge {
 			Annotations(
 				entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput),
 			),
+		edge.To("model_probe_configs", ModelProbeConfig.Type).
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput),
+			),
 		edge.To("channel_model_prices", ChannelModelPrice.Type).
 			Annotations(
 				entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput),

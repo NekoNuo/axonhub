@@ -15,6 +15,7 @@ import (
 	"github.com/looplj/axonhub/internal/ent/model"
 	"github.com/looplj/axonhub/internal/ent/modelhealthhistory"
 	"github.com/looplj/axonhub/internal/ent/modelhealthsnapshot"
+	"github.com/looplj/axonhub/internal/ent/modelprobeconfig"
 	"github.com/looplj/axonhub/internal/ent/project"
 	"github.com/looplj/axonhub/internal/ent/prompt"
 	"github.com/looplj/axonhub/internal/ent/promptprotectionrule"
@@ -397,6 +398,29 @@ func init() {
 	modelhealthsnapshotDescManualOverride := modelhealthsnapshotFields[5].Descriptor()
 	// modelhealthsnapshot.DefaultManualOverride holds the default value on creation for the manual_override field.
 	modelhealthsnapshot.DefaultManualOverride = modelhealthsnapshotDescManualOverride.Default.(bool)
+	modelprobeconfigMixin := schema.ModelProbeConfig{}.Mixin()
+	modelprobeconfigMixinFields0 := modelprobeconfigMixin[0].Fields()
+	_ = modelprobeconfigMixinFields0
+	modelprobeconfigFields := schema.ModelProbeConfig{}.Fields()
+	_ = modelprobeconfigFields
+	// modelprobeconfigDescCreatedAt is the schema descriptor for created_at field.
+	modelprobeconfigDescCreatedAt := modelprobeconfigMixinFields0[0].Descriptor()
+	// modelprobeconfig.DefaultCreatedAt holds the default value on creation for the created_at field.
+	modelprobeconfig.DefaultCreatedAt = modelprobeconfigDescCreatedAt.Default.(func() time.Time)
+	// modelprobeconfigDescUpdatedAt is the schema descriptor for updated_at field.
+	modelprobeconfigDescUpdatedAt := modelprobeconfigMixinFields0[1].Descriptor()
+	// modelprobeconfig.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	modelprobeconfig.DefaultUpdatedAt = modelprobeconfigDescUpdatedAt.Default.(func() time.Time)
+	// modelprobeconfig.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	modelprobeconfig.UpdateDefaultUpdatedAt = modelprobeconfigDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// modelprobeconfigDescProbeEnabled is the schema descriptor for probe_enabled field.
+	modelprobeconfigDescProbeEnabled := modelprobeconfigFields[3].Descriptor()
+	// modelprobeconfig.DefaultProbeEnabled holds the default value on creation for the probe_enabled field.
+	modelprobeconfig.DefaultProbeEnabled = modelprobeconfigDescProbeEnabled.Default.(bool)
+	// modelprobeconfigDescConsecutiveFailures is the schema descriptor for consecutive_failures field.
+	modelprobeconfigDescConsecutiveFailures := modelprobeconfigFields[4].Descriptor()
+	// modelprobeconfig.DefaultConsecutiveFailures holds the default value on creation for the consecutive_failures field.
+	modelprobeconfig.DefaultConsecutiveFailures = modelprobeconfigDescConsecutiveFailures.Default.(int)
 	projectMixin := schema.Project{}.Mixin()
 	project.Policy = privacy.NewPolicies(schema.Project{})
 	project.Hooks[0] = func(next ent.Mutator) ent.Mutator {

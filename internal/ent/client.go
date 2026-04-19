@@ -25,6 +25,7 @@ import (
 	"github.com/looplj/axonhub/internal/ent/model"
 	"github.com/looplj/axonhub/internal/ent/modelhealthhistory"
 	"github.com/looplj/axonhub/internal/ent/modelhealthsnapshot"
+	"github.com/looplj/axonhub/internal/ent/modelprobeconfig"
 	"github.com/looplj/axonhub/internal/ent/project"
 	"github.com/looplj/axonhub/internal/ent/prompt"
 	"github.com/looplj/axonhub/internal/ent/promptprotectionrule"
@@ -67,6 +68,8 @@ type Client struct {
 	ModelHealthHistory *ModelHealthHistoryClient
 	// ModelHealthSnapshot is the client for interacting with the ModelHealthSnapshot builders.
 	ModelHealthSnapshot *ModelHealthSnapshotClient
+	// ModelProbeConfig is the client for interacting with the ModelProbeConfig builders.
+	ModelProbeConfig *ModelProbeConfigClient
 	// Project is the client for interacting with the Project builders.
 	Project *ProjectClient
 	// Prompt is the client for interacting with the Prompt builders.
@@ -120,6 +123,7 @@ func (c *Client) init() {
 	c.Model = NewModelClient(c.config)
 	c.ModelHealthHistory = NewModelHealthHistoryClient(c.config)
 	c.ModelHealthSnapshot = NewModelHealthSnapshotClient(c.config)
+	c.ModelProbeConfig = NewModelProbeConfigClient(c.config)
 	c.Project = NewProjectClient(c.config)
 	c.Prompt = NewPromptClient(c.config)
 	c.PromptProtectionRule = NewPromptProtectionRuleClient(c.config)
@@ -237,6 +241,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Model:                    NewModelClient(cfg),
 		ModelHealthHistory:       NewModelHealthHistoryClient(cfg),
 		ModelHealthSnapshot:      NewModelHealthSnapshotClient(cfg),
+		ModelProbeConfig:         NewModelProbeConfigClient(cfg),
 		Project:                  NewProjectClient(cfg),
 		Prompt:                   NewPromptClient(cfg),
 		PromptProtectionRule:     NewPromptProtectionRuleClient(cfg),
@@ -281,6 +286,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Model:                    NewModelClient(cfg),
 		ModelHealthHistory:       NewModelHealthHistoryClient(cfg),
 		ModelHealthSnapshot:      NewModelHealthSnapshotClient(cfg),
+		ModelProbeConfig:         NewModelProbeConfigClient(cfg),
 		Project:                  NewProjectClient(cfg),
 		Prompt:                   NewPromptClient(cfg),
 		PromptProtectionRule:     NewPromptProtectionRuleClient(cfg),
@@ -327,10 +333,10 @@ func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.APIKey, c.Channel, c.ChannelModelPrice, c.ChannelModelPriceVersion,
 		c.ChannelOverrideTemplate, c.ChannelProbe, c.DataStorage, c.Model,
-		c.ModelHealthHistory, c.ModelHealthSnapshot, c.Project, c.Prompt,
-		c.PromptProtectionRule, c.ProviderQuotaStatus, c.Request, c.RequestExecution,
-		c.Role, c.RuntimeLog, c.System, c.Thread, c.Trace, c.UsageLog, c.User,
-		c.UserProject, c.UserRole,
+		c.ModelHealthHistory, c.ModelHealthSnapshot, c.ModelProbeConfig, c.Project,
+		c.Prompt, c.PromptProtectionRule, c.ProviderQuotaStatus, c.Request,
+		c.RequestExecution, c.Role, c.RuntimeLog, c.System, c.Thread, c.Trace,
+		c.UsageLog, c.User, c.UserProject, c.UserRole,
 	} {
 		n.Use(hooks...)
 	}
@@ -342,10 +348,10 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.APIKey, c.Channel, c.ChannelModelPrice, c.ChannelModelPriceVersion,
 		c.ChannelOverrideTemplate, c.ChannelProbe, c.DataStorage, c.Model,
-		c.ModelHealthHistory, c.ModelHealthSnapshot, c.Project, c.Prompt,
-		c.PromptProtectionRule, c.ProviderQuotaStatus, c.Request, c.RequestExecution,
-		c.Role, c.RuntimeLog, c.System, c.Thread, c.Trace, c.UsageLog, c.User,
-		c.UserProject, c.UserRole,
+		c.ModelHealthHistory, c.ModelHealthSnapshot, c.ModelProbeConfig, c.Project,
+		c.Prompt, c.PromptProtectionRule, c.ProviderQuotaStatus, c.Request,
+		c.RequestExecution, c.Role, c.RuntimeLog, c.System, c.Thread, c.Trace,
+		c.UsageLog, c.User, c.UserProject, c.UserRole,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -374,6 +380,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.ModelHealthHistory.mutate(ctx, m)
 	case *ModelHealthSnapshotMutation:
 		return c.ModelHealthSnapshot.mutate(ctx, m)
+	case *ModelProbeConfigMutation:
+		return c.ModelProbeConfig.mutate(ctx, m)
 	case *ProjectMutation:
 		return c.Project.mutate(ctx, m)
 	case *PromptMutation:
@@ -789,6 +797,22 @@ func (c *ChannelClient) QueryModelHealthHistories(_m *Channel) *ModelHealthHisto
 			sqlgraph.From(channel.Table, channel.FieldID, id),
 			sqlgraph.To(modelhealthhistory.Table, modelhealthhistory.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, channel.ModelHealthHistoriesTable, channel.ModelHealthHistoriesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryModelProbeConfigs queries the model_probe_configs edge of a Channel.
+func (c *ChannelClient) QueryModelProbeConfigs(_m *Channel) *ModelProbeConfigQuery {
+	query := (&ModelProbeConfigClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(channel.Table, channel.FieldID, id),
+			sqlgraph.To(modelprobeconfig.Table, modelprobeconfig.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, channel.ModelProbeConfigsTable, channel.ModelProbeConfigsColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -2069,6 +2093,155 @@ func (c *ModelHealthSnapshotClient) mutate(ctx context.Context, m *ModelHealthSn
 		return (&ModelHealthSnapshotDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown ModelHealthSnapshot mutation op: %q", m.Op())
+	}
+}
+
+// ModelProbeConfigClient is a client for the ModelProbeConfig schema.
+type ModelProbeConfigClient struct {
+	config
+}
+
+// NewModelProbeConfigClient returns a client for the ModelProbeConfig from the given config.
+func NewModelProbeConfigClient(c config) *ModelProbeConfigClient {
+	return &ModelProbeConfigClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `modelprobeconfig.Hooks(f(g(h())))`.
+func (c *ModelProbeConfigClient) Use(hooks ...Hook) {
+	c.hooks.ModelProbeConfig = append(c.hooks.ModelProbeConfig, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `modelprobeconfig.Intercept(f(g(h())))`.
+func (c *ModelProbeConfigClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ModelProbeConfig = append(c.inters.ModelProbeConfig, interceptors...)
+}
+
+// Create returns a builder for creating a ModelProbeConfig entity.
+func (c *ModelProbeConfigClient) Create() *ModelProbeConfigCreate {
+	mutation := newModelProbeConfigMutation(c.config, OpCreate)
+	return &ModelProbeConfigCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ModelProbeConfig entities.
+func (c *ModelProbeConfigClient) CreateBulk(builders ...*ModelProbeConfigCreate) *ModelProbeConfigCreateBulk {
+	return &ModelProbeConfigCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ModelProbeConfigClient) MapCreateBulk(slice any, setFunc func(*ModelProbeConfigCreate, int)) *ModelProbeConfigCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ModelProbeConfigCreateBulk{err: fmt.Errorf("calling to ModelProbeConfigClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ModelProbeConfigCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ModelProbeConfigCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ModelProbeConfig.
+func (c *ModelProbeConfigClient) Update() *ModelProbeConfigUpdate {
+	mutation := newModelProbeConfigMutation(c.config, OpUpdate)
+	return &ModelProbeConfigUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ModelProbeConfigClient) UpdateOne(_m *ModelProbeConfig) *ModelProbeConfigUpdateOne {
+	mutation := newModelProbeConfigMutation(c.config, OpUpdateOne, withModelProbeConfig(_m))
+	return &ModelProbeConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ModelProbeConfigClient) UpdateOneID(id int) *ModelProbeConfigUpdateOne {
+	mutation := newModelProbeConfigMutation(c.config, OpUpdateOne, withModelProbeConfigID(id))
+	return &ModelProbeConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ModelProbeConfig.
+func (c *ModelProbeConfigClient) Delete() *ModelProbeConfigDelete {
+	mutation := newModelProbeConfigMutation(c.config, OpDelete)
+	return &ModelProbeConfigDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ModelProbeConfigClient) DeleteOne(_m *ModelProbeConfig) *ModelProbeConfigDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ModelProbeConfigClient) DeleteOneID(id int) *ModelProbeConfigDeleteOne {
+	builder := c.Delete().Where(modelprobeconfig.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ModelProbeConfigDeleteOne{builder}
+}
+
+// Query returns a query builder for ModelProbeConfig.
+func (c *ModelProbeConfigClient) Query() *ModelProbeConfigQuery {
+	return &ModelProbeConfigQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeModelProbeConfig},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ModelProbeConfig entity by its id.
+func (c *ModelProbeConfigClient) Get(ctx context.Context, id int) (*ModelProbeConfig, error) {
+	return c.Query().Where(modelprobeconfig.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ModelProbeConfigClient) GetX(ctx context.Context, id int) *ModelProbeConfig {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryChannel queries the channel edge of a ModelProbeConfig.
+func (c *ModelProbeConfigClient) QueryChannel(_m *ModelProbeConfig) *ChannelQuery {
+	query := (&ChannelClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(modelprobeconfig.Table, modelprobeconfig.FieldID, id),
+			sqlgraph.To(channel.Table, channel.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, modelprobeconfig.ChannelTable, modelprobeconfig.ChannelColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ModelProbeConfigClient) Hooks() []Hook {
+	return c.hooks.ModelProbeConfig
+}
+
+// Interceptors returns the client interceptors.
+func (c *ModelProbeConfigClient) Interceptors() []Interceptor {
+	return c.inters.ModelProbeConfig
+}
+
+func (c *ModelProbeConfigClient) mutate(ctx context.Context, m *ModelProbeConfigMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ModelProbeConfigCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ModelProbeConfigUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ModelProbeConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ModelProbeConfigDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ModelProbeConfig mutation op: %q", m.Op())
 	}
 }
 
@@ -4764,14 +4937,14 @@ type (
 	hooks struct {
 		APIKey, Channel, ChannelModelPrice, ChannelModelPriceVersion,
 		ChannelOverrideTemplate, ChannelProbe, DataStorage, Model, ModelHealthHistory,
-		ModelHealthSnapshot, Project, Prompt, PromptProtectionRule,
+		ModelHealthSnapshot, ModelProbeConfig, Project, Prompt, PromptProtectionRule,
 		ProviderQuotaStatus, Request, RequestExecution, Role, RuntimeLog, System,
 		Thread, Trace, UsageLog, User, UserProject, UserRole []ent.Hook
 	}
 	inters struct {
 		APIKey, Channel, ChannelModelPrice, ChannelModelPriceVersion,
 		ChannelOverrideTemplate, ChannelProbe, DataStorage, Model, ModelHealthHistory,
-		ModelHealthSnapshot, Project, Prompt, PromptProtectionRule,
+		ModelHealthSnapshot, ModelProbeConfig, Project, Prompt, PromptProtectionRule,
 		ProviderQuotaStatus, Request, RequestExecution, Role, RuntimeLog, System,
 		Thread, Trace, UsageLog, User, UserProject, UserRole []ent.Interceptor
 	}

@@ -18,6 +18,7 @@ import (
 	"github.com/looplj/axonhub/internal/ent/model"
 	"github.com/looplj/axonhub/internal/ent/modelhealthhistory"
 	"github.com/looplj/axonhub/internal/ent/modelhealthsnapshot"
+	"github.com/looplj/axonhub/internal/ent/modelprobeconfig"
 	"github.com/looplj/axonhub/internal/ent/predicate"
 	"github.com/looplj/axonhub/internal/ent/project"
 	"github.com/looplj/axonhub/internal/ent/prompt"
@@ -360,6 +361,33 @@ func (f TraverseModelHealthSnapshot) Traverse(ctx context.Context, q ent.Query) 
 		return f(ctx, q)
 	}
 	return fmt.Errorf("unexpected query type %T. expect *ent.ModelHealthSnapshotQuery", q)
+}
+
+// The ModelProbeConfigFunc type is an adapter to allow the use of ordinary function as a Querier.
+type ModelProbeConfigFunc func(context.Context, *ent.ModelProbeConfigQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f ModelProbeConfigFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.ModelProbeConfigQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.ModelProbeConfigQuery", q)
+}
+
+// The TraverseModelProbeConfig type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseModelProbeConfig func(context.Context, *ent.ModelProbeConfigQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseModelProbeConfig) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseModelProbeConfig) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.ModelProbeConfigQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.ModelProbeConfigQuery", q)
 }
 
 // The ProjectFunc type is an adapter to allow the use of ordinary function as a Querier.
@@ -790,6 +818,8 @@ func NewQuery(q ent.Query) (Query, error) {
 		return &query[*ent.ModelHealthHistoryQuery, predicate.ModelHealthHistory, modelhealthhistory.OrderOption]{typ: ent.TypeModelHealthHistory, tq: q}, nil
 	case *ent.ModelHealthSnapshotQuery:
 		return &query[*ent.ModelHealthSnapshotQuery, predicate.ModelHealthSnapshot, modelhealthsnapshot.OrderOption]{typ: ent.TypeModelHealthSnapshot, tq: q}, nil
+	case *ent.ModelProbeConfigQuery:
+		return &query[*ent.ModelProbeConfigQuery, predicate.ModelProbeConfig, modelprobeconfig.OrderOption]{typ: ent.TypeModelProbeConfig, tq: q}, nil
 	case *ent.ProjectQuery:
 		return &query[*ent.ProjectQuery, predicate.Project, project.OrderOption]{typ: ent.TypeProject, tq: q}, nil
 	case *ent.PromptQuery:

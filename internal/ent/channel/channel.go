@@ -71,6 +71,8 @@ const (
 	EdgeModelHealthSnapshots = "model_health_snapshots"
 	// EdgeModelHealthHistories holds the string denoting the model_health_histories edge name in mutations.
 	EdgeModelHealthHistories = "model_health_histories"
+	// EdgeModelProbeConfigs holds the string denoting the model_probe_configs edge name in mutations.
+	EdgeModelProbeConfigs = "model_probe_configs"
 	// EdgeChannelModelPrices holds the string denoting the channel_model_prices edge name in mutations.
 	EdgeChannelModelPrices = "channel_model_prices"
 	// EdgeProviderQuotaStatus holds the string denoting the provider_quota_status edge name in mutations.
@@ -119,6 +121,13 @@ const (
 	ModelHealthHistoriesInverseTable = "model_health_histories"
 	// ModelHealthHistoriesColumn is the table column denoting the model_health_histories relation/edge.
 	ModelHealthHistoriesColumn = "channel_id"
+	// ModelProbeConfigsTable is the table that holds the model_probe_configs relation/edge.
+	ModelProbeConfigsTable = "model_probe_configs"
+	// ModelProbeConfigsInverseTable is the table name for the ModelProbeConfig entity.
+	// It exists in this package in order to avoid circular dependency with the "modelprobeconfig" package.
+	ModelProbeConfigsInverseTable = "model_probe_configs"
+	// ModelProbeConfigsColumn is the table column denoting the model_probe_configs relation/edge.
+	ModelProbeConfigsColumn = "channel_id"
 	// ChannelModelPricesTable is the table that holds the channel_model_prices relation/edge.
 	ChannelModelPricesTable = "channel_model_prices"
 	// ChannelModelPricesInverseTable is the table name for the ChannelModelPrice entity.
@@ -456,6 +465,20 @@ func ByModelHealthHistories(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOpt
 	}
 }
 
+// ByModelProbeConfigsCount orders the results by model_probe_configs count.
+func ByModelProbeConfigsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newModelProbeConfigsStep(), opts...)
+	}
+}
+
+// ByModelProbeConfigs orders the results by model_probe_configs terms.
+func ByModelProbeConfigs(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newModelProbeConfigsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByChannelModelPricesCount orders the results by channel_model_prices count.
 func ByChannelModelPricesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -516,6 +539,13 @@ func newModelHealthHistoriesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ModelHealthHistoriesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, ModelHealthHistoriesTable, ModelHealthHistoriesColumn),
+	)
+}
+func newModelProbeConfigsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ModelProbeConfigsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ModelProbeConfigsTable, ModelProbeConfigsColumn),
 	)
 }
 func newChannelModelPricesStep() *sqlgraph.Step {

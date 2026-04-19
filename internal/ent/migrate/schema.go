@@ -354,6 +354,39 @@ var (
 			},
 		},
 	}
+	// ModelProbeConfigsColumns holds the columns for the "model_probe_configs" table.
+	ModelProbeConfigsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: schema.Expr("CURRENT_TIMESTAMP")},
+		{Name: "updated_at", Type: field.TypeTime, Default: schema.Expr("CURRENT_TIMESTAMP")},
+		{Name: "display_model", Type: field.TypeString},
+		{Name: "actual_model_id", Type: field.TypeString},
+		{Name: "probe_enabled", Type: field.TypeBool, Default: false},
+		{Name: "consecutive_failures", Type: field.TypeInt, Default: 0},
+		{Name: "auto_disabled_at", Type: field.TypeInt64, Nullable: true},
+		{Name: "channel_id", Type: field.TypeInt},
+	}
+	// ModelProbeConfigsTable holds the schema information for the "model_probe_configs" table.
+	ModelProbeConfigsTable = &schema.Table{
+		Name:       "model_probe_configs",
+		Columns:    ModelProbeConfigsColumns,
+		PrimaryKey: []*schema.Column{ModelProbeConfigsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "model_probe_configs_channels_model_probe_configs",
+				Columns:    []*schema.Column{ModelProbeConfigsColumns[8]},
+				RefColumns: []*schema.Column{ChannelsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "modelprobeconfig_display_model_channel_id_actual_model_id",
+				Unique:  true,
+				Columns: []*schema.Column{ModelProbeConfigsColumns[3], ModelProbeConfigsColumns[8], ModelProbeConfigsColumns[4]},
+			},
+		},
+	}
 	// ProjectsColumns holds the columns for the "projects" table.
 	ProjectsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -1040,6 +1073,7 @@ var (
 		ModelsTable,
 		ModelHealthHistoriesTable,
 		ModelHealthSnapshotsTable,
+		ModelProbeConfigsTable,
 		ProjectsTable,
 		PromptsTable,
 		PromptProtectionRulesTable,
@@ -1068,6 +1102,7 @@ func init() {
 	ChannelProbesTable.ForeignKeys[0].RefTable = ChannelsTable
 	ModelHealthHistoriesTable.ForeignKeys[0].RefTable = ChannelsTable
 	ModelHealthSnapshotsTable.ForeignKeys[0].RefTable = ChannelsTable
+	ModelProbeConfigsTable.ForeignKeys[0].RefTable = ChannelsTable
 	ProviderQuotaStatusTable.ForeignKeys[0].RefTable = ChannelsTable
 	RequestsTable.ForeignKeys[0].RefTable = APIKeysTable
 	RequestsTable.ForeignKeys[1].RefTable = ChannelsTable

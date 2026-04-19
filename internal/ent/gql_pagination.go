@@ -24,6 +24,7 @@ import (
 	"github.com/looplj/axonhub/internal/ent/model"
 	"github.com/looplj/axonhub/internal/ent/modelhealthhistory"
 	"github.com/looplj/axonhub/internal/ent/modelhealthsnapshot"
+	"github.com/looplj/axonhub/internal/ent/modelprobeconfig"
 	"github.com/looplj/axonhub/internal/ent/project"
 	"github.com/looplj/axonhub/internal/ent/prompt"
 	"github.com/looplj/axonhub/internal/ent/promptprotectionrule"
@@ -3282,6 +3283,320 @@ func (_m *ModelHealthSnapshot) ToEdge(order *ModelHealthSnapshotOrder) *ModelHea
 		order = DefaultModelHealthSnapshotOrder
 	}
 	return &ModelHealthSnapshotEdge{
+		Node:   _m,
+		Cursor: order.Field.toCursor(_m),
+	}
+}
+
+// ModelProbeConfigEdge is the edge representation of ModelProbeConfig.
+type ModelProbeConfigEdge struct {
+	Node   *ModelProbeConfig `json:"node"`
+	Cursor Cursor            `json:"cursor"`
+}
+
+// ModelProbeConfigConnection is the connection containing edges to ModelProbeConfig.
+type ModelProbeConfigConnection struct {
+	Edges      []*ModelProbeConfigEdge `json:"edges"`
+	PageInfo   PageInfo                `json:"pageInfo"`
+	TotalCount int                     `json:"totalCount"`
+}
+
+func (c *ModelProbeConfigConnection) build(nodes []*ModelProbeConfig, pager *modelprobeconfigPager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *ModelProbeConfig
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *ModelProbeConfig {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *ModelProbeConfig {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*ModelProbeConfigEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &ModelProbeConfigEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// ModelProbeConfigPaginateOption enables pagination customization.
+type ModelProbeConfigPaginateOption func(*modelprobeconfigPager) error
+
+// WithModelProbeConfigOrder configures pagination ordering.
+func WithModelProbeConfigOrder(order *ModelProbeConfigOrder) ModelProbeConfigPaginateOption {
+	if order == nil {
+		order = DefaultModelProbeConfigOrder
+	}
+	o := *order
+	return func(pager *modelprobeconfigPager) error {
+		if err := o.Direction.Validate(); err != nil {
+			return err
+		}
+		if o.Field == nil {
+			o.Field = DefaultModelProbeConfigOrder.Field
+		}
+		pager.order = &o
+		return nil
+	}
+}
+
+// WithModelProbeConfigFilter configures pagination filter.
+func WithModelProbeConfigFilter(filter func(*ModelProbeConfigQuery) (*ModelProbeConfigQuery, error)) ModelProbeConfigPaginateOption {
+	return func(pager *modelprobeconfigPager) error {
+		if filter == nil {
+			return errors.New("ModelProbeConfigQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type modelprobeconfigPager struct {
+	reverse bool
+	order   *ModelProbeConfigOrder
+	filter  func(*ModelProbeConfigQuery) (*ModelProbeConfigQuery, error)
+}
+
+func newModelProbeConfigPager(opts []ModelProbeConfigPaginateOption, reverse bool) (*modelprobeconfigPager, error) {
+	pager := &modelprobeconfigPager{reverse: reverse}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	if pager.order == nil {
+		pager.order = DefaultModelProbeConfigOrder
+	}
+	return pager, nil
+}
+
+func (p *modelprobeconfigPager) applyFilter(query *ModelProbeConfigQuery) (*ModelProbeConfigQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *modelprobeconfigPager) toCursor(_m *ModelProbeConfig) Cursor {
+	return p.order.Field.toCursor(_m)
+}
+
+func (p *modelprobeconfigPager) applyCursors(query *ModelProbeConfigQuery, after, before *Cursor) (*ModelProbeConfigQuery, error) {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	for _, predicate := range entgql.CursorsPredicate(after, before, DefaultModelProbeConfigOrder.Field.column, p.order.Field.column, direction) {
+		query = query.Where(predicate)
+	}
+	return query, nil
+}
+
+func (p *modelprobeconfigPager) applyOrder(query *ModelProbeConfigQuery) *ModelProbeConfigQuery {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	query = query.Order(p.order.Field.toTerm(direction.OrderTermOption()))
+	if p.order.Field != DefaultModelProbeConfigOrder.Field {
+		query = query.Order(DefaultModelProbeConfigOrder.Field.toTerm(direction.OrderTermOption()))
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(p.order.Field.column)
+	}
+	return query
+}
+
+func (p *modelprobeconfigPager) orderExpr(query *ModelProbeConfigQuery) sql.Querier {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(p.order.Field.column)
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		b.Ident(p.order.Field.column).Pad().WriteString(string(direction))
+		if p.order.Field != DefaultModelProbeConfigOrder.Field {
+			b.Comma().Ident(DefaultModelProbeConfigOrder.Field.column).Pad().WriteString(string(direction))
+		}
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to ModelProbeConfig.
+func (_m *ModelProbeConfigQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...ModelProbeConfigPaginateOption,
+) (*ModelProbeConfigConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newModelProbeConfigPager(opts, last != nil)
+	if err != nil {
+		return nil, err
+	}
+	if _m, err = pager.applyFilter(_m); err != nil {
+		return nil, err
+	}
+	conn := &ModelProbeConfigConnection{Edges: []*ModelProbeConfigEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			c := _m.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+	if _m, err = pager.applyCursors(_m, after, before); err != nil {
+		return nil, err
+	}
+	limit := paginateLimit(first, last)
+	if limit != 0 {
+		_m.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := _m.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+	_m = pager.applyOrder(_m)
+	nodes, err := _m.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+var (
+	// ModelProbeConfigOrderFieldCreatedAt orders ModelProbeConfig by created_at.
+	ModelProbeConfigOrderFieldCreatedAt = &ModelProbeConfigOrderField{
+		Value: func(_m *ModelProbeConfig) (ent.Value, error) {
+			return _m.CreatedAt, nil
+		},
+		column: modelprobeconfig.FieldCreatedAt,
+		toTerm: modelprobeconfig.ByCreatedAt,
+		toCursor: func(_m *ModelProbeConfig) Cursor {
+			return Cursor{
+				ID:    _m.ID,
+				Value: _m.CreatedAt,
+			}
+		},
+	}
+	// ModelProbeConfigOrderFieldUpdatedAt orders ModelProbeConfig by updated_at.
+	ModelProbeConfigOrderFieldUpdatedAt = &ModelProbeConfigOrderField{
+		Value: func(_m *ModelProbeConfig) (ent.Value, error) {
+			return _m.UpdatedAt, nil
+		},
+		column: modelprobeconfig.FieldUpdatedAt,
+		toTerm: modelprobeconfig.ByUpdatedAt,
+		toCursor: func(_m *ModelProbeConfig) Cursor {
+			return Cursor{
+				ID:    _m.ID,
+				Value: _m.UpdatedAt,
+			}
+		},
+	}
+)
+
+// String implement fmt.Stringer interface.
+func (f ModelProbeConfigOrderField) String() string {
+	var str string
+	switch f.column {
+	case ModelProbeConfigOrderFieldCreatedAt.column:
+		str = "CREATED_AT"
+	case ModelProbeConfigOrderFieldUpdatedAt.column:
+		str = "UPDATED_AT"
+	}
+	return str
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (f ModelProbeConfigOrderField) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(f.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (f *ModelProbeConfigOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("ModelProbeConfigOrderField %T must be a string", v)
+	}
+	switch str {
+	case "CREATED_AT":
+		*f = *ModelProbeConfigOrderFieldCreatedAt
+	case "UPDATED_AT":
+		*f = *ModelProbeConfigOrderFieldUpdatedAt
+	default:
+		return fmt.Errorf("%s is not a valid ModelProbeConfigOrderField", str)
+	}
+	return nil
+}
+
+// ModelProbeConfigOrderField defines the ordering field of ModelProbeConfig.
+type ModelProbeConfigOrderField struct {
+	// Value extracts the ordering value from the given ModelProbeConfig.
+	Value    func(*ModelProbeConfig) (ent.Value, error)
+	column   string // field or computed.
+	toTerm   func(...sql.OrderTermOption) modelprobeconfig.OrderOption
+	toCursor func(*ModelProbeConfig) Cursor
+}
+
+// ModelProbeConfigOrder defines the ordering of ModelProbeConfig.
+type ModelProbeConfigOrder struct {
+	Direction OrderDirection              `json:"direction"`
+	Field     *ModelProbeConfigOrderField `json:"field"`
+}
+
+// DefaultModelProbeConfigOrder is the default ordering of ModelProbeConfig.
+var DefaultModelProbeConfigOrder = &ModelProbeConfigOrder{
+	Direction: entgql.OrderDirectionAsc,
+	Field: &ModelProbeConfigOrderField{
+		Value: func(_m *ModelProbeConfig) (ent.Value, error) {
+			return _m.ID, nil
+		},
+		column: modelprobeconfig.FieldID,
+		toTerm: modelprobeconfig.ByID,
+		toCursor: func(_m *ModelProbeConfig) Cursor {
+			return Cursor{ID: _m.ID}
+		},
+	},
+}
+
+// ToEdge converts ModelProbeConfig into ModelProbeConfigEdge.
+func (_m *ModelProbeConfig) ToEdge(order *ModelProbeConfigOrder) *ModelProbeConfigEdge {
+	if order == nil {
+		order = DefaultModelProbeConfigOrder
+	}
+	return &ModelProbeConfigEdge{
 		Node:   _m,
 		Cursor: order.Field.toCursor(_m),
 	}

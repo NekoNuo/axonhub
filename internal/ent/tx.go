@@ -32,6 +32,8 @@ type Tx struct {
 	ModelHealthHistory *ModelHealthHistoryClient
 	// ModelHealthSnapshot is the client for interacting with the ModelHealthSnapshot builders.
 	ModelHealthSnapshot *ModelHealthSnapshotClient
+	// ModelProbeConfig is the client for interacting with the ModelProbeConfig builders.
+	ModelProbeConfig *ModelProbeConfigClient
 	// Project is the client for interacting with the Project builders.
 	Project *ProjectClient
 	// Prompt is the client for interacting with the Prompt builders.
@@ -203,6 +205,7 @@ func (tx *Tx) init() {
 	tx.Model = NewModelClient(tx.config)
 	tx.ModelHealthHistory = NewModelHealthHistoryClient(tx.config)
 	tx.ModelHealthSnapshot = NewModelHealthSnapshotClient(tx.config)
+	tx.ModelProbeConfig = NewModelProbeConfigClient(tx.config)
 	tx.Project = NewProjectClient(tx.config)
 	tx.Prompt = NewPromptClient(tx.config)
 	tx.PromptProtectionRule = NewPromptProtectionRuleClient(tx.config)

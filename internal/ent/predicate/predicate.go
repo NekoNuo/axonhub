@@ -36,6 +36,9 @@ type ModelHealthHistory func(*sql.Selector)
 // ModelHealthSnapshot is the predicate function for modelhealthsnapshot builders.
 type ModelHealthSnapshot func(*sql.Selector)
 
+// ModelProbeConfig is the predicate function for modelprobeconfig builders.
+type ModelProbeConfig func(*sql.Selector)
+
 // Project is the predicate function for project builders.
 type Project func(*sql.Selector)
 
