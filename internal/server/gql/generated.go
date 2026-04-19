@@ -910,8 +910,9 @@ type ComplexityRoot struct {
 	}
 
 	ModelSettings struct {
-		Associations func(childComplexity int) int
-		ProbeEnabled func(childComplexity int) int
+		Associations                             func(childComplexity int) int
+		ProbeAutoDisableAfterConsecutiveFailures func(childComplexity int) int
+		ProbeEnabled                             func(childComplexity int) int
 	}
 
 	ModelTokenUsageStats struct {
@@ -5394,6 +5395,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.ModelSettings.Associations(childComplexity), true
+	case "ModelSettings.probeAutoDisableAfterConsecutiveFailures":
+		if e.complexity.ModelSettings.ProbeAutoDisableAfterConsecutiveFailures == nil {
+			break
+		}
+
+		return e.complexity.ModelSettings.ProbeAutoDisableAfterConsecutiveFailures(childComplexity), true
 	case "ModelSettings.probeEnabled":
 		if e.complexity.ModelSettings.ProbeEnabled == nil {
 			break
@@ -26753,6 +26760,8 @@ func (ec *executionContext) fieldContext_Model_settings(_ context.Context, field
 			switch field.Name {
 			case "probeEnabled":
 				return ec.fieldContext_ModelSettings_probeEnabled(ctx, field)
+			case "probeAutoDisableAfterConsecutiveFailures":
+				return ec.fieldContext_ModelSettings_probeAutoDisableAfterConsecutiveFailures(ctx, field)
 			case "associations":
 				return ec.fieldContext_ModelSettings_associations(ctx, field)
 			}
@@ -29876,6 +29885,35 @@ func (ec *executionContext) fieldContext_ModelSettings_probeEnabled(_ context.Co
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ModelSettings_probeAutoDisableAfterConsecutiveFailures(ctx context.Context, field graphql.CollectedField, obj *objects.ModelSettings) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ModelSettings_probeAutoDisableAfterConsecutiveFailures,
+		func(ctx context.Context) (any, error) {
+			return obj.ProbeAutoDisableAfterConsecutiveFailures, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ModelSettings_probeAutoDisableAfterConsecutiveFailures(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ModelSettings",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -68889,7 +68927,7 @@ func (ec *executionContext) unmarshalInputModelSettingsInput(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"probeEnabled", "associations"}
+	fieldsInOrder := [...]string{"probeEnabled", "probeAutoDisableAfterConsecutiveFailures", "associations"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -68903,6 +68941,13 @@ func (ec *executionContext) unmarshalInputModelSettingsInput(ctx context.Context
 				return it, err
 			}
 			it.ProbeEnabled = data
+		case "probeAutoDisableAfterConsecutiveFailures":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("probeAutoDisableAfterConsecutiveFailures"))
+			data, err := ec.unmarshalOInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ProbeAutoDisableAfterConsecutiveFailures = data
 		case "associations":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("associations"))
 			data, err := ec.unmarshalNModelAssociationInput2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐModelAssociationᚄ(ctx, v)
@@ -92624,6 +92669,11 @@ func (ec *executionContext) _ModelSettings(ctx context.Context, sel ast.Selectio
 			out.Values[i] = graphql.MarshalString("ModelSettings")
 		case "probeEnabled":
 			out.Values[i] = ec._ModelSettings_probeEnabled(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "probeAutoDisableAfterConsecutiveFailures":
+			out.Values[i] = ec._ModelSettings_probeAutoDisableAfterConsecutiveFailures(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

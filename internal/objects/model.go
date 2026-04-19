@@ -37,8 +37,9 @@ type ModelCard struct {
 }
 
 type ModelSettings struct {
-	ProbeEnabled bool                `json:"probeEnabled"`
-	Associations []*ModelAssociation `json:"associations"`
+	ProbeEnabled                             bool                `json:"probeEnabled"`
+	ProbeAutoDisableAfterConsecutiveFailures int                 `json:"probeAutoDisableAfterConsecutiveFailures,omitempty"`
+	Associations                             []*ModelAssociation `json:"associations"`
 }
 
 type ModelAssociation struct {
