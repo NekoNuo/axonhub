@@ -1325,10 +1325,20 @@ func TestMatchAssociations_ProviderAssociations(t *testing.T) {
 
 		result := MatchAssociations(associations, channels)
 
-		require.Len(t, result, 2)
-		channelIDs := []int{result[0].Channel.ID, result[1].Channel.ID}
+		require.Len(t, result, 1)
+		require.Len(t, result[0].Connections, 2)
+		channelIDs := []int{result[0].Connections[0].Channel.ID, result[0].Connections[1].Channel.ID}
 		require.ElementsMatch(t, []int{1, 2}, channelIDs)
-		require.ElementsMatch(t, []string{"gpt-4", "gpt-4o"}, []string{result[0].Models[0].RequestModel, result[0].Models[1].RequestModel})
+
+		var ch1Models []string
+		for _, conn := range result[0].Connections {
+			if conn.Channel.ID == 1 {
+				for _, m := range conn.Models {
+					ch1Models = append(ch1Models, m.RequestModel)
+				}
+			}
+		}
+		require.ElementsMatch(t, []string{"gpt-4", "gpt-4o"}, ch1Models)
 	})
 
 	t.Run("provider associations do not match other providers", func(t *testing.T) {
@@ -1344,6 +1354,7 @@ func TestMatchAssociations_ProviderAssociations(t *testing.T) {
 
 		result := MatchAssociations(associations, channels)
 		require.Len(t, result, 1)
-		require.Equal(t, 3, result[0].Channel.ID)
+		require.Len(t, result[0].Connections, 1)
+		require.Equal(t, 3, result[0].Connections[0].Channel.ID)
 	})
 }
