@@ -9,10 +9,10 @@ import { Loader2, Radar, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useQueryChannels } from '@/features/channels/data/channels';
 import { useQueryAllModels, useQueryModelChannelConnections, type ModelAssociationInput, type ModelChannelConnection } from '@/features/models/data/models';
-import { formatHealthTimestamp } from './channel-health-format';
 import { ModelHealthTree } from './components/model-health-tree';
 import { fetchDiscoveredModelHealthSnapshots, fetchModelHealthHistory, fetchModelHealthSnapshots, manualModelProbe, resetDiscoveredModelHealth } from './data/health';
-import type { ManualModelProbeInput, ModelHealthHistory, ModelHealthSnapshot } from './data/schema';
+import { batchSetChannelProbeEnabled, fetchModelProbeConfigs, setModelProbeEnabled } from './data/probe-config';
+import type { ManualModelProbeInput, ModelHealthHistory, ModelHealthSnapshot, ModelProbeConfig } from './data/schema';
 
 const MANUAL_MODEL_PROBE_MAX_CONCURRENCY = 2;
 
@@ -22,6 +22,9 @@ export interface ModelHealthRow extends ModelHealthSnapshot {
   channelType: string;
   orderingWeight: number;
   priority: number;
+  probeEnabled: boolean;
+  consecutiveFailures: number;
+  autoDisabledAt: number | null;
 }
 
 export interface ModelHealthChannelGroup {
@@ -91,7 +94,8 @@ export function buildModelHealthTree(rows: ModelHealthRow[]): ModelHealthGroup[]
 
 export function buildDiscoveredModelHealthRows(
   snapshots: ModelHealthSnapshot[],
-  channelsByID: Map<string, { name: string; status: string; type: string; orderingWeight: number }>
+  channelsByID: Map<string, { name: string; status: string; type: string; orderingWeight: number }>,
+  configByKey: Map<string, ModelProbeConfig>
 ): ModelHealthRow[] {
   return snapshots.map((snapshot) => {
     const channelMeta = channelsByID.get(snapshot.channelID) ?? {
@@ -100,6 +104,7 @@ export function buildDiscoveredModelHealthRows(
       type: 'unknown',
       orderingWeight: 0,
     };
+    const cfg = configByKey.get(getConnectionKey(snapshot.displayModel, snapshot.channelID, snapshot.actualModelID));
 
     return {
       ...snapshot,
@@ -108,6 +113,9 @@ export function buildDiscoveredModelHealthRows(
       channelType: channelMeta.type,
       orderingWeight: channelMeta.orderingWeight,
       priority: 0,
+      probeEnabled: cfg?.probeEnabled ?? false,
+      consecutiveFailures: cfg?.consecutiveFailures ?? 0,
+      autoDisabledAt: cfg?.autoDisabledAt ?? null,
     };
   });
 }
@@ -230,6 +238,7 @@ export function ModelHealthPage() {
   const [histories, setHistories] = useState<Record<string, ModelHealthHistory[]>>({});
   const [snapshots, setSnapshots] = useState<ModelHealthSnapshot[]>([]);
   const [discoveredSnapshots, setDiscoveredSnapshots] = useState<ModelHealthSnapshot[]>([]);
+  const [probeConfigs, setProbeConfigs] = useState<ModelProbeConfig[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [probingKeys, setProbingKeys] = useState<Record<string, true>>({});
   const [connectionsByModel, setConnectionsByModel] = useState<Record<string, ModelChannelConnection[]>>({});
@@ -258,12 +267,14 @@ export function ModelHealthPage() {
     void (async () => {
       setIsLoading(true);
       try {
-        const [associated, discovered] = await Promise.all([
+        const [associated, discovered, configs] = await Promise.all([
           fetchModelHealthSnapshots({ input: {} }),
           fetchDiscoveredModelHealthSnapshots({ input: {} }),
+          fetchModelProbeConfigs({ input: {} }),
         ]);
         setSnapshots(associated);
         setDiscoveredSnapshots(discovered);
+        setProbeConfigs(configs);
       } finally {
         setIsLoading(false);
       }
@@ -287,6 +298,12 @@ export function ModelHealthPage() {
   );
 
   const modelEntries = useMemo(() => getProbeEnabledModelEntries((modelsData?.edges || []).map((edge) => edge.node)), [modelsData?.edges]);
+
+  const configByKey = useMemo(() => {
+    const m = new Map<string, ModelProbeConfig>();
+    probeConfigs.forEach((c) => m.set(getConnectionKey(c.displayModel, c.channelID, c.actualModelID), c));
+    return m;
+  }, [probeConfigs]);
 
   useEffect(() => {
     const pendingModelIDs = new Set(Object.keys(pendingConnectionModelIDs));
@@ -332,6 +349,7 @@ export function ModelHealthPage() {
         connection.models.forEach((matchedModel) => {
           const key = getConnectionKey(model.modelID, connection.channel.id, matchedModel.actualModel);
           const snapshot = snapshotMap.get(key);
+          const cfg = configByKey.get(key);
           const channelMeta = channelsByID.get(connection.channel.id) ?? {
             name: connection.channel.name,
             status: connection.channel.status,
@@ -352,6 +370,9 @@ export function ModelHealthPage() {
             channelType: channelMeta.type,
             orderingWeight: channelMeta.orderingWeight,
             priority: connection.priority ?? 0,
+            probeEnabled: cfg?.probeEnabled ?? false,
+            consecutiveFailures: cfg?.consecutiveFailures ?? 0,
+            autoDisabledAt: cfg?.autoDisabledAt ?? null,
           });
         });
       });
@@ -371,7 +392,7 @@ export function ModelHealthPage() {
   const groups = useMemo(() => buildModelHealthTree(rows), [rows]);
   const discoveredRows = useMemo(
     () =>
-      buildDiscoveredModelHealthRows(discoveredSnapshots, channelsByID).filter((row) => {
+      buildDiscoveredModelHealthRows(discoveredSnapshots, channelsByID, configByKey).filter((row) => {
         const matchesSearch =
           search.trim() === '' ||
           row.displayModel.toLowerCase().includes(search.toLowerCase()) ||
@@ -380,7 +401,7 @@ export function ModelHealthPage() {
         const matchesStatus = statusFilter === 'all' || row.channelStatus === statusFilter;
         return matchesSearch && matchesStatus;
       }),
-    [channelsByID, discoveredSnapshots, search, statusFilter]
+    [channelsByID, configByKey, discoveredSnapshots, search, statusFilter]
   );
   const discoveredGroups = useMemo(() => buildModelHealthTree(discoveredRows), [discoveredRows]);
   const visiblePageProbeTargets = useMemo(() => collectVisiblePageProbeTargets(groups, discoveredGroups), [discoveredGroups, groups]);
@@ -496,6 +517,42 @@ export function ModelHealthPage() {
     }
   };
 
+  const mergeProbeConfigs = (updates: ModelProbeConfig[]) => {
+    setProbeConfigs((cur) => {
+      const map = new Map(cur.map((c) => [getConnectionKey(c.displayModel, c.channelID, c.actualModelID), c] as const));
+      updates.forEach((c) => map.set(getConnectionKey(c.displayModel, c.channelID, c.actualModelID), c));
+      return Array.from(map.values());
+    });
+  };
+
+  const handleToggleRowProbe = async (row: ModelHealthRow, next: boolean) => {
+    try {
+      const updated = await setModelProbeEnabled({
+        displayModel: row.displayModel,
+        channelID: row.channelID,
+        actualModelID: row.actualModelID,
+        enabled: next,
+      });
+      mergeProbeConfigs([updated]);
+    } catch (error) {
+      toast.error(t('models.healthPage.probeToggleError', { error: error instanceof Error ? error.message : String(error) }));
+    }
+  };
+
+  const handleToggleChannelProbe = async (group: ModelHealthGroup, channel: ModelHealthChannelGroup) => {
+    const next = !channel.rows.every((r) => r.probeEnabled);
+    try {
+      const updated = await batchSetChannelProbeEnabled({
+        displayModel: group.displayModel,
+        channelID: channel.channelID,
+        enabled: next,
+      });
+      mergeProbeConfigs(updated);
+    } catch (error) {
+      toast.error(t('models.healthPage.probeToggleError', { error: error instanceof Error ? error.message : String(error) }));
+    }
+  };
+
   return (
     <Main>
       <div className='space-y-6'>
@@ -540,6 +597,8 @@ export function ModelHealthPage() {
           onProbeGroup={(group) => runProbeTargets(`group:${group.displayModel}`, getGroupProbeTargets(group))}
           onProbeChannel={(group, channel) => runProbeTargets(`channel:${group.displayModel}:${channel.channelID}`, getChannelProbeTargets(channel))}
           onProbeRow={(row) => runProbeTargets(`row:${row.displayModel}:${row.channelID}:${row.actualModelID}`, [getRowProbeTarget(row)])}
+          onToggleRowProbe={handleToggleRowProbe}
+          onToggleChannelProbe={handleToggleChannelProbe}
         />
 
         <div className='space-y-3'>
@@ -560,6 +619,8 @@ export function ModelHealthPage() {
             onProbeGroup={(group) => runProbeTargets(`discovered-group:${group.displayModel}`, getGroupProbeTargets(group))}
             onProbeChannel={(group, channel) => runProbeTargets(`discovered-channel:${group.displayModel}:${channel.channelID}`, getChannelProbeTargets(channel))}
             onProbeRow={(row) => runProbeTargets(`discovered-row:${row.displayModel}:${row.channelID}:${row.actualModelID}`, [getRowProbeTarget(row)])}
+            onToggleRowProbe={handleToggleRowProbe}
+            onToggleChannelProbe={handleToggleChannelProbe}
           />
         </div>
         <ConfirmDialog

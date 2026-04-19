@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import { ChevronDown, ChevronRight, Loader2, Radar } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Switch } from '@/components/ui/switch';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { ModelHealthHistory } from '../data/schema';
 import { formatHealthTimestamp } from '../channel-health-format';
 import { ModelHealthCell } from './model-health-cell';
@@ -16,6 +19,8 @@ interface ModelHealthTreeProps {
   onProbeGroup: (group: ModelHealthGroup) => void;
   onProbeChannel: (group: ModelHealthGroup, channel: ModelHealthChannelGroup) => void;
   onProbeRow: (row: ModelHealthRow) => void;
+  onToggleRowProbe: (row: ModelHealthRow, next: boolean) => void;
+  onToggleChannelProbe: (group: ModelHealthGroup, channel: ModelHealthChannelGroup) => void;
 }
 
 export function getDefaultGroupExpanded() {
@@ -40,14 +45,28 @@ function getConnectionKey(displayModel: string, channelID: string, actualModelID
 
 function getChannelSummary(channel: ModelHealthChannelGroup) {
   const healthyCount = channel.rows.filter((row) => row.isHealthy).length;
+  const enabledCount = channel.rows.filter((row) => row.probeEnabled).length;
   return {
     healthyCount,
     totalCount: channel.rows.length,
     isHealthy: channel.rows.length > 0 && healthyCount === channel.rows.length,
+    enabledCount,
+    allEnabled: channel.rows.length > 0 && enabledCount === channel.rows.length,
+    noneEnabled: enabledCount === 0,
   };
 }
 
-export function ModelHealthTree({ groups, histories, probingKeys, locale, onProbeGroup, onProbeChannel, onProbeRow }: ModelHealthTreeProps) {
+export function ModelHealthTree({
+  groups,
+  histories,
+  probingKeys,
+  locale,
+  onProbeGroup,
+  onProbeChannel,
+  onProbeRow,
+  onToggleRowProbe,
+  onToggleChannelProbe,
+}: ModelHealthTreeProps) {
   const { t } = useTranslation();
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
   const [expandedChannels, setExpandedChannels] = useState<Record<string, boolean>>({});
@@ -136,6 +155,23 @@ export function ModelHealthTree({ groups, histories, probingKeys, locale, onProb
                         </CollapsibleTrigger>
                         <div className='flex items-center gap-3'>
                           <ModelHealthCell snapshot={channel.rows[0]} history={channelHistory} locale={locale} />
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Switch
+                                checked={summary.allEnabled}
+                                aria-checked={summary.allEnabled ? true : summary.noneEnabled ? false : 'mixed'}
+                                onCheckedChange={() => onToggleChannelProbe(group, channel)}
+                                aria-label={t('models.healthPage.channelProbeToggleAria')}
+                              />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {summary.allEnabled
+                                ? t('models.healthPage.channelProbeAllOn')
+                                : summary.noneEnabled
+                                  ? t('models.healthPage.channelProbeAllOff')
+                                  : t('models.healthPage.channelProbePartial', { enabled: summary.enabledCount, total: summary.totalCount })}
+                            </TooltipContent>
+                          </Tooltip>
                           <Button
                             size='icon'
                             variant='ghost'
@@ -157,9 +193,24 @@ export function ModelHealthTree({ groups, histories, probingKeys, locale, onProb
                           const rowHistory = getActualModelHistory(row, histories);
                           const rowProbeMeta = getLatestProbeMeta(row, rowHistory);
                           return (
-                            <div key={rowKey} className='flex items-center justify-between gap-4 rounded-md border p-3'>
+                            <div
+                              key={rowKey}
+                              className={`flex items-center justify-between gap-4 rounded-md border p-3 ${row.probeEnabled ? '' : 'opacity-70'}`}
+                            >
                               <div className='space-y-1'>
-                                <div className='font-medium'>{row.actualModelID}</div>
+                                <div className='flex items-center gap-2'>
+                                  <div className='font-medium'>{row.actualModelID}</div>
+                                  {row.autoDisabledAt ? (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Badge variant='secondary'>{t('models.healthPage.autoDisabledBadge')}</Badge>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        {t('models.healthPage.autoDisabledTooltip', { val: formatHealthTimestamp(row.autoDisabledAt, locale) })}
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  ) : null}
+                                </div>
                                 <div className='text-muted-foreground text-xs'>
                                   {t('models.healthPage.priorityWeight', { priority: row.priority, weight: row.orderingWeight })}
                                 </div>
@@ -173,6 +224,11 @@ export function ModelHealthTree({ groups, histories, probingKeys, locale, onProb
                               </div>
                               <div className='flex items-center gap-2'>
                                 <ModelHealthCell snapshot={row} history={rowHistory} locale={locale} />
+                                <Switch
+                                  checked={row.probeEnabled}
+                                  onCheckedChange={(checked) => onToggleRowProbe(row, checked)}
+                                  aria-label={t('models.healthPage.probeToggleAria')}
+                                />
                                 <Button
                                   size='icon'
                                   variant='ghost'

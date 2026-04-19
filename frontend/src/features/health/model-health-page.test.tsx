@@ -28,6 +28,9 @@ describe('Task 12 Model Health Page', () => {
         isHealthy: true,
         manualOverride: false,
         probedAt: 1712310000,
+        probeEnabled: true,
+        consecutiveFailures: 0,
+        autoDisabledAt: null,
       },
       {
         channelName: 'Channel A',
@@ -41,6 +44,9 @@ describe('Task 12 Model Health Page', () => {
         isHealthy: false,
         manualOverride: false,
         probedAt: 1712310300,
+        probeEnabled: true,
+        consecutiveFailures: 0,
+        autoDisabledAt: null,
       },
       {
         channelName: 'Channel B',
@@ -54,6 +60,9 @@ describe('Task 12 Model Health Page', () => {
         isHealthy: false,
         manualOverride: false,
         probedAt: 1712310060,
+        probeEnabled: true,
+        consecutiveFailures: 0,
+        autoDisabledAt: null,
       },
     ]);
 
@@ -80,6 +89,9 @@ describe('Task 12 Model Health Page', () => {
         isHealthy: true,
         manualOverride: false,
         probedAt: 1712310000,
+        probeEnabled: true,
+        consecutiveFailures: 0,
+        autoDisabledAt: null,
       },
     ]);
 
@@ -167,6 +179,9 @@ describe('Task 12 Model Health Page', () => {
         isHealthy: true,
         manualOverride: false,
         probedAt: 1712310000,
+        probeEnabled: true,
+        consecutiveFailures: 0,
+        autoDisabledAt: null,
       },
       {
         channelName: 'Channel B',
@@ -180,6 +195,9 @@ describe('Task 12 Model Health Page', () => {
         isHealthy: false,
         manualOverride: false,
         probedAt: 1712310300,
+        probeEnabled: true,
+        consecutiveFailures: 0,
+        autoDisabledAt: null,
       },
     ]).flatMap((group) => group.channels);
 
@@ -211,6 +229,9 @@ describe('Task 12 Model Health Page', () => {
         isHealthy: true,
         manualOverride: false,
         probedAt: 1712310000,
+        probeEnabled: true,
+        consecutiveFailures: 0,
+        autoDisabledAt: null,
       },
       {
         channelName: 'Channel A',
@@ -224,6 +245,9 @@ describe('Task 12 Model Health Page', () => {
         isHealthy: false,
         manualOverride: false,
         probedAt: 1712310300,
+        probeEnabled: true,
+        consecutiveFailures: 0,
+        autoDisabledAt: null,
       },
     ];
     const groups = buildModelHealthTree(rows);
@@ -237,6 +261,9 @@ describe('Task 12 Model Health Page', () => {
           isHealthy: true,
           manualOverride: false,
           probedAt: 1712310000,
+        probeEnabled: true,
+        consecutiveFailures: 0,
+        autoDisabledAt: null,
         },
       ],
       'gpt-5.4:Q2hhbm5lbDox:gpt-5.4-low': [
@@ -248,6 +275,9 @@ describe('Task 12 Model Health Page', () => {
           isHealthy: false,
           manualOverride: false,
           probedAt: 1712310300,
+        probeEnabled: true,
+        consecutiveFailures: 0,
+        autoDisabledAt: null,
         },
       ],
     };
@@ -315,7 +345,8 @@ describe('Task 12 Model Health Page', () => {
             orderingWeight: 100,
           },
         ],
-      ])
+      ]),
+      new Map()
     );
 
     expect(rows).toEqual([
@@ -341,6 +372,9 @@ describe('Task 12 Model Health Page', () => {
         isHealthy: true,
         manualOverride: false,
         probedAt: 1712310000,
+        probeEnabled: true,
+        consecutiveFailures: 0,
+        autoDisabledAt: null,
       },
       {
         channelName: 'Channel B',
@@ -354,6 +388,9 @@ describe('Task 12 Model Health Page', () => {
         isHealthy: false,
         manualOverride: false,
         probedAt: 1712310300,
+        probeEnabled: true,
+        consecutiveFailures: 0,
+        autoDisabledAt: null,
       },
     ]);
 
@@ -380,6 +417,9 @@ describe('Task 12 Model Health Page', () => {
         isHealthy: true,
         manualOverride: false,
         probedAt: 1712310000,
+        probeEnabled: true,
+        consecutiveFailures: 0,
+        autoDisabledAt: null,
       },
       {
         channelName: 'Channel B',
@@ -393,6 +433,9 @@ describe('Task 12 Model Health Page', () => {
         isHealthy: false,
         manualOverride: false,
         probedAt: 1712310300,
+        probeEnabled: true,
+        consecutiveFailures: 0,
+        autoDisabledAt: null,
       },
     ]);
     const discoveredGroups = buildModelHealthTree([
@@ -408,6 +451,9 @@ describe('Task 12 Model Health Page', () => {
         isHealthy: true,
         manualOverride: false,
         probedAt: 1712310400,
+        probeEnabled: true,
+        consecutiveFailures: 0,
+        autoDisabledAt: null,
       },
       {
         channelName: 'Channel C',
@@ -421,6 +467,9 @@ describe('Task 12 Model Health Page', () => {
         isHealthy: true,
         manualOverride: false,
         probedAt: 1712310500,
+        probeEnabled: true,
+        consecutiveFailures: 0,
+        autoDisabledAt: null,
       },
     ]);
 
