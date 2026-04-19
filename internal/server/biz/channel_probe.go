@@ -76,15 +76,16 @@ type ChannelProbeServiceParams struct {
 type ChannelProbeService struct {
 	*AbstractService
 
-	SystemService          *SystemService
-	ChannelService         *ChannelService
-	Executor               executors.ScheduledExecutor
-	mu                     sync.Mutex
-	lastExecutionTime      time.Time
-	modelFetcher           *ModelFetcher
-	idleChannelProber      func(ctx context.Context, ch *ent.Channel) (time.Duration, bool, error)
-	idleChannelModelProber func(ctx context.Context, ch *ent.Channel, modelID string) (time.Duration, bool, error)
-	manualModelProbeLocks  sync.Map
+	SystemService           *SystemService
+	ChannelService          *ChannelService
+	ModelProbeConfigService *ModelProbeConfigService
+	Executor                executors.ScheduledExecutor
+	mu                      sync.Mutex
+	lastExecutionTime       time.Time
+	modelFetcher            *ModelFetcher
+	idleChannelProber       func(ctx context.Context, ch *ent.Channel) (time.Duration, bool, error)
+	idleChannelModelProber  func(ctx context.Context, ch *ent.Channel, modelID string) (time.Duration, bool, error)
+	manualModelProbeLocks   sync.Map
 }
 
 // NewChannelProbeService creates a new ChannelProbeService.
@@ -93,10 +94,11 @@ func NewChannelProbeService(params ChannelProbeServiceParams) *ChannelProbeServi
 		AbstractService: &AbstractService{
 			db: params.Ent,
 		},
-		SystemService:     params.SystemService,
-		ChannelService:    params.ChannelService,
-		Executor:          executors.NewPoolScheduleExecutor(executors.WithMaxConcurrent(1)),
-		lastExecutionTime: time.Time{},
+		SystemService:           params.SystemService,
+		ChannelService:          params.ChannelService,
+		ModelProbeConfigService: NewModelProbeConfigService(params.Ent),
+		Executor:                executors.NewPoolScheduleExecutor(executors.WithMaxConcurrent(1)),
+		lastExecutionTime:       time.Time{},
 	}
 	svc.modelFetcher = NewModelFetcher(params.HttpClient, params.ChannelService)
 	svc.idleChannelProber = svc.probeIdleChannelByFetchModels

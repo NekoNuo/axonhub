@@ -53,6 +53,8 @@ func (svc *ChannelProbeService) runModelHealthProbe(ctx context.Context, now tim
 		return
 	}
 
+	targets = svc.filterAutomaticProbeTargets(ctx, targets)
+
 	sem := make(chan struct{}, automaticModelProbeMaxConcurrency)
 	var wg sync.WaitGroup
 	type probeResult struct {
@@ -326,6 +328,38 @@ func (svc *ChannelProbeService) listProbeEnabledModels(ctx context.Context) ([]*
 	return lo.Filter(models, func(item *ent.Model, _ int) bool {
 		return item.Settings != nil && item.Settings.ProbeEnabled
 	}), nil
+}
+
+// filterAutomaticProbeTargets drops any probe target that does not have a
+// ModelProbeConfig row with probe_enabled=true. This is the gate that makes
+// the "default off" rule effective for automatic probing while leaving
+// manual probing untouched (callers of RunManualModelProbe bypass this).
+// If the service is not wired (e.g. in older tests), targets are passed
+// through unchanged — existing behavior preserved.
+func (svc *ChannelProbeService) filterAutomaticProbeTargets(ctx context.Context, targets []ModelHealthProbeTarget) []ModelHealthProbeTarget {
+	if svc.ModelProbeConfigService == nil || len(targets) == 0 {
+		return targets
+	}
+
+	displayModels := lo.Uniq(lo.Map(targets, func(t ModelHealthProbeTarget, _ int) string { return t.DisplayModel }))
+
+	cfgs, err := svc.ModelProbeConfigService.GetByDisplayModels(ctx, displayModels)
+	if err != nil {
+		return nil
+	}
+
+	enabled := make(map[string]struct{}, len(cfgs))
+
+	for _, c := range cfgs {
+		if c.ProbeEnabled {
+			enabled[probeConfigKey(c.DisplayModel, c.ChannelID, c.ActualModelID)] = struct{}{}
+		}
+	}
+
+	return lo.Filter(targets, func(t ModelHealthProbeTarget, _ int) bool {
+		_, ok := enabled[probeConfigKey(t.DisplayModel, t.ChannelID, t.ActualModelID)]
+		return ok
+	})
 }
 
 func getEffectiveModelHealthFromDB(
