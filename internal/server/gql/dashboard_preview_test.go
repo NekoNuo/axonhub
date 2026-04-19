@@ -414,7 +414,7 @@ func TestBuildLoadBalancerPreviewIncludesStrategyComparisonsAndScores(t *testing
 	t.Cleanup(channelService.Stop)
 
 	modelService := biz.NewModelService(biz.ModelServiceParams{Ent: client})
-	requestService := biz.NewRequestService(client, systemService, nil, nil)
+	requestService := biz.NewRequestService(client, systemService, nil, nil, nil)
 
 	ch1, err := client.Channel.Create().
 		SetType(channel.TypeOpenai).

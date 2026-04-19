@@ -11,6 +11,7 @@ schema:
   - filter.graphql
   - model.graphql
   - model_health.graphql
+  - model_probe_config.graphql
   - backup.graphql
   - channel_probe.graphql
   - prompt.graphql

@@ -1,0 +1,25 @@
+input GetModelProbeConfigsInput {
+  displayModels: [String!]
+}
+
+input SetModelProbeEnabledInput {
+  displayModel: String!
+  channelID: ID!
+  actualModelID: String!
+  enabled: Boolean!
+}
+
+input BatchSetChannelProbeEnabledInput {
+  displayModel: String!
+  channelID: ID!
+  enabled: Boolean!
+}
+
+extend type Query {
+  modelProbeConfigs(input: GetModelProbeConfigsInput!): [ModelProbeConfig!]!
+}
+
+extend type Mutation {
+  setModelProbeEnabled(input: SetModelProbeEnabledInput!): ModelProbeConfig!
+  batchSetChannelProbeEnabled(input: BatchSetChannelProbeEnabledInput!): [ModelProbeConfig!]!
+}

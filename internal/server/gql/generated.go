@@ -927,6 +927,7 @@ type ComplexityRoot struct {
 		AddUserToProject                     func(childComplexity int, input AddUserToProjectInput) int
 		ApplyChannelOverrideTemplate         func(childComplexity int, input ApplyChannelOverrideTemplateInput) int
 		Backup                               func(childComplexity int, input backup.BackupOptions) int
+		BatchSetChannelProbeEnabled          func(childComplexity int, input BatchSetChannelProbeEnabledInput) int
 		BulkArchiveAPIKeys                   func(childComplexity int, ids []*objects.GUID) int
 		BulkArchiveChannels                  func(childComplexity int, ids []*objects.GUID) int
 		BulkArchiveModels                    func(childComplexity int, ids []*objects.GUID) int
@@ -986,6 +987,7 @@ type ComplexityRoot struct {
 		Restore                              func(childComplexity int, file graphql.Upload, input backup.RestoreOptions) int
 		SaveChannelModelPrices               func(childComplexity int, channelID objects.GUID, input []*biz.SaveChannelModelPriceInput) int
 		SaveProxyPreset                      func(childComplexity int, input biz.ProxyPreset) int
+		SetModelProbeEnabled                 func(childComplexity int, input SetModelProbeEnabledInput) int
 		SyncChannelModels                    func(childComplexity int, channelID objects.GUID, pattern *string) int
 		TestChannel                          func(childComplexity int, input TestChannelInput) int
 		TestChannelAPIKeys                   func(childComplexity int, channelID objects.GUID, modelID *string) int
@@ -1257,6 +1259,7 @@ type ComplexityRoot struct {
 		ModelHealthHistory             func(childComplexity int, input GetModelHealthHistoryInput) int
 		ModelHealthSnapshots           func(childComplexity int, input GetModelHealthSnapshotsInput) int
 		ModelPerformanceStats          func(childComplexity int) int
+		ModelProbeConfigs              func(childComplexity int, input GetModelProbeConfigsInput) int
 		Models                         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.ModelOrder, where *ent.ModelWhereInput) int
 		MyProjects                     func(childComplexity int) int
 		Node                           func(childComplexity int, id objects.GUID) int
@@ -2124,6 +2127,8 @@ type MutationResolver interface {
 	BulkDeleteModels(ctx context.Context, ids []*objects.GUID) (bool, error)
 	ManualModelProbe(ctx context.Context, input ManualModelProbeInput) (bool, error)
 	ResetDiscoveredModelHealth(ctx context.Context) (bool, error)
+	SetModelProbeEnabled(ctx context.Context, input SetModelProbeEnabledInput) (*ent.ModelProbeConfig, error)
+	BatchSetChannelProbeEnabled(ctx context.Context, input BatchSetChannelProbeEnabledInput) ([]*ent.ModelProbeConfig, error)
 	Backup(ctx context.Context, input backup.BackupOptions) (*BackupPayload, error)
 	Restore(ctx context.Context, file graphql.Upload, input backup.RestoreOptions) (*RestorePayload, error)
 	UpdateAutoBackupSettings(ctx context.Context, input UpdateAutoBackupSettingsInput) (bool, error)
@@ -2232,6 +2237,7 @@ type QueryResolver interface {
 	ModelHealthSnapshots(ctx context.Context, input GetModelHealthSnapshotsInput) ([]*ent.ModelHealthSnapshot, error)
 	DiscoveredModelHealthSnapshots(ctx context.Context, input GetDiscoveredModelHealthSnapshotsInput) ([]*ent.ModelHealthSnapshot, error)
 	ModelHealthHistory(ctx context.Context, input GetModelHealthHistoryInput) ([]*ent.ModelHealthHistory, error)
+	ModelProbeConfigs(ctx context.Context, input GetModelProbeConfigsInput) ([]*ent.ModelProbeConfig, error)
 	AutoBackupSettings(ctx context.Context) (*biz.AutoBackupSettings, error)
 	ChannelProbeData(ctx context.Context, input biz.GetChannelProbeDataInput) ([]*biz.ChannelProbeData, error)
 	LatestChannelHealthSnapshots(ctx context.Context, input biz.GetChannelHealthSnapshotsInput) ([]*biz.ChannelHealthSnapshot, error)
@@ -5472,6 +5478,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.Backup(childComplexity, args["input"].(backup.BackupOptions)), true
+	case "Mutation.batchSetChannelProbeEnabled":
+		if e.complexity.Mutation.BatchSetChannelProbeEnabled == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_batchSetChannelProbeEnabled_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.BatchSetChannelProbeEnabled(childComplexity, args["input"].(BatchSetChannelProbeEnabledInput)), true
 	case "Mutation.bulkArchiveAPIKeys":
 		if e.complexity.Mutation.BulkArchiveAPIKeys == nil {
 			break
@@ -6111,6 +6128,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.SaveProxyPreset(childComplexity, args["input"].(biz.ProxyPreset)), true
+	case "Mutation.setModelProbeEnabled":
+		if e.complexity.Mutation.SetModelProbeEnabled == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_setModelProbeEnabled_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SetModelProbeEnabled(childComplexity, args["input"].(SetModelProbeEnabledInput)), true
 	case "Mutation.syncChannelModels":
 		if e.complexity.Mutation.SyncChannelModels == nil {
 			break
@@ -7591,6 +7619,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.ModelPerformanceStats(childComplexity), true
+	case "Query.modelProbeConfigs":
+		if e.complexity.Query.ModelProbeConfigs == nil {
+			break
+		}
+
+		args, err := ec.field_Query_modelProbeConfigs_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ModelProbeConfigs(childComplexity, args["input"].(GetModelProbeConfigsInput)), true
 	case "Query.models":
 		if e.complexity.Query.Models == nil {
 			break
@@ -10616,6 +10655,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputAutoDisableChannelInput,
 		ec.unmarshalInputAutoDisableChannelStatusInput,
 		ec.unmarshalInputBackupOptionsInput,
+		ec.unmarshalInputBatchSetChannelProbeEnabledInput,
 		ec.unmarshalInputBulkCreateChannelsInput,
 		ec.unmarshalInputBulkImportChannelItem,
 		ec.unmarshalInputBulkImportChannelsInput,
@@ -10676,6 +10716,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputGetLoadBalancerPreviewInput,
 		ec.unmarshalInputGetModelHealthHistoryInput,
 		ec.unmarshalInputGetModelHealthSnapshotsInput,
+		ec.unmarshalInputGetModelProbeConfigsInput,
 		ec.unmarshalInputHeaderEntryInput,
 		ec.unmarshalInputIdleDBMaintenanceInput,
 		ec.unmarshalInputInitializeSystemInput,
@@ -10737,6 +10778,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputS3Input,
 		ec.unmarshalInputSaveChannelModelPriceInput,
 		ec.unmarshalInputSaveProxyPresetInput,
+		ec.unmarshalInputSetModelProbeEnabledInput,
 		ec.unmarshalInputSignInInput,
 		ec.unmarshalInputSystemOrder,
 		ec.unmarshalInputSystemWhereInput,
@@ -10888,7 +10930,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 	return introspection.WrapTypeFromDef(ec.Schema(), ec.Schema().Types[name]), nil
 }
 
-//go:embed "axonhub.graphql" "ent.graphql" "dashboard.graphql" "scopes.graphql" "me.graphql" "system.graphql" "filter.graphql" "model.graphql" "model_health.graphql" "backup.graphql" "channel_probe.graphql" "prompt.graphql" "prompt_protection_rule.graphql" "price.graphql" "cost.graphql"
+//go:embed "axonhub.graphql" "ent.graphql" "dashboard.graphql" "scopes.graphql" "me.graphql" "system.graphql" "filter.graphql" "model.graphql" "model_health.graphql" "model_probe_config.graphql" "backup.graphql" "channel_probe.graphql" "prompt.graphql" "prompt_protection_rule.graphql" "price.graphql" "cost.graphql"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -10909,6 +10951,7 @@ var sources = []*ast.Source{
 	{Name: "filter.graphql", Input: sourceData("filter.graphql"), BuiltIn: false},
 	{Name: "model.graphql", Input: sourceData("model.graphql"), BuiltIn: false},
 	{Name: "model_health.graphql", Input: sourceData("model_health.graphql"), BuiltIn: false},
+	{Name: "model_probe_config.graphql", Input: sourceData("model_probe_config.graphql"), BuiltIn: false},
 	{Name: "backup.graphql", Input: sourceData("backup.graphql"), BuiltIn: false},
 	{Name: "channel_probe.graphql", Input: sourceData("channel_probe.graphql"), BuiltIn: false},
 	{Name: "prompt.graphql", Input: sourceData("prompt.graphql"), BuiltIn: false},
@@ -11164,6 +11207,17 @@ func (ec *executionContext) field_Mutation_backup_args(ctx context.Context, rawA
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNBackupOptionsInput2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋbackupᚐBackupOptions)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_batchSetChannelProbeEnabled_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNBatchSetChannelProbeEnabledInput2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋgqlᚐBatchSetChannelProbeEnabledInput)
 	if err != nil {
 		return nil, err
 	}
@@ -11821,6 +11875,17 @@ func (ec *executionContext) field_Mutation_saveProxyPreset_args(ctx context.Cont
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNSaveProxyPresetInput2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋbizᚐProxyPreset)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_setModelProbeEnabled_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNSetModelProbeEnabledInput2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋgqlᚐSetModelProbeEnabledInput)
 	if err != nil {
 		return nil, err
 	}
@@ -12988,6 +13053,17 @@ func (ec *executionContext) field_Query_modelHealthSnapshots_args(ctx context.Co
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNGetModelHealthSnapshotsInput2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋgqlᚐGetModelHealthSnapshotsInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_modelProbeConfigs_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNGetModelProbeConfigsInput2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋgqlᚐGetModelProbeConfigsInput)
 	if err != nil {
 		return nil, err
 	}
@@ -34337,6 +34413,132 @@ func (ec *executionContext) fieldContext_Mutation_resetDiscoveredModelHealth(_ c
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_setModelProbeEnabled(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_setModelProbeEnabled,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().SetModelProbeEnabled(ctx, fc.Args["input"].(SetModelProbeEnabledInput))
+		},
+		nil,
+		ec.marshalNModelProbeConfig2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐModelProbeConfig,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_setModelProbeEnabled(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_ModelProbeConfig_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_ModelProbeConfig_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_ModelProbeConfig_updatedAt(ctx, field)
+			case "displayModel":
+				return ec.fieldContext_ModelProbeConfig_displayModel(ctx, field)
+			case "channelID":
+				return ec.fieldContext_ModelProbeConfig_channelID(ctx, field)
+			case "actualModelID":
+				return ec.fieldContext_ModelProbeConfig_actualModelID(ctx, field)
+			case "probeEnabled":
+				return ec.fieldContext_ModelProbeConfig_probeEnabled(ctx, field)
+			case "consecutiveFailures":
+				return ec.fieldContext_ModelProbeConfig_consecutiveFailures(ctx, field)
+			case "autoDisabledAt":
+				return ec.fieldContext_ModelProbeConfig_autoDisabledAt(ctx, field)
+			case "channel":
+				return ec.fieldContext_ModelProbeConfig_channel(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ModelProbeConfig", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_setModelProbeEnabled_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_batchSetChannelProbeEnabled(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_batchSetChannelProbeEnabled,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().BatchSetChannelProbeEnabled(ctx, fc.Args["input"].(BatchSetChannelProbeEnabledInput))
+		},
+		nil,
+		ec.marshalNModelProbeConfig2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐModelProbeConfigᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_batchSetChannelProbeEnabled(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_ModelProbeConfig_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_ModelProbeConfig_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_ModelProbeConfig_updatedAt(ctx, field)
+			case "displayModel":
+				return ec.fieldContext_ModelProbeConfig_displayModel(ctx, field)
+			case "channelID":
+				return ec.fieldContext_ModelProbeConfig_channelID(ctx, field)
+			case "actualModelID":
+				return ec.fieldContext_ModelProbeConfig_actualModelID(ctx, field)
+			case "probeEnabled":
+				return ec.fieldContext_ModelProbeConfig_probeEnabled(ctx, field)
+			case "consecutiveFailures":
+				return ec.fieldContext_ModelProbeConfig_consecutiveFailures(ctx, field)
+			case "autoDisabledAt":
+				return ec.fieldContext_ModelProbeConfig_autoDisabledAt(ctx, field)
+			case "channel":
+				return ec.fieldContext_ModelProbeConfig_channel(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ModelProbeConfig", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_batchSetChannelProbeEnabled_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_backup(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -42399,6 +42601,69 @@ func (ec *executionContext) fieldContext_Query_modelHealthHistory(ctx context.Co
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_modelHealthHistory_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_modelProbeConfigs(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_modelProbeConfigs,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().ModelProbeConfigs(ctx, fc.Args["input"].(GetModelProbeConfigsInput))
+		},
+		nil,
+		ec.marshalNModelProbeConfig2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐModelProbeConfigᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_modelProbeConfigs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_ModelProbeConfig_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_ModelProbeConfig_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_ModelProbeConfig_updatedAt(ctx, field)
+			case "displayModel":
+				return ec.fieldContext_ModelProbeConfig_displayModel(ctx, field)
+			case "channelID":
+				return ec.fieldContext_ModelProbeConfig_channelID(ctx, field)
+			case "actualModelID":
+				return ec.fieldContext_ModelProbeConfig_actualModelID(ctx, field)
+			case "probeEnabled":
+				return ec.fieldContext_ModelProbeConfig_probeEnabled(ctx, field)
+			case "consecutiveFailures":
+				return ec.fieldContext_ModelProbeConfig_consecutiveFailures(ctx, field)
+			case "autoDisabledAt":
+				return ec.fieldContext_ModelProbeConfig_autoDisabledAt(ctx, field)
+			case "channel":
+				return ec.fieldContext_ModelProbeConfig_channel(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ModelProbeConfig", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_modelProbeConfigs_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -59304,6 +59569,47 @@ func (ec *executionContext) unmarshalInputBackupOptionsInput(ctx context.Context
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputBatchSetChannelProbeEnabledInput(ctx context.Context, obj any) (BatchSetChannelProbeEnabledInput, error) {
+	var it BatchSetChannelProbeEnabledInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"displayModel", "channelID", "enabled"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "displayModel":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("displayModel"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DisplayModel = data
+		case "channelID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channelID"))
+			data, err := ec.unmarshalNID2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐGUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChannelID = data
+		case "enabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("enabled"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Enabled = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputBulkCreateChannelsInput(ctx context.Context, obj any) (biz.BulkCreateChannelsInput, error) {
 	var it biz.BulkCreateChannelsInput
 	asMap := map[string]any{}
@@ -66118,6 +66424,33 @@ func (ec *executionContext) unmarshalInputGetModelHealthHistoryInput(ctx context
 
 func (ec *executionContext) unmarshalInputGetModelHealthSnapshotsInput(ctx context.Context, obj any) (GetModelHealthSnapshotsInput, error) {
 	var it GetModelHealthSnapshotsInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"displayModels"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "displayModels":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("displayModels"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DisplayModels = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputGetModelProbeConfigsInput(ctx context.Context, obj any) (GetModelProbeConfigsInput, error) {
+	var it GetModelProbeConfigsInput
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -77983,6 +78316,54 @@ func (ec *executionContext) unmarshalInputSaveProxyPresetInput(ctx context.Conte
 				return it, err
 			}
 			it.Password = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputSetModelProbeEnabledInput(ctx context.Context, obj any) (SetModelProbeEnabledInput, error) {
+	var it SetModelProbeEnabledInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"displayModel", "channelID", "actualModelID", "enabled"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "displayModel":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("displayModel"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DisplayModel = data
+		case "channelID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channelID"))
+			data, err := ec.unmarshalNID2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐGUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChannelID = data
+		case "actualModelID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("actualModelID"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ActualModelID = data
+		case "enabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("enabled"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Enabled = data
 		}
 	}
 
@@ -93343,6 +93724,20 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "setModelProbeEnabled":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_setModelProbeEnabled(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "batchSetChannelProbeEnabled":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_batchSetChannelProbeEnabled(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "backup":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_backup(ctx, field)
@@ -96900,6 +97295,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_modelHealthHistory(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "modelProbeConfigs":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_modelProbeConfigs(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -104750,6 +105167,11 @@ func (ec *executionContext) marshalNBackupPayload2ᚖgithubᚗcomᚋloopljᚋaxo
 	return ec._BackupPayload(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNBatchSetChannelProbeEnabledInput2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋgqlᚐBatchSetChannelProbeEnabledInput(ctx context.Context, v any) (BatchSetChannelProbeEnabledInput, error) {
+	res, err := ec.unmarshalInputBatchSetChannelProbeEnabledInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v any) (bool, error) {
 	res, err := graphql.UnmarshalBoolean(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -106433,6 +106855,11 @@ func (ec *executionContext) unmarshalNGetModelHealthSnapshotsInput2githubᚗcom�
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNGetModelProbeConfigsInput2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋgqlᚐGetModelProbeConfigsInput(ctx context.Context, v any) (GetModelProbeConfigsInput, error) {
+	res, err := ec.unmarshalInputGetModelProbeConfigsInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNHeaderEntry2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐHeaderEntry(ctx context.Context, sel ast.SelectionSet, v objects.HeaderEntry) graphql.Marshaler {
 	return ec._HeaderEntry(ctx, sel, &v)
 }
@@ -107536,6 +107963,54 @@ func (ec *executionContext) unmarshalNModelPriceItemInput2ᚕgithubᚗcomᚋloop
 		}
 	}
 	return res, nil
+}
+
+func (ec *executionContext) marshalNModelProbeConfig2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐModelProbeConfig(ctx context.Context, sel ast.SelectionSet, v ent.ModelProbeConfig) graphql.Marshaler {
+	return ec._ModelProbeConfig(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNModelProbeConfig2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐModelProbeConfigᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.ModelProbeConfig) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNModelProbeConfig2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐModelProbeConfig(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalNModelProbeConfig2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐModelProbeConfig(ctx context.Context, sel ast.SelectionSet, v *ent.ModelProbeConfig) graphql.Marshaler {
@@ -109010,6 +109485,11 @@ func (ec *executionContext) marshalNSegment2ᚖgithubᚗcomᚋloopljᚋaxonhub�
 		return graphql.Null
 	}
 	return ec._Segment(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNSetModelProbeEnabledInput2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋgqlᚐSetModelProbeEnabledInput(ctx context.Context, v any) (SetModelProbeEnabledInput, error) {
+	res, err := ec.unmarshalInputSetModelProbeEnabledInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNSpan2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋserverᚋbizᚐSpan(ctx context.Context, sel ast.SelectionSet, v biz.Span) graphql.Marshaler {

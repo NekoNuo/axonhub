@@ -91,6 +91,12 @@ type BackupPayload struct {
 	Message *string `json:"message,omitempty"`
 }
 
+type BatchSetChannelProbeEnabledInput struct {
+	DisplayModel string       `json:"displayModel"`
+	ChannelID    objects.GUID `json:"channelID"`
+	Enabled      bool         `json:"enabled"`
+}
+
 type BrandSettings struct {
 	BrandName *string `json:"brandName,omitempty"`
 	BrandLogo *string `json:"brandLogo,omitempty"`
@@ -254,6 +260,10 @@ type GetModelHealthSnapshotsInput struct {
 	DisplayModels []string `json:"displayModels,omitempty"`
 }
 
+type GetModelProbeConfigsInput struct {
+	DisplayModels []string `json:"displayModels,omitempty"`
+}
+
 type HourlyRequestStats struct {
 	Hour  int `json:"hour"`
 	Count int `json:"count"`
@@ -398,6 +408,13 @@ type ScopeInfo struct {
 	Scope       string   `json:"scope"`
 	Description string   `json:"description"`
 	Levels      []string `json:"levels"`
+}
+
+type SetModelProbeEnabledInput struct {
+	DisplayModel  string       `json:"displayModel"`
+	ChannelID     objects.GUID `json:"channelID"`
+	ActualModelID string       `json:"actualModelID"`
+	Enabled       bool         `json:"enabled"`
 }
 
 type SignInInput struct {
