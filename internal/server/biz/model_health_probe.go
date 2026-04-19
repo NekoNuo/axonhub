@@ -156,6 +156,14 @@ func (svc *ChannelProbeService) persistModelHealthResult(
 		return fmt.Errorf("create model health history: %w", err)
 	}
 
+	if !manualOverride && svc.ModelProbeConfigService != nil {
+		if err := svc.ModelProbeConfigService.UpdateOnProbeResult(
+			ctx, target.DisplayModel, target.ChannelID, target.ActualModelID, healthy, probedAt,
+		); err != nil {
+			return fmt.Errorf("update probe config counters: %w", err)
+		}
+	}
+
 	return nil
 }
 

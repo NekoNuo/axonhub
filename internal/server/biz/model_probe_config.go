@@ -187,3 +187,67 @@ func upsertProbeConfigTx(ctx context.Context, tx *ent.Tx, displayModel string, c
 func probeConfigKey(displayModel string, channelID int, actualModelID string) string {
 	return fmt.Sprintf("%s:%d:%s", displayModel, channelID, actualModelID)
 }
+
+// UpdateOnProbeResult adjusts the triple's failure counter after an automatic
+// probe. Healthy → reset to 0. Unhealthy → increment, and auto-disable once
+// the count hits the per-model threshold from
+// Model.settings.probeAutoDisableAfterConsecutiveFailures. Threshold 0 or a
+// missing/undefined model means never auto-disable. Manual probe results do
+// not call this — the counter is only moved by automatic runs.
+func (s *ModelProbeConfigService) UpdateOnProbeResult(ctx context.Context, displayModel string, channelID int, actualModelID string, healthy bool, probedAt int64) error {
+	cfg, err := s.Get(ctx, displayModel, channelID, actualModelID)
+	if err != nil {
+		return err
+	}
+
+	if cfg == nil {
+		cfg, err = s.db.ModelProbeConfig.Create().
+			SetDisplayModel(displayModel).
+			SetChannelID(channelID).
+			SetActualModelID(actualModelID).
+			SetProbeEnabled(true).
+			Save(ctx)
+		if err != nil {
+			return fmt.Errorf("create probe config: %w", err)
+		}
+	}
+
+	if healthy {
+		if cfg.ConsecutiveFailures == 0 {
+			return nil
+		}
+
+		_, err := cfg.Update().SetConsecutiveFailures(0).Save(ctx)
+
+		return err
+	}
+
+	next := cfg.ConsecutiveFailures + 1
+	upd := cfg.Update().SetConsecutiveFailures(next)
+
+	threshold, err := s.lookupAutoDisableThreshold(ctx, displayModel)
+	if err == nil && threshold > 0 && next >= threshold {
+		upd = upd.SetProbeEnabled(false).SetAutoDisabledAt(probedAt)
+	}
+
+	_, err = upd.Save(ctx)
+
+	return err
+}
+
+func (s *ModelProbeConfigService) lookupAutoDisableThreshold(ctx context.Context, displayModel string) (int, error) {
+	m, err := s.db.Model.Query().Where(model.ModelIDEQ(displayModel)).Only(ctx)
+	if ent.IsNotFound(err) {
+		return 0, nil
+	}
+
+	if err != nil {
+		return 0, err
+	}
+
+	if m.Settings == nil {
+		return 0, nil
+	}
+
+	return m.Settings.ProbeAutoDisableAfterConsecutiveFailures, nil
+}
