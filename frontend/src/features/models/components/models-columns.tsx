@@ -112,6 +112,49 @@ function ModelProbeCell({ row, canWrite }: { row: Row<Model>; canWrite: boolean 
   );
 }
 
+function ModelAutoDisableThresholdCell({ row, canWrite }: { row: Row<Model>; canWrite: boolean }) {
+  const { t } = useTranslation();
+  const model = row.original;
+  const updateModel = useUpdateModel();
+  const current = model.settings?.probeAutoDisableAfterConsecutiveFailures ?? 0;
+  const [value, setValue] = useState<string>(String(current));
+
+  const commit = useCallback(async () => {
+    const next = Math.max(0, Number.parseInt(value, 10) || 0);
+    if (next === current) return;
+    await updateModel.mutateAsync({
+      id: model.id,
+      input: {
+        settings: {
+          ...model.settings,
+          probeAutoDisableAfterConsecutiveFailures: next,
+        },
+      },
+    });
+  }, [value, current, updateModel, model]);
+
+  if (!canWrite) {
+    return <span className='text-muted-foreground text-sm tabular-nums'>{current || '-'}</span>;
+  }
+
+  return (
+    <div className='flex items-center justify-center'>
+      <input
+        type='number'
+        min={0}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={() => {
+          void commit();
+        }}
+        aria-label={t('models.columns.autoDisableThreshold')}
+        className='border-input bg-background ring-offset-background w-16 rounded-md border px-2 py-1 text-sm tabular-nums'
+        disabled={updateModel.isPending}
+      />
+    </div>
+  );
+}
+
 export const createColumns = (t: ReturnType<typeof useTranslation>['t'], canWrite: boolean = true): ColumnDef<Model>[] => {
   return [
     {
@@ -224,6 +267,12 @@ export const createColumns = (t: ReturnType<typeof useTranslation>['t'], canWrit
       id: 'probeEnabled',
       header: ({ column }) => <DataTableColumnHeader column={column} title={t('models.columns.probeEnabled')} />,
       cell: ({ row }) => <ModelProbeCell row={row} canWrite={canWrite} />,
+      enableSorting: false,
+    },
+    {
+      id: 'probeAutoDisableAfterConsecutiveFailures',
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('models.columns.autoDisableThreshold')} />,
+      cell: ({ row }) => <ModelAutoDisableThresholdCell row={row} canWrite={canWrite} />,
       enableSorting: false,
     },
     // {

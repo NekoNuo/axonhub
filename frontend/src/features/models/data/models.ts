@@ -54,6 +54,7 @@ const MODELS_QUERY = `
           }
           settings {
             probeEnabled
+            probeAutoDisableAfterConsecutiveFailures
             associations {
               type
               priority
@@ -176,6 +177,7 @@ const CREATE_MODEL_MUTATION = `
       }
       settings {
         probeEnabled
+        probeAutoDisableAfterConsecutiveFailures
         associations {
           type
           priority
@@ -288,6 +290,7 @@ const BULK_CREATE_MODELS_MUTATION = `
       }
       settings {
         probeEnabled
+        probeAutoDisableAfterConsecutiveFailures
         associations {
           type
           priority
@@ -400,6 +403,7 @@ const UPDATE_MODEL_MUTATION = `
       }
       settings {
         probeEnabled
+        probeAutoDisableAfterConsecutiveFailures
         associations {
           type
           priority
