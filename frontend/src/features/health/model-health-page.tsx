@@ -62,11 +62,15 @@ export function getProbeEnabledModelEntries(modelEntries: ConnectionQueryModelEn
 }
 
 export function getDefaultProbeEnabled(probeEnabled: boolean | undefined, channelStatus: string) {
+  if (channelStatus !== 'enabled') {
+    return false;
+  }
+
   if (probeEnabled != null) {
     return probeEnabled;
   }
 
-  return channelStatus === 'enabled';
+  return true;
 }
 
 export function buildModelHealthTree(rows: ModelHealthRow[]): ModelHealthGroup[] {

@@ -369,9 +369,14 @@ describe('Task 12 Model Health Page', () => {
     expect(getDefaultProbeEnabled(undefined, 'disabled')).toBe(false);
   });
 
-  it('prefers explicit config over channel status for default probing', () => {
+  it('prefers explicit config on enabled channels only', () => {
     expect(getDefaultProbeEnabled(false, 'enabled')).toBe(false);
-    expect(getDefaultProbeEnabled(true, 'disabled')).toBe(true);
+    expect(getDefaultProbeEnabled(true, 'enabled')).toBe(true);
+  });
+
+  it('forces disabled channels to display probing as off', () => {
+    expect(getDefaultProbeEnabled(true, 'disabled')).toBe(false);
+    expect(getDefaultProbeEnabled(false, 'disabled')).toBe(false);
   });
 
   it('rebuilds associated rows from the latest probe config state', () => {
