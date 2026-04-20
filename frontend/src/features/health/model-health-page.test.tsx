@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildAssociatedModelHealthRows,
   buildModelHealthTree,
+  collectVisibleChannelTargets,
   collectVisiblePageProbeTargets,
   buildDiscoveredModelHealthRows,
+  getDefaultProbeEnabled,
   runProbeTargetsWithLimit,
   getActualModelHistory,
   getChannelProbeTargets,
@@ -355,6 +358,140 @@ describe('Task 12 Model Health Page', () => {
         channelName: 'Channel A',
         actualModelID: 'gpt-5-2',
       }),
+    ]);
+  });
+
+  it('defaults probing to enabled when config is missing on enabled channels', () => {
+    expect(getDefaultProbeEnabled(undefined, 'enabled')).toBe(true);
+  });
+
+  it('defaults probing to disabled when config is missing on disabled channels', () => {
+    expect(getDefaultProbeEnabled(undefined, 'disabled')).toBe(false);
+  });
+
+  it('prefers explicit config over channel status for default probing', () => {
+    expect(getDefaultProbeEnabled(false, 'enabled')).toBe(false);
+    expect(getDefaultProbeEnabled(true, 'disabled')).toBe(true);
+  });
+
+  it('rebuilds associated rows from the latest probe config state', () => {
+    const modelEntries = [
+      {
+        modelID: 'gpt-4o',
+        name: 'GPT-4o',
+        settings: {
+          probeEnabled: true,
+          associations: [{ type: 'model', disabled: false }],
+        },
+      },
+    ];
+    const connectionsByModel = {
+      'gpt-4o': [
+        {
+          channel: {
+            id: 'channel-a',
+            name: 'Channel A',
+            status: 'enabled',
+            type: 'openai',
+            orderingWeight: 100,
+          },
+          priority: 1,
+          models: [{ actualModel: 'gpt-4o-2024-11-20' }],
+        },
+      ],
+    };
+    const channelsByID = new Map([
+      [
+        'channel-a',
+        {
+          name: 'Channel A',
+          status: 'enabled',
+          type: 'openai',
+          orderingWeight: 100,
+        },
+      ],
+    ]);
+
+    const defaultRows = buildAssociatedModelHealthRows(
+      modelEntries as any,
+      connectionsByModel as any,
+      [],
+      channelsByID,
+      new Map()
+    );
+    const updatedRows = buildAssociatedModelHealthRows(
+      modelEntries as any,
+      connectionsByModel as any,
+      [],
+      channelsByID,
+      new Map([
+        [
+          'gpt-4o:channel-a:gpt-4o-2024-11-20',
+          {
+            displayModel: 'gpt-4o',
+            channelID: 'channel-a',
+            actualModelID: 'gpt-4o-2024-11-20',
+            probeEnabled: false,
+            consecutiveFailures: 0,
+            autoDisabledAt: null,
+          },
+        ],
+      ])
+    );
+
+    expect(defaultRows[0].probeEnabled).toBe(true);
+    expect(updatedRows[0].probeEnabled).toBe(false);
+  });
+
+  it('collects visible channels for batch probe toggles', () => {
+    const groups = buildModelHealthTree([
+      {
+        channelName: 'Channel A',
+        channelStatus: 'enabled',
+        channelType: 'openai',
+        orderingWeight: 10,
+        priority: 1,
+        displayModel: 'gpt-4o',
+        channelID: 'channel-a',
+        actualModelID: 'gpt-4o-2024-11-20',
+        isHealthy: true,
+        manualOverride: false,
+        probedAt: 1712310000,
+        probeEnabled: true,
+        consecutiveFailures: 0,
+        autoDisabledAt: null,
+      },
+      {
+        channelName: 'Channel B',
+        channelStatus: 'disabled',
+        channelType: 'openai',
+        orderingWeight: 5,
+        priority: 1,
+        displayModel: 'gpt-4o',
+        channelID: 'channel-b',
+        actualModelID: 'gpt-4o-2024-08-06',
+        isHealthy: false,
+        manualOverride: false,
+        probedAt: 1712310300,
+        probeEnabled: false,
+        consecutiveFailures: 0,
+        autoDisabledAt: null,
+      },
+    ]);
+
+    expect(collectVisibleChannelTargets(groups)).toEqual([
+      {
+        key: 'gpt-4o:channel-a',
+        displayModel: 'gpt-4o',
+        channelID: 'channel-a',
+        channelName: 'Channel A',
+      },
+      {
+        key: 'gpt-4o:channel-b',
+        displayModel: 'gpt-4o',
+        channelID: 'channel-b',
+        channelName: 'Channel B',
+      },
     ]);
   });
 

@@ -137,6 +137,38 @@ func TestModelProbeConfigService_BatchSetChannelProbeEnabled_UpsertsFromAssociat
 	require.Equal(t, "gpt-4o-2024-11-20", cfgs[0].ActualModelID)
 }
 
+func TestModelProbeConfigService_BatchSetChannelProbeEnabled_WorksForDisabledChannel(t *testing.T) {
+	client, ctx := setupProbeConfigTestClient(t)
+	ch := createProbeTestChannel(t, ctx, client, "ch-a")
+	createProbeTestModel(t, ctx, client, "gpt-4o", ch.ID, "gpt-4o-2024-11-20")
+
+	_, err := client.Channel.UpdateOneID(ch.ID).SetStatus("disabled").Save(ctx)
+	require.NoError(t, err)
+
+	svc := NewModelProbeConfigService(client)
+	cfgs, err := svc.BatchSetChannelProbeEnabled(ctx, "gpt-4o", ch.ID, true)
+	require.NoError(t, err)
+	require.Len(t, cfgs, 1)
+	require.True(t, cfgs[0].ProbeEnabled)
+	require.Equal(t, "gpt-4o-2024-11-20", cfgs[0].ActualModelID)
+}
+
+func TestModelProbeConfigService_BatchSetChannelProbeEnabled_WorksForDisabledModel(t *testing.T) {
+	client, ctx := setupProbeConfigTestClient(t)
+	ch := createProbeTestChannel(t, ctx, client, "ch-a")
+	m := createProbeTestModel(t, ctx, client, "gpt-4o", ch.ID, "gpt-4o-2024-11-20")
+
+	_, err := client.Model.UpdateOneID(m.ID).SetStatus(model.StatusDisabled).Save(ctx)
+	require.NoError(t, err)
+
+	svc := NewModelProbeConfigService(client)
+	cfgs, err := svc.BatchSetChannelProbeEnabled(ctx, "gpt-4o", ch.ID, true)
+	require.NoError(t, err)
+	require.Len(t, cfgs, 1)
+	require.True(t, cfgs[0].ProbeEnabled)
+	require.Equal(t, "gpt-4o-2024-11-20", cfgs[0].ActualModelID)
+}
+
 func TestModelProbeConfigService_GetByDisplayModels_Filters(t *testing.T) {
 	client, ctx := setupProbeConfigTestClient(t)
 	ch := createProbeTestChannel(t, ctx, client, "ch-a")

@@ -41,6 +41,13 @@ export interface ModelHealthGroup {
   channels: ModelHealthChannelGroup[];
 }
 
+export interface VisibleChannelTarget {
+  key: string;
+  displayModel: string;
+  channelID: string;
+  channelName: string;
+}
+
 interface ConnectionQueryModelEntry {
   modelID: string;
   name: string;
@@ -52,6 +59,14 @@ interface ConnectionQueryModelEntry {
 
 export function getProbeEnabledModelEntries(modelEntries: ConnectionQueryModelEntry[]) {
   return modelEntries.filter((model) => model.settings?.probeEnabled && (model.settings?.associations?.length ?? 0) > 0);
+}
+
+export function getDefaultProbeEnabled(probeEnabled: boolean | undefined, channelStatus: string) {
+  if (probeEnabled != null) {
+    return probeEnabled;
+  }
+
+  return channelStatus === 'enabled';
 }
 
 export function buildModelHealthTree(rows: ModelHealthRow[]): ModelHealthGroup[] {
@@ -113,11 +128,81 @@ export function buildDiscoveredModelHealthRows(
       channelType: channelMeta.type,
       orderingWeight: channelMeta.orderingWeight,
       priority: 0,
-      probeEnabled: cfg?.probeEnabled ?? false,
+      probeEnabled: getDefaultProbeEnabled(cfg?.probeEnabled, channelMeta.status),
       consecutiveFailures: cfg?.consecutiveFailures ?? 0,
       autoDisabledAt: cfg?.autoDisabledAt ?? null,
     };
   });
+}
+
+export function buildAssociatedModelHealthRows(
+  modelEntries: ConnectionQueryModelEntry[],
+  connectionsByModel: Record<string, ModelChannelConnection[]>,
+  snapshots: ModelHealthSnapshot[],
+  channelsByID: Map<string, { name: string; status: string; type: string; orderingWeight: number }>,
+  configByKey: Map<string, ModelProbeConfig>
+): ModelHealthRow[] {
+  const snapshotMap = new Map(snapshots.map((item) => [getConnectionKey(item.displayModel, item.channelID, item.actualModelID), item]));
+  const result: ModelHealthRow[] = [];
+
+  modelEntries.forEach((model) => {
+    const connections = connectionsByModel[model.modelID] || [];
+    connections.forEach((connection) => {
+      connection.models.forEach((matchedModel) => {
+        const key = getConnectionKey(model.modelID, connection.channel.id, matchedModel.actualModel);
+        const snapshot = snapshotMap.get(key);
+        const cfg = configByKey.get(key);
+        const channelMeta = channelsByID.get(connection.channel.id) ?? {
+          name: connection.channel.name,
+          status: connection.channel.status,
+          type: connection.channel.type,
+          orderingWeight: connection.channel.orderingWeight ?? 0,
+        };
+
+        result.push({
+          id: snapshot?.id,
+          displayModel: model.modelID,
+          channelID: connection.channel.id,
+          actualModelID: matchedModel.actualModel,
+          isHealthy: snapshot?.isHealthy ?? false,
+          manualOverride: snapshot?.manualOverride ?? false,
+          probedAt: snapshot?.probedAt ?? 0,
+          channelName: channelMeta.name,
+          channelStatus: channelMeta.status,
+          channelType: channelMeta.type,
+          orderingWeight: channelMeta.orderingWeight,
+          priority: connection.priority ?? 0,
+          probeEnabled: getDefaultProbeEnabled(cfg?.probeEnabled, channelMeta.status),
+          consecutiveFailures: cfg?.consecutiveFailures ?? 0,
+          autoDisabledAt: cfg?.autoDisabledAt ?? null,
+        });
+      });
+    });
+  });
+
+  return result;
+}
+
+export function collectVisibleChannelTargets(groups: ModelHealthGroup[]): VisibleChannelTarget[] {
+  const deduped = new Map<string, VisibleChannelTarget>();
+
+  groups.forEach((group) => {
+    group.channels.forEach((channel) => {
+      const key = `${group.displayModel}:${channel.channelID}`;
+      if (deduped.has(key)) {
+        return;
+      }
+
+      deduped.set(key, {
+        key,
+        displayModel: group.displayModel,
+        channelID: channel.channelID,
+        channelName: channel.channelName,
+      });
+    });
+  });
+
+  return Array.from(deduped.values());
 }
 
 export function getModelsPendingConnectionQuery(
@@ -246,6 +331,9 @@ export function ModelHealthPage() {
   const [isResetDiscoveredOpen, setIsResetDiscoveredOpen] = useState(false);
   const [isResettingDiscovered, setIsResettingDiscovered] = useState(false);
   const [isSyncingAll, setIsSyncingAll] = useState(false);
+  const [updatingProbeKeys, setUpdatingProbeKeys] = useState<Record<string, true>>({});
+  const [selectedChannelKeys, setSelectedChannelKeys] = useState<Record<string, true>>({});
+  const [isBatchUpdatingChannels, setIsBatchUpdatingChannels] = useState(false);
   const { data: modelsData } = useQueryAllModels({
     where: {
       statusIn: ['enabled', 'disabled'],
@@ -262,6 +350,13 @@ export function ModelHealthPage() {
     },
   });
   const queryConnections = useQueryModelChannelConnections();
+
+  const refreshProbeConfigs = async () => {
+    const configs = await fetchModelProbeConfigs({ input: {} });
+    startTransition(() => {
+      setProbeConfigs(configs);
+    });
+  };
 
   useEffect(() => {
     void (async () => {
@@ -340,45 +435,7 @@ export function ModelHealthPage() {
   }, [connectionsByModel, modelEntries, pendingConnectionModelIDs, queryConnections.mutateAsync, search]);
 
   const rows = useMemo<ModelHealthRow[]>(() => {
-    const snapshotMap = new Map(snapshots.map((item) => [getConnectionKey(item.displayModel, item.channelID, item.actualModelID), item]));
-    const result: ModelHealthRow[] = [];
-
-    modelEntries.forEach((model) => {
-      const connections = connectionsByModel[model.modelID] || [];
-      connections.forEach((connection) => {
-        connection.models.forEach((matchedModel) => {
-          const key = getConnectionKey(model.modelID, connection.channel.id, matchedModel.actualModel);
-          const snapshot = snapshotMap.get(key);
-          const cfg = configByKey.get(key);
-          const channelMeta = channelsByID.get(connection.channel.id) ?? {
-            name: connection.channel.name,
-            status: connection.channel.status,
-            type: connection.channel.type,
-            orderingWeight: connection.channel.orderingWeight ?? 0,
-          };
-
-          result.push({
-            id: snapshot?.id,
-            displayModel: model.modelID,
-            channelID: connection.channel.id,
-            actualModelID: matchedModel.actualModel,
-            isHealthy: snapshot?.isHealthy ?? false,
-            manualOverride: snapshot?.manualOverride ?? false,
-            probedAt: snapshot?.probedAt ?? 0,
-            channelName: channelMeta.name,
-            channelStatus: channelMeta.status,
-            channelType: channelMeta.type,
-            orderingWeight: channelMeta.orderingWeight,
-            priority: connection.priority ?? 0,
-            probeEnabled: cfg?.probeEnabled ?? false,
-            consecutiveFailures: cfg?.consecutiveFailures ?? 0,
-            autoDisabledAt: cfg?.autoDisabledAt ?? null,
-          });
-        });
-      });
-    });
-
-    return result.filter((row) => {
+    return buildAssociatedModelHealthRows(modelEntries, connectionsByModel, snapshots, channelsByID, configByKey).filter((row) => {
       const matchesSearch =
         search.trim() === '' ||
         row.displayModel.toLowerCase().includes(search.toLowerCase()) ||
@@ -387,9 +444,14 @@ export function ModelHealthPage() {
       const matchesStatus = statusFilter === 'all' || row.channelStatus === statusFilter;
       return matchesSearch && matchesStatus;
     });
-  }, [channelsByID, connectionsByModel, modelEntries, search, snapshots, statusFilter]);
+  }, [channelsByID, configByKey, connectionsByModel, modelEntries, search, snapshots, statusFilter]);
 
   const groups = useMemo(() => buildModelHealthTree(rows), [rows]);
+  const visibleChannelTargets = useMemo(() => collectVisibleChannelTargets(groups), [groups]);
+  const selectedVisibleChannelTargets = useMemo(
+    () => visibleChannelTargets.filter((target) => selectedChannelKeys[target.key]),
+    [selectedChannelKeys, visibleChannelTargets]
+  );
   const discoveredRows = useMemo(
     () =>
       buildDiscoveredModelHealthRows(discoveredSnapshots, channelsByID, configByKey).filter((row) => {
@@ -410,6 +472,14 @@ export function ModelHealthPage() {
     () => new Set(discoveredRows.map((row) => getConnectionKey(row.displayModel, row.channelID, row.actualModelID))),
     [discoveredRows]
   );
+
+  useEffect(() => {
+    const visibleKeys = new Set(visibleChannelTargets.map((target) => target.key));
+    setSelectedChannelKeys((current) => {
+      const next = Object.fromEntries(Object.entries(current).filter(([key]) => visibleKeys.has(key)));
+      return Object.keys(next).length === Object.keys(current).length ? current : next;
+    });
+  }, [visibleChannelTargets]);
 
   useEffect(() => {
     rows.forEach((row) => {
@@ -525,31 +595,79 @@ export function ModelHealthPage() {
     });
   };
 
-  const handleToggleRowProbe = async (row: ModelHealthRow, next: boolean) => {
+  const withProbeUpdateKey = async (key: string, work: () => Promise<void>) => {
+    setUpdatingProbeKeys((current) => ({ ...current, [key]: true }));
     try {
-      const updated = await setModelProbeEnabled({
-        displayModel: row.displayModel,
-        channelID: row.channelID,
-        actualModelID: row.actualModelID,
-        enabled: next,
+      await work();
+    } finally {
+      setUpdatingProbeKeys((current) => {
+        const next = { ...current };
+        delete next[key];
+        return next;
       });
-      mergeProbeConfigs([updated]);
-    } catch (error) {
-      toast.error(t('models.healthPage.probeToggleError', { error: error instanceof Error ? error.message : String(error) }));
     }
+  };
+
+  const handleToggleRowProbe = async (row: ModelHealthRow, next: boolean) => {
+    await withProbeUpdateKey(`row:${row.displayModel}:${row.channelID}:${row.actualModelID}`, async () => {
+      try {
+        const updated = await setModelProbeEnabled({
+          displayModel: row.displayModel,
+          channelID: row.channelID,
+          actualModelID: row.actualModelID,
+          enabled: next,
+        });
+        mergeProbeConfigs([updated]);
+        await refreshProbeConfigs();
+      } catch (error) {
+        toast.error(t('models.healthPage.probeToggleError', { error: error instanceof Error ? error.message : String(error) }));
+      }
+    });
   };
 
   const handleToggleChannelProbe = async (group: ModelHealthGroup, channel: ModelHealthChannelGroup) => {
     const next = !channel.rows.every((r) => r.probeEnabled);
+    await withProbeUpdateKey(`channel:${group.displayModel}:${channel.channelID}`, async () => {
+      try {
+        const updated = await batchSetChannelProbeEnabled({
+          displayModel: group.displayModel,
+          channelID: channel.channelID,
+          enabled: next,
+        });
+        mergeProbeConfigs(updated);
+        await refreshProbeConfigs();
+      } catch (error) {
+        toast.error(t('models.healthPage.probeToggleError', { error: error instanceof Error ? error.message : String(error) }));
+      }
+    });
+  };
+
+  const handleToggleSelectedChannels = async (enabled: boolean) => {
+    if (selectedVisibleChannelTargets.length === 0) return;
+
+    setIsBatchUpdatingChannels(true);
     try {
-      const updated = await batchSetChannelProbeEnabled({
-        displayModel: group.displayModel,
-        channelID: channel.channelID,
-        enabled: next,
-      });
-      mergeProbeConfigs(updated);
+      const updates = await Promise.all(
+        selectedVisibleChannelTargets.map((target) =>
+          batchSetChannelProbeEnabled({
+            displayModel: target.displayModel,
+            channelID: target.channelID,
+            enabled,
+          })
+        )
+      );
+      mergeProbeConfigs(updates.flat());
+      await refreshProbeConfigs();
+      setSelectedChannelKeys({});
+      toast.success(
+        enabled
+          ? t('models.healthPage.batchEnableSelectedSuccess', { count: selectedVisibleChannelTargets.length })
+          : t('models.healthPage.batchDisableSelectedSuccess', { count: selectedVisibleChannelTargets.length })
+      );
     } catch (error) {
       toast.error(t('models.healthPage.probeToggleError', { error: error instanceof Error ? error.message : String(error) }));
+    } finally {
+      setIsBatchUpdatingChannels(false);
     }
   };
 
@@ -589,11 +707,77 @@ export function ModelHealthPage() {
           </Button>
         </div>
 
+        {visibleChannelTargets.length > 0 ? (
+          <div className='flex flex-col gap-3 rounded-lg border p-3 md:flex-row md:items-center md:justify-between'>
+            <div className='text-sm'>
+              {t('models.healthPage.selectedChannelsSummary', {
+                selected: selectedVisibleChannelTargets.length,
+                total: visibleChannelTargets.length,
+              })}
+            </div>
+            <div className='flex flex-wrap items-center gap-2'>
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={() =>
+                  setSelectedChannelKeys(
+                    selectedVisibleChannelTargets.length === visibleChannelTargets.length
+                      ? {}
+                      : Object.fromEntries(visibleChannelTargets.map((target) => [target.key, true] as const))
+                  )
+                }
+                disabled={isBatchUpdatingChannels}
+              >
+                {selectedVisibleChannelTargets.length === visibleChannelTargets.length
+                  ? t('models.healthPage.clearChannelSelection')
+                  : t('models.healthPage.selectAllChannels')}
+              </Button>
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={() => setSelectedChannelKeys({})}
+                disabled={isBatchUpdatingChannels || selectedVisibleChannelTargets.length === 0}
+              >
+                {t('models.healthPage.clearSelectedChannels')}
+              </Button>
+              <Button
+                size='sm'
+                onClick={() => handleToggleSelectedChannels(true)}
+                disabled={isBatchUpdatingChannels || selectedVisibleChannelTargets.length === 0}
+              >
+                {t('models.healthPage.batchEnableSelectedChannels')}
+              </Button>
+              <Button
+                size='sm'
+                variant='secondary'
+                onClick={() => handleToggleSelectedChannels(false)}
+                disabled={isBatchUpdatingChannels || selectedVisibleChannelTargets.length === 0}
+              >
+                {t('models.healthPage.batchDisableSelectedChannels')}
+              </Button>
+            </div>
+          </div>
+        ) : null}
+
         <ModelHealthTree
           groups={groups}
           histories={histories}
           probingKeys={probingKeys}
+          updatingProbeKeys={updatingProbeKeys}
           locale={locale}
+          selectedChannelKeys={selectedChannelKeys}
+          showChannelSelection
+          onToggleSelectChannel={(group, channel, checked) =>
+            setSelectedChannelKeys((current) => {
+              const key = `${group.displayModel}:${channel.channelID}`;
+              if (checked) {
+                return { ...current, [key]: true };
+              }
+              const next = { ...current };
+              delete next[key];
+              return next;
+            })
+          }
           onProbeGroup={(group) => runProbeTargets(`group:${group.displayModel}`, getGroupProbeTargets(group))}
           onProbeChannel={(group, channel) => runProbeTargets(`channel:${group.displayModel}:${channel.channelID}`, getChannelProbeTargets(channel))}
           onProbeRow={(row) => runProbeTargets(`row:${row.displayModel}:${row.channelID}:${row.actualModelID}`, [getRowProbeTarget(row)])}
@@ -611,13 +795,14 @@ export function ModelHealthPage() {
               {t('models.healthPage.resetDiscovered')}
             </Button>
           </div>
-          <ModelHealthTree
-            groups={discoveredGroups}
-            histories={histories}
-            probingKeys={probingKeys}
-            locale={locale}
-            onProbeGroup={(group) => runProbeTargets(`discovered-group:${group.displayModel}`, getGroupProbeTargets(group))}
-            onProbeChannel={(group, channel) => runProbeTargets(`discovered-channel:${group.displayModel}:${channel.channelID}`, getChannelProbeTargets(channel))}
+        <ModelHealthTree
+          groups={discoveredGroups}
+          histories={histories}
+          probingKeys={probingKeys}
+          updatingProbeKeys={updatingProbeKeys}
+          locale={locale}
+          onProbeGroup={(group) => runProbeTargets(`discovered-group:${group.displayModel}`, getGroupProbeTargets(group))}
+          onProbeChannel={(group, channel) => runProbeTargets(`discovered-channel:${group.displayModel}:${channel.channelID}`, getChannelProbeTargets(channel))}
             onProbeRow={(row) => runProbeTargets(`discovered-row:${row.displayModel}:${row.channelID}:${row.actualModelID}`, [getRowProbeTarget(row)])}
             onToggleRowProbe={handleToggleRowProbe}
             onToggleChannelProbe={handleToggleChannelProbe}

@@ -150,3 +150,26 @@ func TestBatchSetChannelProbeEnabled_Mutation_UpsertsFromAssociations(t *testing
 	require.Len(t, cfgs, 1)
 	require.True(t, cfgs[0].ProbeEnabled)
 }
+
+func TestModelProbeConfigResolver_ID(t *testing.T) {
+	resolver, _, _ := setupProbeConfigResolverTest(t)
+
+	guid, err := (&modelProbeConfigResolver{resolver}).ID(context.Background(), &ent.ModelProbeConfig{ID: 42})
+	require.NoError(t, err)
+	require.Equal(t, &objects.GUID{
+		Type: ent.TypeModelProbeConfig,
+		ID:   42,
+	}, guid)
+}
+
+func TestModelProbeConfigResolver_ChannelID(t *testing.T) {
+	resolver, ctx, client := setupProbeConfigResolverTest(t)
+	ch := seedProbeConfigChannel(t, ctx, client)
+
+	guid, err := (&modelProbeConfigResolver{resolver}).ChannelID(context.Background(), &ent.ModelProbeConfig{ChannelID: ch.ID})
+	require.NoError(t, err)
+	require.Equal(t, &objects.GUID{
+		Type: ent.TypeChannel,
+		ID:   ch.ID,
+	}, guid)
+}

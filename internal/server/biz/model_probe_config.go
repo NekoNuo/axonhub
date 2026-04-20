@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/looplj/axonhub/internal/ent"
-	"github.com/looplj/axonhub/internal/ent/channel"
 	"github.com/looplj/axonhub/internal/ent/model"
 	"github.com/looplj/axonhub/internal/ent/modelprobeconfig"
 )
@@ -114,7 +113,7 @@ func (s *ModelProbeConfigService) BatchSetChannelProbeEnabled(ctx context.Contex
 // so channel-level UI toggles touch every triple the user sees in the tree.
 func (s *ModelProbeConfigService) resolveChannelActualModels(ctx context.Context, displayModel string, channelID int) ([]string, error) {
 	m, err := s.db.Model.Query().
-		Where(model.ModelIDEQ(displayModel), model.StatusEQ(model.StatusEnabled)).
+		Where(model.ModelIDEQ(displayModel)).
 		Only(ctx)
 	if ent.IsNotFound(err) {
 		return nil, nil
@@ -128,12 +127,16 @@ func (s *ModelProbeConfigService) resolveChannelActualModels(ctx context.Context
 		return nil, nil
 	}
 
-	channels, err := s.db.Channel.Query().Where(channel.StatusEQ(channel.StatusEnabled)).All(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("load channels: %w", err)
+	targetChannel, err := s.db.Channel.Get(ctx, channelID)
+	if ent.IsNotFound(err) {
+		return nil, nil
 	}
 
-	targets := resolveAssociatedModelHealthTargets(m, channels)
+	if err != nil {
+		return nil, fmt.Errorf("load channel %d: %w", channelID, err)
+	}
+
+	targets := resolveAssociatedModelHealthTargets(m, []*ent.Channel{targetChannel})
 	seen := make(map[string]struct{}, len(targets))
 	actuals := make([]string, 0, len(targets))
 

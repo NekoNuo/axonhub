@@ -233,12 +233,18 @@ func (r *modelHealthSnapshotResolver) ChannelID(ctx context.Context, obj *ent.Mo
 
 // ID is the resolver for the id field.
 func (r *modelProbeConfigResolver) ID(ctx context.Context, obj *ent.ModelProbeConfig) (*objects.GUID, error) {
-	panic(fmt.Errorf("not implemented: ID - id"))
+	return &objects.GUID{
+		Type: ent.TypeModelProbeConfig,
+		ID:   obj.ID,
+	}, nil
 }
 
 // ChannelID is the resolver for the channelID field.
 func (r *modelProbeConfigResolver) ChannelID(ctx context.Context, obj *ent.ModelProbeConfig) (*objects.GUID, error) {
-	panic(fmt.Errorf("not implemented: ChannelID - channelID"))
+	return &objects.GUID{
+		Type: ent.TypeChannel,
+		ID:   obj.ChannelID,
+	}, nil
 }
 
 // ID is the resolver for the id field.
